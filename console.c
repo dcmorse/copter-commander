@@ -53,8 +53,8 @@
 union coco_console_actual_arg {
   int aaint;
   int aanat;
-  char *aastr;
-  char *aastrrr;
+  char *aastr; /* coco_malloc'ed */
+  char *aastrrr; /* coco_malloc'ed */
 };
 
 enum coco_console_arg_type {
@@ -195,7 +195,11 @@ coco_console_eval( const char *line )
                 if (nline == line)
                   arg_read_mode = COCO_FALSE;
                 else
-                  COCO_CE_ACTUAL_ARG().aaint = val;
+                  {
+                    COCO_CE_ACTUAL_ARG().aaint = val;
+                    assert( nline );
+                    line = nline;
+                  }
               }
               break;
             case COCO_CAT_NAT:
@@ -211,7 +215,10 @@ coco_console_eval( const char *line )
                   COCO_CE_ACTUAL_ARG().aanat = COCO_GOOD_GUYS;
                 else if ((0==strncasecmp( left, line, arglen )) || 
                          (0==strncasecmp( one,  line, arglen )))
-                  COCO_CE_ACTUAL_ARG().aanat = COCO_BAD_GUYS;
+                  {
+                    COCO_CE_ACTUAL_ARG().aanat = COCO_BAD_GUYS;
+                    line += arglen;
+                  }
                 else if (*(coco_console_skip_chars( line, coco_console_whitespace )))
                   /* non-null, non-whitespace nat */
                   coco_console_error( line, "Nationality is garbled.");
@@ -220,8 +227,24 @@ coco_console_eval( const char *line )
               }
               break;
             case COCO_CAT_STRING:
+              {
+                char *l = line;
+                size_t len;
+                while (1)
+                  {
+                    char c = *l;
+                    if (('\0' == c) || (' ' == c) || ('	' == c))
+                      break;
+                    else l++;
+                  }
+                len = l - line;
+                coco_strndup( COCO_CE_ACTUAL_ARG().aastr, line, len );
+                line = l;
+              }
               break;
             case COCO_CAT_STRING_REST:
+              COCO_CE_ACTUAL_ARG().aastrrr = coco_strdup( line );
+              line += strlen( line );
               break;
             }
           }
@@ -241,6 +264,7 @@ coco_console_eval( const char *line )
 #undef COCO_CE_ACTUAL_ARG      
       for (i=0, fml = c->args; fml->name != NULL; fml++, i++)
         coco_cookie( "arg %d as nat: %d\n", i, actual_args[i].aanat );
+      /* free char* actual args */
     }
 }
 
@@ -257,3 +281,15 @@ coco_console_printf( const char *fmt, ... )
 }
 
 
+/* only relevant when not fullscreen */
+#define COCO_CONSOLE_LINES 1
+#define COCO_CONSOLE_Y COCO_OFFICIAL_WINDOW_H
+
+void
+coco_console_draw( coco_bool fullscreen )
+{
+  coco_font *font = &coco_default_font;
+  int fis = COCO_FONT_INTERLINE_SPACING( font );
+  int nlines
+    = fullscreen ? (coco_real_window_h / fis) : COCO_CONSOLE_LINES;
+}

@@ -214,7 +214,8 @@ unsigned int coco_random( unsigned int mask );
 void *coco_malloc( size_t size );
 void *coco_realloc( void *ptr, size_t size );
 void coco_free( void *ptr );
-char *coco_string_malloc_copy( char *src );
+char *coco_strdup( const char *src );
+char *coco_strndup( const char *src, size_t n );
 
 coco_bool time_less_than( coco_u32 t1, coco_u32 t2 );
 

@@ -526,7 +526,7 @@ coco_map_level_text( char *filename, char **error_message )
                            filename, err_string );
       else 
         {
-          *error_message = coco_string_malloc_copy( err_string );
+          *error_message = coco_strdup( err_string );
           return NULL;
         }
     }
@@ -580,7 +580,7 @@ coco_load_level_definition( char *from, coco_sstate *sstate )
   if (NULL==macro_buf) macro_buf = coco_malloc( ident_size );
   from = coco_read_identifier( from, macro_buf );
   if (NULL==from) 
-    return coco_string_malloc_copy( "Coudln't find identifier after "
+    return coco_strdup( "Coudln't find identifier after "
                                     "top level open paren." );
   if (0!=strcmp( macro_buf, "define-coco-level" ))
     {
@@ -619,10 +619,10 @@ coco_load_level_definition( char *from, coco_sstate *sstate )
       }
     from = coco_read_lnum( from, NULL, &lev_version );
     if (NULL==from)
-      return coco_string_malloc_copy( "Couldn't find level version" );
+      return coco_strdup( "Couldn't find level version" );
     from = coco_read_lnum( from, NULL, &width );
     if (NULL==from)
-      return coco_string_malloc_copy( "Couldn't find level width" );
+      return coco_strdup( "Couldn't find level width" );
     from = coco_clear_whitespace( from );
 
     if (!syntax_check_only)
@@ -724,7 +724,7 @@ coco_load_level_definition( char *from, coco_sstate *sstate )
           local_env[i].next = local_env + i + 1;
         local_env[env_augment_size-1].next = global_env;
 
-        local_env[0].name = coco_string_malloc_copy( "board-w" );
+        local_env[0].name = coco_strdup( "board-w" );
         local_env[0].value = width;
 
         for (i=0, j=1; i<unit_count; i++)
@@ -831,7 +831,7 @@ coco_load_level_definition( char *from, coco_sstate *sstate )
       if (syntax_check_only)
         {
           if (!found_a_landing_pad)
-            return coco_string_malloc_copy( "Couldn't find a single landing "
+            return coco_strdup( "Couldn't find a single landing "
                                             "pad in any of the units." );
         }
       else
@@ -859,7 +859,7 @@ coco_load_level_definition( char *from, coco_sstate *sstate )
               }
           });
           if (-1==min_pad_idx)
-            return coco_string_malloc_copy( "Couldn't find any landing pads." );
+            return coco_strdup( "Couldn't find any landing pads." );
           else if (!syntax_check_only)
             {
               sstate->teams[0].landing_pad_index = max_pad_idx;

@@ -1,3 +1,8 @@
+2001-07-16  David Morse  <dm@bomberlan.net>
+
+	* language.c (coco_strdup): renamed from coco_string_malloc_copy
+	because that's what it is.
+
 2001-07-11  David Morse  <dm@bomberlan.net>
 
 	* console.c: work in progress.

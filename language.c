@@ -115,12 +115,22 @@ coco_free( void *ptr )
 }
 
 char *
-coco_string_malloc_copy( char *src )
+coco_strdup( const char *src )
 {
   char *buf = coco_malloc( strlen( src ) + 1 );
   strcpy( buf, src );
   return buf;
 }
+
+char *
+coco_strndup( const char *src, size_t size )
+{
+  char *buf = coco_malloc( size + 1 );
+  strncpy( buf, src, size );
+  buf[size] = '\0';
+  return buf;
+}
+
 
 /* _Time___________________________________________________________ */
 
@@ -555,4 +565,3 @@ coco_time_pad_end( struct timeval *private, struct timeval *how_long )
     coco_warn_printf( "Sleeping select failed with errno=%d: %s\n",
                       errno, coco_errno_string( errno ) );
 }
-

@@ -1707,7 +1707,7 @@ coco_add_menuitem_for_ccl_strings( char *filename, void *raw_closure )
         menuitem = gtk_menu_item_new_with_label( label );
         gtk_object_set_data_full( GTK_OBJECT( menuitem ), 
                                   "coco level filename", 
-                                  coco_string_malloc_copy( filename ),
+                                  coco_strdup( filename ),
                                   coco_free );
         gtk_signal_connect( GTK_OBJECT( menuitem ), "activate",
                             GTK_SIGNAL_FUNC
@@ -1758,7 +1758,7 @@ coco_tutorial_dialog_new( GtkWidget *parent_window )
     {
       GtkRadioButton *prev = radio ? GTK_RADIO_BUTTON( radio ) : NULL;
       char *ugly = coco_tutorial_infos[i].name;
-      char *pretty = strdup( ugly );
+      char *pretty = g_strdup( ugly );
       coco_beautify_string( pretty );
       radio = gtk_radio_button_new_with_label_from_widget( prev, pretty );
       gtk_box_pack_start( vbox, radio, TRUE, TRUE, 0 );
