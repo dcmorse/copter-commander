@@ -3,8 +3,8 @@
 0.    Environment Overview
       A. C at runtime
       B. External data compiles into C
-         1. oo compiler (lisp) -> sobjects (C)
-         2. tiff compiler (tiff) -> raster structs (C)
+         1. oo compiler (lisp) -LISP-> sobjects (C)
+         2. tiff compiler (tiff) -C-> raster structs (C)
       C. External data loaded dynamically:
          1. Sounds (.wav)
          2. Levels (.ccl)
@@ -127,6 +127,8 @@ III.  Graphics
          2. Its cross platform
          3. Currently on Linux, it has a slow software implementation, 
             and fast, hard to install, and buggier hardware ones.
+	    a) ha ha, I wrote that like 2 years ago.  Now its actually
+	       easier to install, but still not always automatic
          4. Maybe X would have been better.
             a) no texture mapping, but that's hardly essential
             b) certainly faster than Mesa for raster drawing, 
@@ -172,12 +174,13 @@ IV.   Sound
       B. Mute is the no-op backend.
       C. ESD just uses gnome convenience functions, designed
          for GUIs not games.  Does not spatially scale sounds.
-         1. Mixing multiple sounds hangs renderer.
+         1. Mixing multiple sounds slows game.
       D. OpenAL does everything one could want, esp theoretically
          1. Mixing multiple sounds still hangs renderer.
          2. could an openal thread be given a lower priority,
             to keep it from usurping rendering thread?
          3. OpenAL sound scaling is left to chance.
+	 4. OpenAL api drift is a problem.
 V.    Input Devices
       A. Mouse and Keyboard driven the traditional way: X events.
          1. Performance problems under heavy load.
@@ -188,6 +191,11 @@ V.    Input Devices
          1. DGA mouse?  Quake supports it.
          2. Joystick would be nice.  Plenty of buttons.
             Probably pollable directly by application.
+      C. New for 1.7: GII (generic input interface) support
+	 for mouse and keyboard.  Theoretically this is faster
+         than X events; however, its such a titanic pain in
+	 the behind to set up, even I haven't gotten it to work
+	 yet, so the support is pretty much theoretical.
 VI.   User Interface
       A. Game screen domination protocol not settled on Linux.
          1. Either set video mode and grab mouse is the Quake way.
@@ -234,7 +242,7 @@ VII.  Level Parser
             case.
          2) second time is in server process, where it really creates
             the sobjects.
-      F. Its in "ccl.c".
+      F. Level parser is implemented in "ccl.c".
       G. Much more likely to call malloc than the rest of coco, but 
          who cares?  Its run once.
 VIII. System Construction
@@ -284,3 +292,22 @@ X.    History and Scale
          20,000 lines of code.  That's 100-300 lines of finished code per
          8 hour day.  Keep in mind that much time was spent using non-code
          editors, e.g. GIMP and Digatal Audio Processor (DAP).
+      F. The 1.7 version was released 15 months later, after sporadic
+         work.  The tarball is actually smaller this time around, due
+         to fixing some bugs in the distribution system and not
+         including incredibly anti-compressed
+         rasters-as-c-source-code.
+	 1. 1.7 is a preview release for the hopefully stable 2.0.
+XI.   Web Presence
+      A. copter-commander.org reserved, but waiting to get DNS set up.
+      B. Primary user page is www.speakeasy.org/~morse/copter-commander
+      C. Primary devo page is sourceforge.net/projects/coco
+         1. We use the bug tracker.
+	 2. We use the mailing list.
+      D. There is also a freshmeat page, as the primary advertising.
+         1. freshmeat.net/projects/copter-commander
+	 2. Increasing number of releases leads to
+         3. ... more front page listings on freshmeat
+	 4. ... which means more users
+	 5. ... which means more project health.
+	 6. So we should release often!

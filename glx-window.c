@@ -31,7 +31,7 @@ coco_bool coco_start_game_asap = COCO_TRUE;
 
 char *coco_gnu_info_string = "For\n"
 "more information about these matters\n"
-"type `/license' at the console.";
+"press [L] and read standard output.";
 char *coco_low_tech_menu = "Press [RETURN] to continue.\nPress [ESC] to quit.";
 
 coco_bool coco_use_keyboard_for_gui_p = COCO_TRUE;

@@ -84,8 +84,9 @@ coco_bool coco_use_gii
 
 struct coco_keyboard_pointer_state coco_input_state = { 0 };
 
+#ifdef COCO_USE_GII
 void coco_handle_gii_events( void );
-
+#endif
 
 /* ________________________________________________________________ */
 
@@ -1209,7 +1210,7 @@ coco_key_press( coco_key key, char *string_or_null,
   case COCO_CLIENT_DEMO:
     if (coco_use_keyboard_for_gui_p)
       switch (key) {
-      case COCO_CHAR_TO_KEY( 'p' ):
+      case COCO_KEY_RETURN:
         coco_cookie( "P pressed\n" );
         coco_client_connect_to_server( NULL, NULL );
         break;
