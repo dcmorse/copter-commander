@@ -74,8 +74,8 @@
      :allocation :every-class)
    ;; width+height available before the object is created.
    ;; canonical_w is used by all units to place them at the right x 
-   ;; (usually centered).  canonical_h may only be defined for things
-   ;; drawn via texture-map, it tells what is the max index (w,h) into their
+   ;; (usually centered).  canonical_h is not always defined.
+   ;; it tells what is the max index (w,h) into their
    ;; raster.
    ("canonical_w"  "1 /* placeholder */" "coco_gnum" :allocation :every-class)
    ("canonical_h"  "1 /* placeholder */" "coco_gnum" :allocation :every-class)
@@ -475,7 +475,9 @@
    ;;("cobject_raster_index_fn" "coco_cobject_simple_raster_index") ; not used
    ("collision_priority" "150")
    ("canonical_w"   "COCO_BALLOON_W_RASTER_W")
+   ("canonical_h"   "COCO_BALLOON_W_RASTER_H")
    ("damage"       "7")
+   ("factory_fresh" "COCO_FALSE" "coco_bool")
    ("clip_to_board" "COCO_TRUE")
    ("default_blip_color_index" 
        "COCO_MAKE_BLIP_TRIPLET( COCO_BLIP_FRY_BALLOON, COCO_BLIP_EMY_BALLOON, COCO_BLIP_EMY_BALLOON )"))
@@ -598,6 +600,22 @@
 
 (c-define-method "sobject_unlink" "pillbox" 
                  "coco_pillbox_unlink")
+
+(c-define-class "balloon_factory" ("building")
+  (("nationality"    "COCO_NEUTRAL")
+   ("phase"          "COCO_VAPOR")
+   ("z"              "1")
+   ("raster_index"   "0")
+   ("rasters"        "coco_balloon_factory_rasters")
+   ("raster_count"   "COCO_BALLOON_FACTORY_RASTER_COUNT")
+   ("canonical_w"    "COCO_BALLOON_FACTORY_BASE_RASTER_W")
+   ("balloon_rate"   :arg "int");; in seconds, must be >= 2
+   ("cobject_guess_nationality_fn" "coco_neutral_guess_nationality")
+   ("cobject_draw"  "coco_balloon_factory_draw"))
+  :init-by-list-fn :automatic)
+
+(c-define-method "sobject_update_state" "balloon_factory"
+                 "coco_balloon_factory_update_state")
 
 (c-define-class "landing_pad" ("building")
   (("nationality"  "COCO_NEUTRAL")

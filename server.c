@@ -1168,6 +1168,7 @@ coco_hut_deploy_balloon( coco_sobject *hut, coco_sstate *sstate )
                      line ? nat : COCO_NEUTRAL );
   coco_sobject_set_raster_index( balloon, (unsigned char) nat );
   COCO_SOBJECT_DY( balloon ) = 1; /* get it rolling */
+  COCO_BALLOON_FACTORY_FRESH( balloon ) = COCO_TRUE;
   if (NULL == line)
     {
       COCO_SOBJECT_NATIONALITY( balloon ) = COCO_NEUTRAL;

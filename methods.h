@@ -48,6 +48,12 @@ coco_bunker_update_state( coco_sobject *sobject,
                           coco_sstate *sstate );
 
 coco_bool
+coco_balloon_factory_update_state( coco_sobject *sobject,
+                                   coco_sobject_cl *cl,
+                                   coco_sstate *sstate );
+
+
+coco_bool
 coco_hut_update_state( coco_sobject *sobject, coco_sobject_cl *cl, coco_sstate *sstate );
 
 coco_bool
@@ -552,6 +558,10 @@ void coco_metal_shrapnel_draw( coco_cobject *cobject, coco_sobject_cl *cla );
 
 void
 coco_balloon_line_draw( coco_cobject *cobject, coco_sobject_cl *cla );
+
+void
+coco_balloon_factory_draw( coco_cobject *cobject, coco_sobject_cl *cla );
+
 
 void coco_cobject_y_ntoh( coco_cobject *cobject );
 

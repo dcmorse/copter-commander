@@ -254,6 +254,13 @@ coco_balloon_update_state( coco_sobject *balloon,
       int num = rand(); /* jus call rand once, reuse different bits */
       switch (COCO_SOBJECT_DY( balloon )) {
       case 1:
+        if (COCO_BALLOON_FACTORY_FRESH( balloon ))
+          {
+            if (COCO_SOBJECT_DY( balloon ) < 100)
+              break;
+            else COCO_BALLOON_FACTORY_FRESH( balloon ) = COCO_FALSE;
+          }
+        /* no break is intentional */
       case -1: 
         if (num&1) COCO_SOBJECT_DY( balloon ) = 0; break;
       case 0: 
@@ -271,7 +278,9 @@ coco_balloon_update_state( coco_sobject *balloon,
           if (num&8) COCO_SOBJECT_DX( balloon ) = 0; break;
         case 0: 
           if (!(num&12))
-            COCO_SOBJECT_DX( balloon )
+            COCO_SOBJECT_DX( balloon ) = (num&16) ? -1 : 1;
+          /* DX used to be this, but why?
+             Maybe it was supposed to be DY?
               = (COCO_SOBJECT_Y( balloon ) >= COCO_BALLOON_LINE_CEILING)
               ? -1
               : ((COCO_SOBJECT_Y( balloon ) <= COCO_BALLOON_FLOOR)
@@ -279,6 +288,7 @@ coco_balloon_update_state( coco_sobject *balloon,
                  : ((num&16)
                     ? -1
                     : 1));
+          */
           break;
         default:
           /* never get here */
@@ -2027,6 +2037,62 @@ coco_bunker_update_state( coco_sobject *sobject,
   return coco_sobject_update_state( sobject, cl->super, sstate );
 }
 
+coco_bool
+coco_balloon_factory_update_state( coco_sobject *sobject,
+                                   coco_sobject_cl *cl,
+                                   coco_sstate *sstate )
+{
+  double seconds = ((double) sstate->time) / COCO_IDEAL_FRAMES_PER_SECOND;
+  double seconds_ = floor( seconds );
+  if (seconds == seconds_)
+    {
+      
+      int smokesize;
+      coco_u32 div = COCO_BALLOON_FACTORY_BALLOON_RATE( sobject );
+      switch (((int) seconds_) % div) {
+      case 1:
+        {
+          coco_sobject *b = coco_sstate_allocate_sobject( sstate );
+          if (b)
+            {
+              coco_sobject_cl *bc = COCO_BALLOON_CLASS;
+              coco_gnum x = COCO_SOBJECT_X( sobject )
+                + COCO_BALLOON_FACTORY_BALLOON_TAB;
+              coco_gnum y = 1 + COCO_SOBJECT_H( sobject )
+                + COCO_SOBJECT_Y( sobject ) - bc->canonical_h;
+              coco_cookie( "making balloon at %d,%d\n", x, y );
+              coco_init_balloon( b, bc, x, y, (rand()&1) + 1, COCO_NEUTRAL );
+              COCO_SOBJECT_DY( b ) = 1;
+              COCO_BALLOON_FACTORY_FRESH( b ) = COCO_TRUE;
+            }
+          smokesize = 2;
+        }
+        break;
+      case 0: smokesize = 2; break;
+      default: smokesize = rand()%3-1; break;
+      }
+      if (smokesize>=0)
+        {
+          coco_sobject *s = coco_sstate_allocate_sobject( sstate );
+          if (s)
+            {
+              coco_sobject_cl *sc = COCO_SMOKE_CLASS;
+              coco_gnum x = COCO_SOBJECT_X( sobject )
+                + COCO_BALLOON_FACTORY_STACK_TAB 
+                + ((COCO_BALLOON_FACTORY_STACK_RASTER_W - sc->canonical_w)>>1);
+              coco_gnum y = COCO_SOBJECT_Y( sobject )
+                + COCO_SOBJECT_H( sobject )
+                + COCO_BALLOON_FACTORY_STACK_RASTER_H
+                + COCO_SMOKE_BIG_RASTER_H;
+              coco_init_smoke( s, sc, x, y, smokesize );
+            }
+        }
+
+    }
+  /* call-next-method */
+  return coco_sobject_update_state( sobject, cl->super, sstate );
+}
+
 
 void
 coco_health_subtracting_hostile_collision( coco_sobject *obj1,
@@ -2122,10 +2188,22 @@ coco_bullet_hostile_collision( coco_sobject *obj1,
       coco_kaboom( obj1, COCO_SOBJECT_CL( obj1 ), sstate );
       COCO_SOBJECT_RASTER_INDEX( obj2 ) = COCO_INFANTRY_FREE_FALL_BASE;
       COCO_INFANTRY_PARACHUTES( obj2 ) = 0;
+      return;
     }
+  /*
+  else if (COCO_SOBJECT_HEALTH( obj2 ) == COCO_NIGH_INVULNERABLE)
+    {
+      /+ tired of seeing tanks unable to shoot through balloon factories,
+       infantry unable to shoot through huts, etc. -dm 05-19-2001 +/
+      /+ On second thought not -dm +/
+      *stat1 = *stat2 = COCO_FALSE;
+      return;
+    }
+  */
   else coco_hostile_collision( obj1, obj1cl->super, obj2, sstate, 
                                stat1, stat2 );
 }
+
 
 
 void
@@ -2145,8 +2223,6 @@ coco_balloon_part_hostile_collision( coco_sobject *obj1,
   else coco_hostile_collision( obj1, obj1cl->super, obj2, sstate,
                                stat1, stat2 );
 }
-
-
 
 
 void

@@ -551,6 +551,23 @@ coco_balloon_line_draw( coco_cobject *cobject, coco_sobject_cl *cla )
 }
 
 void
+coco_balloon_factory_draw( coco_cobject *cobject, coco_sobject_cl *cla )
+{
+  /* draw top 2/3 of smokestack, which is a seperate raster. */
+  coco_sobject_cl *scla = cla;
+  coco_cnum x = COCO_COBJECT_X( cobject );
+  coco_cnum y = COCO_COBJECT_Y( cobject );
+  coco_draw_raster( x+COCO_BALLOON_FACTORY_STACK_TAB, 
+                    y+COCO_BALLOON_FACTORY_BASE_RASTER_H,
+                    cla->rasters[1] );
+  /* calculate and call next method */
+  do scla = scla->super;
+  while (scla->cobject_draw == coco_balloon_factory_draw);
+  scla->cobject_draw( cobject, cla->super );
+}
+
+
+void
 coco_missile_draw_by_coords( coco_gnum x, coco_gnum y, coco_angle angle, 
                              coco_sobject_cl *cl, coco_bool burn_engine )
 {

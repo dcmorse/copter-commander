@@ -922,6 +922,8 @@ extern struct coco_raster *coco_balloon_rasters[COCO_BALLOON_RASTER_COUNT];
 struct coco_raster *coco_bunker_rasters[COCO_BUNKER_RASTER_COUNT];
 #define COCO_PILLBOX_RASTER_COUNT 1
 struct coco_raster *coco_pillbox_rasters[COCO_PILLBOX_RASTER_COUNT];
+#define COCO_BALLOON_FACTORY_RASTER_COUNT 2
+struct coco_raster *coco_balloon_factory_rasters[COCO_BALLOON_FACTORY_RASTER_COUNT];
 #define COCO_TRAFFIC_SIGN_RASTER_COUNT 1
 extern struct coco_raster *coco_traffic_sign_rasters[COCO_TRAFFIC_SIGN_RASTER_COUNT];
 #define COCO_HUT_RASTER_COUNT 3
@@ -1370,6 +1372,8 @@ void coco_send_play_message_maybe( void );
 #define COCO_INFANTRY_CHUTE_Y 16
 #define COCO_ROCKET_LEFT_ANGLE 142
 #define COCO_ROCKET_RIGHT_ANGLE 246
+#define COCO_BALLOON_FACTORY_STACK_TAB 4
+#define COCO_BALLOON_FACTORY_BALLOON_TAB 23
 
 /* This implementation is unsafe in situations where sstate->sobjects or
    sstate->sobject_size might change, iterate manually. */

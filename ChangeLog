@@ -1,3 +1,11 @@
+2001-05-19  David Morse  <dm@bomberlan.net>
+
+	* levels/balloon-run.ccl (balloon-run): Add balloon factories.
+
+	* levels/micro.ccl (micro): Add balloon factory.
+
+	* sobject.lisp (balloon-factory): Created balloon factory.
+
 2001-05-18  David Morse  <dm@bomberlan.net>
 
 	* clsho.c (coco_help_message): fix typeo.

@@ -175,6 +175,13 @@ struct coco_raster *coco_pillbox_rasters[COCO_PILLBOX_RASTER_COUNT] = {
 };
 
 
+struct coco_raster *coco_balloon_factory_rasters[COCO_BALLOON_FACTORY_RASTER_COUNT] = {
+  /* indicies carefully chosen to be nationalities - COCO_GOOD_GUYS. */
+  &coco_balloon_factory_base_raster, 
+  &coco_balloon_factory_stack_raster,
+};
+
+
 struct coco_raster *coco_landing_pad_rasters[COCO_LANDING_PAD_RASTER_COUNT] = {
   &coco_landing_pad_raster,
 };
