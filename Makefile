@@ -54,7 +54,7 @@ COCO_MINOR_VERSION=1
 # Copter Commander will (barely) run out of the source directlory, but you
 # must use the file browser to find the levels, and it won't find its sound
 # files.
-COCO_INSTALL_DIRECTORY=/home/dm/cvs
+COCO_INSTALL_DIRECTORY=/usr/local
 COCO_BIN_DIRECTORY=${COCO_INSTALL_DIRECTORY}/bin
 COCO_SHARE_DIRECTORY=${COCO_INSTALL_DIRECTORY}/share/copter-commander/${COCO_MAJOR_VERSION}.${COCO_MINOR_VERSION}
 COCO_DOC_DIRECTORY=${COCO_SHARE_DIRECTORY}/doc
