@@ -59,6 +59,8 @@ coco_bool coco_use_join_dialog( GtkWidget *parent_window );
 
 coco_bool coco_use_new_game_dialog( GtkWidget *parent_window );
 
+void coco_use_tutorial_dialog( GtkWidget *parent_window );
+
 void coco_on_game_activate( GtkMenuItem     *menuitem,
                             gpointer         user_data);
 
@@ -508,13 +510,6 @@ coco_on_new_game1_activate( GtkMenuItem *menuitem,
 {
   if (coco_root_window)
     coco_use_new_game_dialog( coco_root_window );
-}
-
-
-void
-coco_use_tutorial_dialog( GtkWidget *coco_root_window )
-{
-  /* do nothing -- move me! */
 }
 
 
@@ -1637,6 +1632,109 @@ coco_gtk_set_wait_cursor( GtkWidget *window, coco_bool wait )
     ( gtk_widget_get_toplevel( window )->window, wait ? cursor : NULL ) ;
 }
 
+
+struct coco_tutorial_info {
+  char *name;
+  void (* setup)(coco_sstate *);
+};
+
+static void
+coco_setup_boot_camp( coco_sstate *sstate )
+{
+}
+
+static void
+coco_setup_first_blood( coco_sstate *sstate )
+{
+}
+
+static void
+coco_setup_hammer_blow( coco_sstate *sstate )
+{
+}
+
+
+#define COCO_TUTORIAL_INFO_SIZE 3
+
+static struct coco_tutorial_info coco_tutorial_infos[COCO_TUTORIAL_INFO_SIZE] =
+{
+  { "boot-camp", coco_setup_boot_camp },
+  { "first-blood", coco_setup_first_blood },
+  { "hammer-blow", coco_setup_hammer_blow },
+};
+
+
+GtkWidget *
+coco_tutorial_dialog_new( GtkWidget *parent_window )
+{
+  int i;
+  GtkWidget *dialog = gnome_dialog_new( "Select Tutorial",
+                                        GNOME_STOCK_BUTTON_OK,
+                                        GNOME_STOCK_BUTTON_CANCEL,
+                                        NULL );
+  GtkBox *vbox = GTK_BOX( GNOME_DIALOG( dialog )->vbox );
+  GtkWidget *radio = NULL;
+  gnome_dialog_set_parent( GNOME_DIALOG( dialog ), 
+                           GTK_WINDOW( parent_window ) );
+  for (i=0; i<COCO_TUTORIAL_INFO_SIZE; i++)
+    {
+      GtkRadioButton *prev = radio ? GTK_RADIO_BUTTON( radio ) : NULL;
+      char *ugly = coco_tutorial_infos[i].name;
+      char *pretty = strdup( ugly );
+      coco_beautify_string( pretty );
+      radio = gtk_radio_button_new_with_label_from_widget( prev, pretty );
+      gtk_box_pack_start( vbox, radio, TRUE, TRUE, 0 );
+    }
+  gtk_widget_show_all( GNOME_DIALOG( dialog )->vbox );
+  return dialog;
+}
+
+struct coco_tutorial_dialog_selected_closure {
+  int i;
+  int answer;
+};
+
+void
+coco_tutorial_dialog_selected_helper( GtkWidget *radio, void *data )
+{
+  struct coco_tutorial_dialog_selected_closure *closure = data;
+  if (GTK_IS_TOGGLE_BUTTON( radio )
+      && gtk_toggle_button_get_active( GTK_TOGGLE_BUTTON( radio ) ))
+    closure->answer = closure->i;
+  (closure->i)++;
+}
+
+int
+coco_tutorial_dialog_get_selected( GtkWidget *tutorial_dialog )
+{
+  GtkContainer *container 
+    = GTK_CONTAINER( GNOME_DIALOG( tutorial_dialog )->vbox );
+  struct coco_tutorial_dialog_selected_closure closure;
+  closure.i = 0;
+  closure.answer = -1;
+  gtk_container_foreach( container, coco_tutorial_dialog_selected_helper, &closure );
+  if (closure.answer > -1)
+    return closure.answer;
+  else
+    {
+      coco_fatal_printf( COCO_ERROR_COCO_IMPLEMENTAION_PROBLEM, 
+                         "No tutorial radio button is selected." );
+      return -1; /* quiet compiler */
+    }
+}
+
+void
+coco_use_tutorial_dialog( GtkWidget *parent_window )
+{
+  GtkWidget *dialog = coco_tutorial_dialog_new( parent_window );
+  int button_idx;
+  button_idx = gnome_dialog_run( GNOME_DIALOG( dialog ) );
+  coco_cookie( "button_idx = %d\n", button_idx );
+  if (0==button_idx) /* OK button pressed */
+    coco_cookie( "radio = %d\n", coco_tutorial_dialog_get_selected( dialog ) );
+  if (GNOME_IS_DIALOG( dialog )) /* maybe its already dead */
+    gnome_dialog_close( GNOME_DIALOG( dialog ) );
+}
 
 
 

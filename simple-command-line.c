@@ -141,6 +141,8 @@ coco_bool coco_process_server_arguments( int argc, char **argv )
         }
       else if (0==strncmp( "--level=", argv[i], 10 ))
         level_file_name = argv[i] + 10;
+      else if (0==strcmp( "--tutorial", argv[i] ))
+        coco_tutorial = COCO_TRUE;
       else coco_fatal_printf( COCO_ERROR_BAD_COMMAND_LINE,
                                "Unknown option \"%s\".\n",
                                argv[i] );

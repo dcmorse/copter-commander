@@ -1948,7 +1948,7 @@ coco_handle_compflux_message( coco_msg_ptr msg )
       coco_old_compflux_interesting 
         |= coco_handle_compflux_message_helper( msg, mynat, "on your side." );
       coco_old_compflux_interesting 
-        |= coco_handle_compflux_message_helper( msg, onat, "work for the enemy." );
+        |= coco_handle_compflux_message_helper( msg, onat, "working for the enemy." );
 
       coco_old_compflux_initialized = COCO_TRUE;
     }

@@ -376,14 +376,14 @@ coco_comp_think( struct coco_comp *self,
                                      COCO_COPTER_CLASS )
           && (self->nationality
               == COCO_COBJECT_NATIONALITY_GUESS( cobjs+ci )))
-        {
+        { /* only chill if they're doing something */
           coco_angle angle = COCO_COBJECT_ANGLE( cobjs+ci );
           if (((angle > COCO_COMP_FROTHY_ANGLE) 
                && (angle < (128 - COCO_COMP_FROTHY_ANGLE)))
               || ((angle > (128 + COCO_COMP_FROTHY_ANGLE))
                   && (angle < (256 - COCO_COMP_FROTHY_ANGLE))))
             {
-              coco_cookie( "%d not crowding %d\n", myci, ci );
+              /* chill out and wait for them to move further away */
               state_return->pointer_x = 0;
               return;
             }

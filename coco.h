@@ -1283,6 +1283,8 @@ void coco_send_play_message_maybe( void );
 
 /* server.c */
 
+extern coco_bool coco_tutorial;
+
 #define COCO_COMP_FAVORITE_COPTER_CLASS COCO_COBRA_CLASS
 #define COCO_GROUND_UNIT_WARP_IN_X 80
 #define COCO_GROUND_UNIT_WARP_OUT_X 600

@@ -158,6 +158,7 @@ coco_help_message()
           "  --left-comps=NUM        Number of computer players on left.\n"
           "  --right-comps=NUM       Number of computer players on right.\n"
           "  --log=FILE              Route diagnostics to a file (default stdout).\n"
+          "  --tutorial              Server is for tutorial game."
           "  -q, --quiet             Do not produce diagnostics.\n"
           "  --level=FILE            Load level from file.\n" );
   exit( 0 );

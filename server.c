@@ -31,6 +31,9 @@
 #include "coco.h"
 #include "rasters.h"       /* for raster dimensions */
 
+/* true iff launced with --tutorial flag */
+coco_bool coco_tutorial = COCO_FALSE;
+
 coco_sobject *
 coco_find_camera( coco_sstate *sstate, int p_or_c_index, coco_bool is_comp );
 
