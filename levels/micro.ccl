@@ -16,6 +16,9 @@
      (nil  (traffic-sign (left-center traffic-sign -300) 0))
      (nil  (traffic-sign (right-center traffic-sign -300) 0))
 
+     (nil  (traffic-sign (left-center traffic-sign 1300) 1))
+     (nil  (traffic-sign (right-center traffic-sign 1300) 2))
+
      (nil (balloon-factory (/ (- board-w (w balloon-factory)) 2) 20))
 
      ))

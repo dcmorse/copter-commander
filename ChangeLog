@@ -1,5 +1,9 @@
 2001-05-31  David Morse  <dm@bomberlan.net>
 
+	* server.c (coco_make_mech_jet_exhaust): Add jet-exhaust.
+
+	* tiffs/rgba-8/cactus.tif: add tree and cactus "traffic signs".
+
 	* methods.c (coco_mech_hostile_collision): walking mechs don't
 	explode when they hit wires.
 

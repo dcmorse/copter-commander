@@ -1752,6 +1752,59 @@ coco_mech_pad_update( coco_sobject *sobject, coco_sobject_cl *cl,
 }
 
 
+coco_sobject *
+coco_make_mech_jet_exhaust( coco_sobject *mech, coco_sstate *sstate, 
+                            int jstrength, coco_facing x )
+{
+  coco_sobject *jet = coco_sstate_allocate_sobject( sstate );
+  if (jet)
+    {
+      coco_gnum mw, rw;
+      coco_gnum jx, jy;
+      int ri;
+      struct coco_raster *r;
+
+      if (jstrength==2)
+        if (0==x)
+          ri = 6;
+        else if (x<0)
+          ri = 5;
+        else 
+          ri = 7;
+      else if (jstrength==1)
+        if (0==x)
+          ri = 2;
+        else if (x<0)
+          ri = 1;
+        else 
+          ri = 3;
+      else if (x<0)
+        ri = 0;
+      else
+        ri = 4;
+
+      ri += COCO_EXPLOSION_JET_EXHAUST_BASE;
+      r = coco_explosion_rasters[ri];
+      mw = COCO_SOBJECT_W( mech );
+      rw = r->w;
+
+      if (jstrength && (0==x))
+        jx = ((mw - rw)>>1);
+      else if (x<0)
+        jx = mw;
+      else
+        jx = -rw;
+
+      jx += COCO_SOBJECT_X( mech ) + COCO_SOBJECT_DX( mech );
+      jy =  COCO_SOBJECT_Y( mech ) + COCO_SOBJECT_DY( mech ) - r->h;
+
+      coco_init_explosion( jet, COCO_EXPLOSION_CLASS, 0,
+                           jx, jy, 0, 0, ri );
+      return jet;
+    }
+  else return NULL;
+}
+
 
 coco_bool 
 coco_mech_update_state( coco_sobject *sobject, 
@@ -1765,6 +1818,8 @@ coco_mech_update_state( coco_sobject *sobject,
   coco_facing run;
   coco_bool landed_p = COCO_MECH_LANDED_ON_PAD_P( sobject );
   coco_bool jump = COCO_FALSE;
+  int jumped_strength = 0;
+  coco_bool exhaust_p = COCO_FALSE;
   int legs = COCO_MECH_LEG_RASTER_INDEX( sobject );
   int lefty = (legs >= COCO_LEFTY_LEG_PART) ? COCO_LEFTY_LEG_PART : 0;
   int legs_out = legs;
@@ -1936,6 +1991,7 @@ coco_mech_update_state( coco_sobject *sobject,
              : (lefty + COCO_AKIMBO_PART) );
         COCO_MECH_ENERGY( sobject ) 
           = ((e==effective_e)?(e - dydt):(e-(dydt>>1)) );
+        jumped_strength = 1 + (dydt >= 5);
         landed_p = COCO_FALSE;
       }
     /* if in air... */
@@ -1950,13 +2006,18 @@ coco_mech_update_state( coco_sobject *sobject,
                 dxroom = COCO_MECH_JUMPING_DX_MAX + dx;
                 COCO_SOBJECT_DX( sobject )
                   = dx - COCO_MIN( dxroom, COCO_MECH_JUMPING_DDX_MAX );
+                if (!lefty)
+                  legs_out = legs + COCO_LEFTY_LEG_PART;
               }
             else
               {
                 dxroom = COCO_MECH_JUMPING_DX_MAX - dx;
                 COCO_SOBJECT_DX( sobject )
                   = dx + COCO_MIN( dxroom, COCO_MECH_JUMPING_DDX_MAX );
+                if (lefty)
+                  legs_out = legs - COCO_LEFTY_LEG_PART;
               };
+            exhaust_p = COCO_TRUE;
           }
         else
           {
@@ -1977,6 +2038,7 @@ coco_mech_update_state( coco_sobject *sobject,
               COCO_SOBJECT_DX( sobject ) = dx-1;
             else if (dx<0)
               COCO_SOBJECT_DX( sobject ) = dx+1;
+            exhaust_p = !!jumped_strength;
           }
 
       }
@@ -2103,6 +2165,8 @@ coco_mech_update_state( coco_sobject *sobject,
                              COCO_MAX_WALK_PARTS ));
   assert( COCO_BETWEENA( 0, legs_out, COCO_MAX_LEG_PARTS ) );
   COCO_MECH_LEG_RASTER_INDEX( sobject ) = legs_out;
+  if (exhaust_p)
+    coco_make_mech_jet_exhaust( sobject, sstate, jumped_strength, run );
   if (landed_p)
     coco_mech_pad_update( sobject, COCO_SOBJECT_CL( sobject ), sstate );
   else COCO_MECH_LANDED_ON_PAD_P( sobject ) = COCO_FALSE;

@@ -915,7 +915,7 @@ struct coco_raster *coco_bunker_rasters[COCO_BUNKER_RASTER_COUNT];
 struct coco_raster *coco_pillbox_rasters[COCO_PILLBOX_RASTER_COUNT];
 #define COCO_BALLOON_FACTORY_RASTER_COUNT 2
 struct coco_raster *coco_balloon_factory_rasters[COCO_BALLOON_FACTORY_RASTER_COUNT];
-#define COCO_TRAFFIC_SIGN_RASTER_COUNT 1
+#define COCO_TRAFFIC_SIGN_RASTER_COUNT 3
 extern struct coco_raster *coco_traffic_sign_rasters[COCO_TRAFFIC_SIGN_RASTER_COUNT];
 #define COCO_HUT_RASTER_COUNT 3
 extern struct coco_raster *coco_hut_rasters[COCO_HUT_RASTER_COUNT];
@@ -943,7 +943,7 @@ struct coco_raster *coco_firetruck_rasters[COCO_FIRETRUCK_RASTER_COUNT];
 extern struct coco_raster *coco_infantry_rasters[COCO_INFANTRY_RASTER_COUNT];
 #define COCO_ENGINEER_RASTER_COUNT 16
 extern struct coco_raster *coco_engineer_rasters[COCO_ENGINEER_RASTER_COUNT];
-#define COCO_EXPLOSION_RASTER_COUNT 12
+#define COCO_EXPLOSION_RASTER_COUNT 20
 extern struct coco_raster *coco_explosion_rasters[COCO_EXPLOSION_RASTER_COUNT];
 
 /* these also apply to engineers, the thinly veiled subclasses of infantry */
@@ -965,6 +965,7 @@ extern struct coco_raster *coco_explosion_rasters[COCO_EXPLOSION_RASTER_COUNT];
 #define COCO_EXPLOSION_ANTI_PERSONELL_BASE COCO_EXPLOSION_AIRBURST_COUNT
 #define COCO_EXPLOSION_ANTI_PERSONELL_COUNT \
   (COCO_EXPLOSION_BOMB_COUNT + COCO_EXPLOSION_NAPALM_COUNT)
+#define COCO_EXPLOSION_JET_EXHAUST_BASE 12
 
 coco_mini_point 
 coco_cobra_rotor_points[COCO_COPTER_RASTER_COUNT];

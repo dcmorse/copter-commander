@@ -654,6 +654,7 @@
 (c-define-method "hostile_collision" "building"
                  "coco_building_hostile_collision")
 
+;; also known as tree
 (c-define-class "traffic_sign" ("building")
   (("raster_index" :arg)
    ("nationality" "COCO_NEUTRAL")

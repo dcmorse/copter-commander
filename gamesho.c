@@ -194,7 +194,8 @@ struct coco_raster *coco_balloon_rasters[COCO_BALLOON_RASTER_COUNT] = {
 
 struct coco_raster *coco_traffic_sign_rasters[COCO_TRAFFIC_SIGN_RASTER_COUNT] = {
   &coco_wrong_way_raster,
-
+  &coco_tree1_raster,
+  &coco_cactus_raster
 };
 
 
@@ -256,6 +257,14 @@ struct coco_raster *coco_explosion_rasters[COCO_EXPLOSION_RASTER_COUNT] = {
   &coco_explosion_napalm_1_raster,
   &coco_explosion_napalm_2_raster,
   &coco_explosion_napalm_3_raster,
+  &coco_jet_exhaust_ww_raster,
+  &coco_jet_exhaust_ws_raster,
+  &coco_jet_exhaust_ss_raster,
+  &coco_jet_exhaust_es_raster,
+  &coco_jet_exhaust_ee_raster,
+  &coco_jet_exhaust_w_raster,
+  &coco_jet_exhaust_s_raster,
+  &coco_jet_exhaust_e_raster,
 };
 
 
