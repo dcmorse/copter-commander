@@ -1,5 +1,9 @@
 2002-02-08  David Morse  <svref@yahoo.com>
 
+	* Makefile (${COCO_TAR_FILE}): add oo-compiler.fas and
+	oo-compiler.lib to dependancies, so that they're never
+	forgotten (like they were in 1.7).
+
 	* INSTALL: [ #510323 ] Sprinkle pleas for help
 
 2002-01-29  David Morse  <svref@yahoo.com>

@@ -441,7 +441,7 @@ tarball: ${COCO_TAR_FILE}.gz ${COCO_TAR_FILE}.bz2
 # the source distribution.  This is just to fool make into not remaking
 # them (or trying to remake them, then finding there's no clisp
 # installed).
-${COCO_TAR_FILE}:  forward-sobject.h  sobject.h  sobject.c
+${COCO_TAR_FILE}:  forward-sobject.h  sobject.h  sobject.c oo-compiler.fas oo-compiler.lib
 	set -e ;\
 	rm -rf ${COCO_TAR_DIRECTORY} ${COCO_TAR_FILE} ;\
 	mkdir ${COCO_TAR_DIRECTORY} ;\
