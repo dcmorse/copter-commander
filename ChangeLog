@@ -1,0 +1,5 @@
+2001-03-12  David Morse  <dm@bomberlan.net>
+
+	* Makefile: Add ChangeLog to list of tarball components.
+	
+

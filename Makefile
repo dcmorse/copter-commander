@@ -380,7 +380,7 @@ ${COCO_TAR_FILE}: .
 	rm -rf ${COCO_TAR_DIRECTORY} ${COCO_TAR_FILE}
 	mkdir ${COCO_TAR_DIRECTORY}
 	cp --archive -R Makefile  *.lisp *.fas rstr-* *.c *.h *.txt *.sh \
-	  COPYING INSTALL DEVEL GNOME-HACKS copter-commander.png \
+	  COPYING INSTALL DEVEL GNOME-HACKS ChangeLog copter-commander.png \
          raster-dumper.lisp tiffs \
 	 ${COCO_TAR_DIRECTORY}
 	rm -f ${COCO_TAR_DIRECTORY}/configure-time.h
