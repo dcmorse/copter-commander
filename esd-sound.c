@@ -49,7 +49,7 @@ coco_exit_sound_system( void )
 }
 
 coco_bool 
-coco_load_sound( char *name, coco_sound *sound_return )
+coco_load_sound( char *name, coco_sound_type type, coco_sound *sound_return )
 {
   char *file_name;
   int sampleid;
@@ -75,7 +75,8 @@ coco_unload_sound( coco_sound sound )
 }
 
 void
-coco_play_sound( coco_sound sound, coco_i32 x, coco_i32 y )
+coco_play_sound( coco_sound sound, coco_sound_type type, 
+                 coco_i32 x, coco_i32 y )
 {
   if (mute) return;
   esd_sample_play( gnome_sound_connection, sound );

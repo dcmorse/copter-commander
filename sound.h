@@ -24,10 +24,12 @@ typedef unsigned int coco_sound;
 void coco_init_sound_system( void );
 void coco_exit_sound_system( void );
 
-coco_bool coco_load_sound( char *name, coco_sound *sound_return );
+coco_bool coco_load_sound( char *name, coco_sound_type type,
+                           coco_sound *sound_return );
 void coco_unload_sound( coco_sound sound );
 /* lower left origin */
-void coco_play_sound( coco_sound sound, coco_i32 x, coco_i32 y );
+void coco_play_sound( coco_sound sound, coco_sound_type type, 
+                      coco_i32 x, coco_i32 y );
 /* forces played sounds to play. */
 void coco_flush_pending_plays( void );
 

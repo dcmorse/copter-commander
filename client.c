@@ -411,7 +411,8 @@ coco_cobject_sound_draw( coco_cobject *cobject, coco_sobject_cl *cla )
 {
   /* coco_cookie( "Sound map %d -> %d\n", COCO_COBJECT_SOUND( cobject ),
      coco_game_sound_map[COCO_COBJECT_SOUND( cobject )] ); */
-  coco_play_sound( coco_game_sound_map[COCO_COBJECT_SOUND( cobject )],
+  coco_sound_type type = COCO_COBJECT_SOUND( cobject );
+  coco_play_sound( coco_game_sound_map[type], type,
                    COCO_COBJECT_X( cobject ),
                    COCO_COBJECT_Y( cobject ) );
 }
@@ -2090,7 +2091,7 @@ coco_load_sound_palette( char **sound_names,
 {
   int i;
   for (i=0; i<length; i++)
-    if (!coco_load_sound( sound_names[i], sounds_return + i ))
+    if (!coco_load_sound( sound_names[i], i, sounds_return + i ))
       {
         coco_warn_printf( "Couldn't load sounds starting with \"%s\"\n", 
                           sound_names[i] );

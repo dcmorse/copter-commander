@@ -1168,25 +1168,28 @@ coco_rocket_kaboom( coco_sobject *sobject,
       coco_facing facing = COCO_SOBJECT_FACING( sobject );
       struct coco_raster **rasters = COCO_EXPLOSION_CLASS->rasters;
       coco_gnum raster_w = rasters[COCO_EXPLOSION_NAPALM_BASE]->w;
+      coco_gnum x = COCO_SOBJECT_X( sobject ) 
+        + (COCO_SOBJECT_W( sobject )>>1)
+        - ((facing>0) ? 0 : raster_w);
       int i;
       for (i=0; i<COCO_EXPLOSION_NAPALM_COUNT; i++)
         {
           coco_sobject *explosion = coco_sstate_allocate_sobject( sstate );
-          coco_gnum x = COCO_SOBJECT_X( sobject ) 
-            + (COCO_SOBJECT_W( sobject )>>1)
-            - ((facing>0) ? 0 : raster_w);
-          coco_init_explosion( explosion, COCO_EXPLOSION_CLASS, 0,
-                               x, COCO_GROUND_Y,
-                               (COCO_SOBJECT_DX_PUBLIC( sobject )>>1)
-                               *(COCO_EXPLOSION_NAPALM_COUNT-i), 
-                               0, 
-                               COCO_EXPLOSION_NAPALM_BASE + i );
-          coco_make_snd( COCO_SOUND_ROCKET_HIT, sstate, x, COCO_GROUND_Y );
+          if (explosion)
+            coco_init_explosion( explosion, COCO_EXPLOSION_CLASS, 0,
+                                 x, COCO_GROUND_Y,
+                                 (COCO_SOBJECT_DX_PUBLIC( sobject )>>1)
+                                 *(COCO_EXPLOSION_NAPALM_COUNT-i), 
+                                 0, 
+                                 COCO_EXPLOSION_NAPALM_BASE + i );
         }
+      coco_make_snd( COCO_SOUND_ROCKET_HIT, sstate, x, COCO_GROUND_Y );
     }
 
+  coco_cookie( "calling next...\n" );
   /* call-next-method */
   coco_kaboom( sobject, cl->super, sstate );
+  coco_cookie( "calling next DONE\n" );
 }
 
 

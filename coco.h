@@ -784,10 +784,6 @@ struct coco_client_to_server_packet {
 };
 
 
-/* sound.c -- a virtual source file supported by (at least) mute-sound.c
-   and openal-sound.c */
-/* Api split into a seperate file to promote porting. */
-#include "sound.h"
 
 /* gamesho.c */
 
@@ -953,6 +949,11 @@ extern char *coco_game_sound_names[COCO_GAME_SOUNDS_SIZE];
 extern float coco_game_sound_durations[COCO_GAME_SOUNDS_SIZE];
 
 extern coco_gnum coco_game_fx_radius[COCO_GAME_SOUNDS_SIZE];
+
+/* sound.c -- a virtual source file supported by (at least) mute-sound.c
+   and openal-sound.c */
+/* Api split into a seperate file to promote porting. */
+#include "sound.h"
 
 /* screenshot.c */
 coco_bool coco_screenshot( char *file_name );

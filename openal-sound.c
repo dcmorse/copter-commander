@@ -65,8 +65,37 @@ coco_exit_sound_system( void )
 }
 
 
+static int coco_ndedicated_sources[COCO_GAME_SOUNDS_SIZE];
+static ALuint *coco_dedicated_sources[COCO_GAME_SOUNDS_SIZE] = {0};
+static int coco_dedicated_source_cursor[COCO_GAME_SOUNDS_SIZE] = {0};
+
+
+void
+coco_allocate_dedicated_sources( coco_sound_type type, int ndedicated )
+{
+  coco_ndedicated_sources[type] = ndedicated;
+  if (coco_dedicated_sources[type])
+    {
+      coco_cookie( "Deleting previous dedicated for type %d\n", type );
+      alDeleteSources( ndedicated, coco_dedicated_sources[type] );
+      coco_free( coco_dedicated_sources[type] );
+    }
+
+  if (ndedicated>0)
+    {
+      coco_cookie( "Allocating dedicated\n" );
+      coco_dedicated_sources[type]
+        = (ALuint *) coco_malloc( ndedicated * sizeof( ALuint ) );
+      alGenSources( ndedicated, coco_dedicated_sources[type] );
+    }
+  else
+    coco_dedicated_sources[type] = NULL;
+}
+
+
+
 coco_bool 
-coco_load_sound( char *name, coco_sound *sound_return )
+coco_load_sound( char *name, coco_sound_type type, coco_sound *sound_return )
 {
   char *file_name;
   void *wav;
@@ -76,6 +105,7 @@ coco_load_sound( char *name, coco_sound *sound_return )
   ALsizei freq;
   ALsizei format;
   ALboolean err;
+  int nds;
 
   /*
     loadit( "/home/dm/coco/boom.wav" );
@@ -91,6 +121,16 @@ coco_load_sound( char *name, coco_sound *sound_return )
     return COCO_FALSE;
   alBufferData( buffid, format, wav, size, freq );
   free( wav ); /* openal makes a local copy of wave data */
+
+  /* setup dedicated sources */
+  nds = coco_ndedicated_sources[type];
+  if (nds > 0)
+    {
+      int i;
+      alGenSources( nds, coco_dedicated_sources[type] );
+      for (i=0; i<nds; i++)
+        alSourcei( coco_dedicated_sources[type][i], AL_BUFFER, buffid );
+    }
 
   *sound_return = buffid;
   return COCO_TRUE;
@@ -119,37 +159,83 @@ coco_unload_sound( coco_sound sound )
 #define COCO_AL_SOURCE_Y( y ) \
   ((8.0 * (float) (y))/COCO_VIEWABLE_H)
 
+coco_bool
+coco_play_sound_from_source_maybe( ALuint source, coco_sound sound,
+                                   coco_i32 x, coco_i32 y )
+{
+  ALint enumerant;
+  alGetSourcei( source, AL_SOURCE_STATE, &enumerant );
+  if (AL_PLAYING != enumerant)
+    {
+      alSource3f( source, AL_POSITION, 
+                  COCO_AL_SOURCE_X( x ),
+                  COCO_AL_SOURCE_Y( y ), 0.0 );
+      /* alSourcefv( source, AL_ORIENTATION, back );  */
+      alSourcei( source, AL_BUFFER, sound );
+      /* alSourcei(  source, AL_SOURCE_LOOPING_LOKI, AL_TRUE); */
+      alSourcePlay( source );
+      /* talAttenuationScale(2); */
+      return COCO_TRUE;
+    }
+  else return COCO_FALSE;
+}
 
-#define COCO_AL_NQUEUE_MAX 1 /* max number of distinct new sounds per turn */
-static int coco_al_nqueue = 0;
-struct {
-  coco_sound sound;
-  coco_i32 x;
-  coco_i32 y;
-} coco_al_queue[COCO_AL_NQUEUE_MAX];
 
 void
-coco_play_sound( coco_sound sound, coco_i32 x, coco_i32 y )
+coco_play_sound( coco_sound sound, coco_sound_type type, 
+                 coco_i32 x, coco_i32 y )
 {
-  /* the idea is, keep a queue of sounds, then play them in one fell swoop
-     when coco_flush_pending_plays gets called.  This may keep the AL in
-     cache more, rather than what we used to do, intermingling AL and GL
-     calls. */
-  if (coco_al_nqueue < (COCO_AL_NQUEUE_MAX-1))
+  int i;
+
+
+  if (!context) return;
+  if (mute) return;
+
+  if (coco_ndedicated_sources[type] > 0)
     {
-      coco_al_queue[coco_al_nqueue].sound = sound;
-      coco_al_queue[coco_al_nqueue].x = x;
-      coco_al_queue[coco_al_nqueue].y = y;
-      coco_al_nqueue++;
+      int cursor = coco_dedicated_source_cursor[type];
+      ALuint source = coco_dedicated_sources[type][cursor];
+      coco_cookie( "Playing dedicated for type %d, cursor %d\n", 
+                   type, cursor );
+      alSource3f( source, AL_POSITION, 
+                  COCO_AL_SOURCE_X( x ),
+                  COCO_AL_SOURCE_Y( y ), 0.0 );
+      alSourcePlay( source );
+      /* advance cursor */
+      coco_dedicated_source_cursor[type] =
+        (coco_dedicated_source_cursor[type] + 1)
+        % coco_ndedicated_sources[type];
     }
-  else coco_play_sound_immediately( sound, x, y ); /* queue full, skip it */
+  else
+    {
+
+      while (1)
+        for (i=coco_next_source; i<COCO_SOUND_NSOURCES; i++)
+          if (coco_play_sound_from_source_maybe( coco_sources[i],
+                                                 sound, x, y ))
+            {
+              coco_next_source = ((i<(COCO_SOUND_NSOURCES-1)) ? (i+1) : 0);
+              return;
+            }
+      for (i=0; i<coco_next_source; i++)
+        if (coco_play_sound_from_source_maybe( coco_sources[i], 
+                                               sound, x, y ))
+          {
+            coco_next_source = ((i<(COCO_SOUND_NSOURCES-1)) ? (i+1) : 0);
+            return;
+          }
+    }
 }
+
+
+
+
 
 void 
 coco_init_sound_system( void )
 {
   static int attrlist[] = { ALC_FREQUENCY, 22050, 0 };
-  int i;
+  int i, j;
   for (i=0; i<COCO_SOUND_NSOURCES; i++)
     coco_sources_allocated[i] = COCO_FALSE;
   assert( NULL == context );
@@ -176,63 +262,17 @@ coco_init_sound_system( void )
     alListenerfv(AL_ORIENTATION, back );
   }
   alGenSources( COCO_SOUND_NSOURCES, coco_sources );
+
+  /* setup semi-static arrays for dedicated sources */
+  for (j=0; j<COCO_GAME_SOUNDS_SIZE; j++)
+    coco_allocate_dedicated_sources( j, 0 );
+  coco_allocate_dedicated_sources( COCO_SOUND_COPTER_CANNON, 4 );
+  coco_allocate_dedicated_sources( COCO_SOUND_ROCKET_HIT, 4 );
+  coco_allocate_dedicated_sources( COCO_SOUND_BOMB_HIT, 4 );
 }
 
 void
 coco_flush_pending_plays( void )
 {
-  int i;
-  if (!context) return;
-  for (i=0; i<coco_al_nqueue; i++)
-    coco_play_sound_immediately( coco_al_queue[i].sound, 
-                                 coco_al_queue[i].x,
-                                 coco_al_queue[i].y );
-  coco_al_nqueue = 0;
 }
-
-coco_bool
-coco_play_sound_from_source_maybe( ALuint source, coco_sound sound,
-                                   coco_i32 x, coco_i32 y )
-{
-  ALint enumerant;
-  alGetSourcei( source, AL_SOURCE_STATE, &enumerant );
-  if (AL_PLAYING != enumerant)
-    {
-      alSource3f( source, AL_POSITION, 
-                  COCO_AL_SOURCE_X( x ),
-                  COCO_AL_SOURCE_Y( y ), 0.0 );
-      /* alSourcefv( source, AL_ORIENTATION, back );  */
-      alSourcei( source, AL_BUFFER, sound );
-      /* alSourcei(  source, AL_SOURCE_LOOPING_LOKI, AL_TRUE); */
-      alSourcePlay( source );
-      /* talAttenuationScale(2); */
-      return COCO_TRUE;
-    }
-  else return COCO_FALSE;
-}
-
-void 
-coco_play_sound_immediately( coco_sound sound, coco_i32 x, coco_i32 y )
-{
-  int i;
-
-  if (!context) return;
-  if (mute) return;
-
-  while (1)
-    for (i=coco_next_source; i<COCO_SOUND_NSOURCES; i++)
-      if (coco_play_sound_from_source_maybe( coco_sources[i], sound, x, y ))
-        {
-          coco_next_source = ((i<(COCO_SOUND_NSOURCES-1)) ? (i+1) : 0);
-          return;
-        }
-  for (i=0; i<coco_next_source; i++)
-    if (coco_play_sound_from_source_maybe( coco_sources[i], sound, x, y ))
-      {
-        coco_next_source = ((i<(COCO_SOUND_NSOURCES-1)) ? (i+1) : 0);
-        return;
-      }
-}
-
-
 
