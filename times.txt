@@ -1,0 +1,39 @@
+*** 15fps real time
+
+select-cstate  13359  cstate-draw     40  draw-swap    862  swap-events     33  events-sendmouse     10  TOTAL 0. 14304
+select-cstate  45382  cstate-draw      7  draw-swap      1  swap-events      1  events-sendmouse     59  TOTAL 0. 45450
+select-cstate   6001  cstate-draw      4  draw-swap      2  swap-events      1  events-sendmouse     25  TOTAL 0.  6033
+select-cstate   9614  cstate-draw      4  draw-swap      1  swap-events      2  events-sendmouse     23  TOTAL 0.  9644
+select-cstate   7442  cstate-draw     39  draw-swap    874  swap-events     34  events-sendmouse     11  TOTAL 0.  8400
+select-cstate   1599  cstate-draw      4  draw-swap      1  swap-events      2  events-sendmouse     31  TOTAL 0.  1637
+select-cstate  47408  cstate-draw      6  draw-swap      1  swap-events      1  events-sendmouse     40  TOTAL 0. 47456
+select-cstate  19636  cstate-draw     45  draw-swap   1098  swap-events     40  events-sendmouse     15  TOTAL 0. 20834
+select-cstate  69005  cstate-draw     47  draw-swap   1061  swap-events     38  events-sendmouse     14  TOTAL 0. 70165
+select-cstate  68670  cstate-draw     46  draw-swap   1060  swap-events     40  events-sendmouse     14  TOTAL 0. 69830
+select-cstate  68966  cstate-draw     48  draw-swap   1079  swap-events     37  events-sendmouse     16  TOTAL 0. 70146
+select-cstate  68496  cstate-draw     53  draw-swap   1057  swap-events     38  events-sendmouse     15  TOTAL 0. 69659
+select-cstate  68636  cstate-draw     46  draw-swap    974  swap-events     35  events-sendmouse     15  TOTAL 0. 69706
+select-cstate  68750  cstate-draw     44  draw-swap    967  swap-events     37  events-sendmouse     15  TOTAL 0. 69813
+select-cstate  68801  cstate-draw     47  draw-swap   1009  swap-events     37  events-sendmouse     15  TOTAL 0. 69909
+select-cstate  68783  cstate-draw     47  draw-swap    983  swap-events     37  events-sendmouse     14  TOTAL 0. 69864
+select-cstate  68795  cstate-draw     46  draw-swap    977  swap-events     35  events-sendmouse     15  TOTAL 0. 69868
+select-cstate  50670  cstate-draw      7  draw-swap      2  swap-events      1  events-sendmouse     18  TOTAL 0. 50698
+select-cstate     10  cstate-draw      1  draw-swap      2  swap-events      1  events-sendmouse      4  TOTAL 0.    18
+select-cstate      7  cstate-draw      1  draw-swap      1  swap-events      2  events-sendmouse      4  TOTAL 0.    15
+select-cstate      7  cstate-draw      2  draw-swap      1  swap-events      1  events-sendmouse      4  TOTAL 0.    15
+select-cstate      7  cstate-draw      2  draw-swap      1  swap-events      1  events-sendmouse      4  TOTAL 0.    15
+
+*** 60fps real time
+
+
+select-cstate     28  cstate-draw     66  draw-swap  50079  swap-events     62  events-sendmouse     26  TOTAL 0. 50261
+select-cstate     30  cstate-draw     62  draw-swap  50925  swap-events     61  events-sendmouse     23  TOTAL 0. 51101
+select-cstate     40  cstate-draw     70  draw-swap   2847  swap-events  46890  events-sendmouse     41  TOTAL 0. 49888
+select-cstate     41  cstate-draw     55  draw-swap   3285  swap-events  47489  events-sendmouse     39  TOTAL 0. 50909
+select-cstate     36  cstate-draw     77  draw-swap   2480  swap-events  47202  events-sendmouse     41  TOTAL 0. 49836
+select-cstate     40  cstate-draw     68  draw-swap   3248  swap-events  47515  events-sendmouse     19  TOTAL 0. 50890
+select-cstate     28  cstate-draw     74  draw-swap   1619  swap-events  49059  events-sendmouse     16  TOTAL 0. 50796
+select-cstate     19  cstate-draw     60  draw-swap   1786  swap-events  46941  events-sendmouse     22  TOTAL 0. 48828
+              MOUSE 1
+select-cstate     31  cstate-draw     65  draw-swap   3908  swap-events  47816  events-sendmouse    237  TOTAL 0. 52057
+select-cstate     20  cstate-draw     59  draw-swap   2328  swap-events  47285  events-sendmouse     21  TOTAL 0. 49713

@@ -1,0 +1,63 @@
+FROM: Stephen J Baker
+DATE: 07/11/2000 09:54:30
+SUBJECT: RE:  [Mesa3d-users] Problem compiling Mesa demos.
+ 
+On Fri, 7 Jul 2000, Eric Harlow wrote:
+
+> 
+> I did an install of Redhat 6.2
+> 
+> I downloaded the latest Mesa + Demos.
+> 
+> I made everything.
+> 
+> Seemed to compile.
+> 
+> I went to the samples directory.  Ran "make -f
+> Makefile.X11 targets" since the samples were not made.
+>  It worked.  I try to run the samples.
+> 
+> I get this error on *some* but not all.  
+> 
+> BUG IN DYNAMIC LINKER dl.so: dl-version.c: 210:
+> _dl_check_map_versions: Assertion `needed != ((void *)
+> 0)` failed. 
+> 
+> This happens on "samples/sphere" but not on
+> "samples/fog".  I`m learning OpenGl/Mesa so help is
+> appreciated.
+
+This is the infamous 42944 bug in the Linux `ldd` linker.
+
+http://www.debian.org/Bugs/db/42/42944.html
+
+  "Basically, it involves having a shared library that calls
+   pthread library functions, and a program that uses the
+   shared library but isn`t linked against libpthread itself."
+
+The work-around is to link the pthreads library into
+your program explicitly rather than relying on Mesa
+to pull it in.
+
+This bug has been around long enough to make it into
+a Linux fortune cookie!
+
+  "Stopping Apache webserver...sleeping...starting again...
+   apache: dl-version.c:189: _dl_check_map_versions: Assertion
+   `needed != ((void *)0)` failed
+   noooooooooooooooooooooooooooo
+        -- netgod on #Debian at LISC"
+
+Enjoy!
+
+Steve Baker                      (817)619-2657 (Vox/Vox-Mail)
+L3Com/Link Simulation & Training (817)619-2466 (Fax)
+Work: <EMAIL: PROTECTED>           http://www.link.com
+Home: <EMAIL: PROTECTED>       http://web2.airmail.net/sjbaker1
+
+
+_______________________________________________
+Mesa3d-users mailing list
+<EMAIL: PROTECTED>
+http://lists.sourceforge.net/mailman/listinfo/mesa3d-users
+
