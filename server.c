@@ -243,7 +243,7 @@ coco_init_sstate( coco_sstate *sstate, coco_gnum width )
   for (i=0; i < COCO_MAX_PLAYERS; i++)
     {
       sstate->respawn[i] = COCO_FALSE;
-      sstate->favorite_copter_class[i] = COCO_MECH_CLASS;
+      sstate->favorite_copter_class[i] = COCO_COBRA_CLASS;
     }
   for (i=0; i < COCO_MAX_COMPS; i++)
     {

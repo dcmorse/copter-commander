@@ -999,7 +999,7 @@ extern int coco_sky_option; /* as interpreted by enum coco_sky_colors */
 /* also change coco_ideal_frame_rate in gamesho.c */
 extern struct timeval coco_ideal_frame_rate;
 #define COCO_IDEAL_FRAMES_PER_SECOND 14
-#define COCO_RESPAWN_SECONDS 2
+#define COCO_RESPAWN_SECONDS 4
 #define COCO_RESPAWN_BASE_SNAP_SECONDS 1
 
 coco_mini_point coco_tank_hardpoints[COCO_TANK_RASTER_COUNT];

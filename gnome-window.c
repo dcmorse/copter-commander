@@ -823,6 +823,8 @@ coco_on_game_activate( GtkMenuItem     *menuitem,
     {
       gtk_widget_set_sensitive( GTK_WIDGET( COCO_DISCONNECT_WIDGET ), 
                                 disconnect_enable );
+      gtk_widget_set_sensitive( GTK_WIDGET( COCO_TUTORIAL_WIDGET ), 
+                                !disconnect_enable );
       gtk_widget_set_sensitive( GTK_WIDGET( COCO_NEW_GAME_WIDGET ), 
                                 !disconnect_enable );
       gtk_widget_set_sensitive( GTK_WIDGET( COCO_JOIN_GAME_WIDGET ), 
