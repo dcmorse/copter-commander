@@ -392,7 +392,6 @@ ${COCO_TAR_FILE}:
 	for f in rstr-* ; \
 	  do mkdir ${COCO_TAR_DIRECTORY}/$$f; \
 	  cp $$f/*.c $$f/*.h ${COCO_TAR_DIRECTORY}/$$f ; \
-	  ls ${COCO_TAR_DIRECTORY}/$$f ; \
 	  done
 	tar -cf ${COCO_TAR_FILE} ${COCO_TAR_DIRECTORY}
 	rm -rf ${COCO_TAR_DIRECTORY}
