@@ -366,9 +366,9 @@ struct coco_raster *coco_firetruck_rasters[COCO_FIRETRUCK_RASTER_COUNT] = {
 /* 20 fps */
 /* struct timeval coco_ideal_frame_rate = { 0,  50000 }; */
 /* 15 fps */
-/* struct timeval coco_ideal_frame_rate = { 0,  66666 }; */
+struct timeval coco_ideal_frame_rate = { 0,  66666 };
 /* 14 fps */
-struct timeval coco_ideal_frame_rate = { 0,  71429 };
+/* struct timeval coco_ideal_frame_rate = { 0,  71429 }; */
 /* 12 fps */
 /* struct timeval coco_ideal_frame_rate = { 0,  83333 }; */
 /* 10 fps */
@@ -421,8 +421,8 @@ coco_sobject_weapon_hardpoint_coords( coco_sobject *sobject,
 char *coco_game_sound_names[COCO_GAME_SOUNDS_SIZE] = {
   "marty-airburst",
   "missile-f", /* "barrage-mans-rocket-f",*/
-  "marty-copter-cannon",
-  "whang-f",
+  "marty-aa-gun",
+  "abuse-whang",
   "marty-rocket-hit",
   "marty-bomb-hit",
   "gnobots-die",
@@ -435,7 +435,8 @@ char *coco_game_sound_names[COCO_GAME_SOUNDS_SIZE] = {
   "take-off-f",
   "abuse-mech-warm-up",
   "openal-plasma",
-  "pop"
+  "pop",
+  "abuse-whang2",
 };
 
 coco_gnum coco_game_fx_radius[COCO_GAME_SOUNDS_SIZE] = {
@@ -456,6 +457,7 @@ coco_gnum coco_game_fx_radius[COCO_GAME_SOUNDS_SIZE] = {
   0.1 * COCO_OFFICIAL_WINDOW_W,
   1.0 * COCO_OFFICIAL_WINDOW_W,
   COCO_GNUM_MAX,
+  0.5 * COCO_OFFICIAL_WINDOW_W,
 };
 
 

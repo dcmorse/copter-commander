@@ -1614,6 +1614,7 @@ coco_copter_update_state( coco_sobject *sobject,
                           coco_sobject_cl *cl, 
                           coco_sstate *sstate )
 {
+  coco_bool fired_bullet = COCO_FALSE;
   signed char camera_index = COCO_SOBJECT_CAMERA_INDEX( sobject );
   signed char comp_index = COCO_SOBJECT_COMP_INDEX( sobject );
   struct coco_keyboard_pointer_state *input;
@@ -1644,7 +1645,11 @@ coco_copter_update_state( coco_sobject *sobject,
     {
       if (coco_get_bit( input->key_state, COCO_MPOINTER )
           || coco_get_bit( input->key_state, COCO_KEY_SHIFT ))
-        coco_fire_bullet( sobject, COCO_SOBJECT_CL( sobject ), sstate, NULL );
+        {
+          fired_bullet = 
+            !!coco_fire_bullet( sobject, 
+                                COCO_SOBJECT_CL( sobject ), sstate, NULL );
+        }
       if (coco_get_bit( input->key_state, COCO_RPOINTER )
           || coco_get_bit( input->key_state, COCO_KEY_TO_CHAR( 'z' ) ))
         coco_drop_bomb( sobject, COCO_SOBJECT_CL( sobject ), sstate );
@@ -1666,6 +1671,8 @@ coco_copter_update_state( coco_sobject *sobject,
         coco_cargo_copter_maybe_use_kit( sobject, sstate,
                                          COCO_HUT_CLASS );
     }
+  if (!fired_bullet)
+    COCO_COPTER_GUN_COOLDOWN( sobject ) = COCO_FALSE;
   {
     coco_bool landed_p = COCO_COPTER_LANDED_P( sobject );
     int ri = COCO_SOBJECT_RASTER_INDEX( sobject );
@@ -1974,7 +1981,8 @@ coco_mech_update_state( coco_sobject *sobject,
     /* also kinda in mech_update_state */
     /* sx = screen_x of mech center_of_mass */
     sx = xmid
-      - coco_camera_velocity_offset( sobject, COCO_SOBJECT_CL( sobject ) );
+      - coco_camera_velocity_offset( sobject, COCO_SOBJECT_CL( sobject ),
+                                     sstate );
 
     a = coco_atan2( input->pointer_y - (COCO_SOBJECT_Y( sobject ) + ymid),
                     input->pointer_x - sx );
@@ -3752,7 +3760,8 @@ coco_cam_bounds( coco_sstate *sstate, coco_sobject *cam_object, /* possibly null
       *cam_left = cam_x 
         + xmid - (COCO_OFFICIAL_WINDOW_W>>1)
         + coco_camera_velocity_offset( cam_object, 
-                                       COCO_SOBJECT_CL( cam_object ) );
+                                       COCO_SOBJECT_CL( cam_object ),
+                                       sstate );
       *cam_right = *cam_left + COCO_OFFICIAL_WINDOW_W;
 
     }
@@ -3970,3 +3979,18 @@ coco_sobject_is_obscured( coco_sobject *sobject, coco_sstate *sstate )
   };
   return COCO_FALSE;
 }
+
+
+coco_gnum 
+coco_copter_velocity_offset_old_skool( coco_sobject *camera, 
+                                       coco_sobject_cl *cla,
+                                       coco_sstate *sstate )
+{
+  /* was COCO_SOBJECT_DX_MAX( camera ), but that makes retreating cargo
+     copters effectively blind: */
+  coco_gnum dx_max = COCO_COPTER_DX_MAX; 
+  return (dx_max>0)
+    ? (COCO_SOBJECT_DX( camera ) * (COCO_OFFICIAL_WINDOW_W>>2) / dx_max)
+    : 0;
+}
+

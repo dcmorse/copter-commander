@@ -19,11 +19,12 @@
 
 /* terminal.c -- support for terminal user interface */
 
-#define _BSD_SOURCE /* hack to get strncasecmp under glibc */
+#define _BSD_SOURCE /* to get strncasecmp under glibc */
 #include <stdlib.h>
 #include <string.h>
 #include <stdio.h>
 #include <stdarg.h>
+#include <assert.h>
 #include "coco.h"
 
 /* commands:
@@ -42,6 +43,7 @@
    /key [key] [fn]
    /addcomp [nationality]
    /delcomp [nationality]
+   /vote [motion] [bool]
    */
 
 
@@ -228,7 +230,7 @@ coco_console_eval( const char *line )
               break;
             case COCO_CAT_STRING:
               {
-                char *l = line;
+                const char *l = line;
                 size_t len;
                 while (1)
                   {
@@ -238,7 +240,7 @@ coco_console_eval( const char *line )
                     else l++;
                   }
                 len = l - line;
-                coco_strndup( COCO_CE_ACTUAL_ARG().aastr, line, len );
+                COCO_CE_ACTUAL_ARG().aastr = coco_strndup( line, len );
                 line = l;
               }
               break;
@@ -269,27 +271,99 @@ coco_console_eval( const char *line )
 }
 
 
+/* only relevant when not fullscreen */
+#define COCO_CONSOLE_LINES 3 /* lines of text to display */
+
+/* actually 1 less than this because of sentinel */
+#define COCO_CONSOLE_MAX_LINES 30
+
+#define COCO_CONSOLE_MAX_CHARS_PER_LINE 512 /* max chars_per_line */
+
+#define COCO_CONSOLE_X_MARGIN 5 /* pixels */
+#define COCO_CONSOLE_Y_MARGIN 5 /* pixels */
+
+int coco_console_chars_cursor = 0;
+/* big n*m "frame buffer" of chars.  The extra 1 char on the end is to
+   detect memory corruption.  */
+char coco_console_chars[COCO_CONSOLE_MAX_LINES
+                       *COCO_CONSOLE_MAX_CHARS_PER_LINE + 1]
+ = {((char) 1)}; /* (char) 1 terminated */
+
+
 void
 coco_console_printf( const char *fmt, ... )
 {
-  char buf[1024];
+  char *buf;
   va_list ap;
   va_start( ap, fmt );
-  vsnprintf( buf, 1024, fmt, ap );
-  coco_cookie( "console-printf> %s\n", buf ); /* STUB */
+  assert( !coco_console_chars[COCO_CONSOLE_MAX_LINES
+                             * COCO_CONSOLE_MAX_CHARS_PER_LINE] );
+  coco_console_chars_cursor
+    = (coco_console_chars_cursor+1) % COCO_CONSOLE_MAX_LINES;
+  buf = coco_console_chars
+    + (coco_console_chars_cursor*COCO_CONSOLE_MAX_CHARS_PER_LINE);
+  if (vsnprintf( buf, COCO_CONSOLE_MAX_CHARS_PER_LINE, fmt, ap ) 
+      > COCO_CONSOLE_MAX_CHARS_PER_LINE)
+    coco_warn_printf( "coco_console_printf had to truncate due to long"
+                      " line\n" );
+  coco_console_chars[((coco_console_chars_cursor+1) % COCO_CONSOLE_MAX_LINES)
+                    * COCO_CONSOLE_MAX_CHARS_PER_LINE]
+    = ((char) 1);
+  coco_cookie( "coco_console_printf() => \"%s\"\n", buf );
+  assert( !coco_console_chars[COCO_CONSOLE_MAX_LINES
+                             * COCO_CONSOLE_MAX_CHARS_PER_LINE] );
   va_end( ap );
 }
 
 
-/* only relevant when not fullscreen */
-#define COCO_CONSOLE_LINES 1
-#define COCO_CONSOLE_Y COCO_OFFICIAL_WINDOW_H
-
 void
 coco_console_draw( coco_bool fullscreen )
 {
-  coco_font *font = &coco_default_font;
+  struct coco_font *font = &coco_default_font;
   int fis = COCO_FONT_INTERLINE_SPACING( font );
   int nlines
-    = fullscreen ? (coco_real_window_h / fis) : COCO_CONSOLE_LINES;
+    = fullscreen ? ((coco_real_window_h-COCO_CONSOLE_Y_MARGIN) / fis)
+    : COCO_CONSOLE_LINES;
+  int x, y, w, h, x1, y1, line;
+  assert( !coco_console_chars[COCO_CONSOLE_MAX_LINES
+                             * COCO_CONSOLE_MAX_CHARS_PER_LINE] );
+  x = 0;
+  w = coco_real_window_w;
+  if (fullscreen)
+    {
+      y = 0;
+      h = coco_real_window_h;
+    }
+  else
+    {
+      h = COCO_MAX( fis*nlines+COCO_CONSOLE_Y_MARGIN,
+                    coco_real_window_h - COCO_DASHBOARD_Y );
+      y = coco_real_window_h - h;
+    }
+  x1 = x + w;
+  y1 = y + h;
+  coco_draw_color( COCO_COLOR_CONSOLE_BG );
+  coco_draw_rectangle( x, y, x1-1, y1-1 );
+  coco_draw_color( COCO_COLOR_CONSOLE_FG );
+  coco_draw_rectangle_hollow( x, y, x1-1, y1-1 );
+  line = 0;
+  while (line < nlines)
+    {
+      char *str = coco_console_chars
+        + (((coco_console_chars_cursor - line + COCO_CONSOLE_MAX_LINES)
+            % COCO_CONSOLE_MAX_LINES)
+           * COCO_CONSOLE_MAX_CHARS_PER_LINE);
+      if (((char) 1) == *str) break;
+      coco_draw_string( x + COCO_CONSOLE_X_MARGIN, 
+                        y + fis*line + COCO_CONSOLE_Y_MARGIN,
+                        str, -1, font, COCO_BOTTOM );
+      line++;
+    }
+  assert( !coco_console_chars[COCO_CONSOLE_MAX_LINES
+                             * COCO_CONSOLE_MAX_CHARS_PER_LINE] );
+  {
+    static int ntimes = 0;
+    if ((ntimes++%10)==5)
+      coco_console_printf( "foo bamboo %d", ntimes );
+  }
 }

@@ -295,6 +295,9 @@ void coco_time_pad_start( struct timeval *private );
 
 void coco_time_pad_end( struct timeval *private, struct timeval *how_long );
 
+int coco_tend_towards( int current, int goal, int by );
+
+
 /* graphics.c */
 
 typedef unsigned int coco_color;
@@ -335,6 +338,8 @@ typedef unsigned int coco_color;
 #define COCO_COLOR_GREY_D 0xCFCFCFFF
 #define COCO_COLOR_GREY_E 0xDFDFDFFF
 #define COCO_COLOR_GREY_F 0xEFEFEFFF
+#define COCO_COLOR_CONSOLE_FG COCO_COLOR_WHITE
+#define COCO_COLOR_CONSOLE_BG COCO_COLOR_GREY_3
 
 extern coco_color COCO_COLOR_FONT;
 
@@ -436,6 +441,8 @@ void coco_point_drawing_vertex( coco_gnum x0, coco_gnum y0 );
 void coco_end_point_drawing( void );
 void coco_draw_rectangle( coco_gnum x0, coco_gnum y0,
                            coco_gnum x1, coco_gnum y1 );
+void coco_draw_rectangle_hollow( coco_gnum x0, coco_gnum y0,
+                                 coco_gnum x1, coco_gnum y1 );
 void coco_draw_line( coco_gnum x0, coco_gnum y0, 
                      coco_gnum x1, coco_gnum y1 );
 void coco_begin_line_drawing( void );
@@ -489,6 +496,9 @@ void coco_draw_string( coco_gnum x, coco_gnum y,
                        struct coco_font *font, enum coco_font_origin origin );
 
 int coco_font_height( struct coco_font *font );
+int 
+coco_font_string_width( const char *string, 
+                        int nchars_or_minus_one, struct coco_font *font );
 void coco_font_string_dimensions( const char *string, int nchars_or_minus_one,
                                   struct coco_font *font,
                                   int *w, int *h, int *ascent );
@@ -898,6 +908,7 @@ struct coco_client_to_server_packet {
    used by the server.  */
 #define COCO_OFFICIAL_WINDOW_W 640 /* 700 */
 #define COCO_OFFICIAL_WINDOW_H 480 /* 450 */
+#define COCO_OFFICIAL_WINDOW_W_2 (COCO_OFFICIAL_WINDOW_W>>1)
 
 #define COCO_VIEWABLE_H 416
 /* the missing pixel is a border */
@@ -1018,7 +1029,7 @@ extern int coco_sky_option; /* as interpreted by enum coco_sky_colors */
 
 /* also change coco_ideal_frame_rate in gamesho.c */
 extern struct timeval coco_ideal_frame_rate;
-#define COCO_IDEAL_FRAMES_PER_SECOND 14
+#define COCO_IDEAL_FRAMES_PER_SECOND 15
 #define COCO_RESPAWN_SECONDS 4
 #define COCO_RESPAWN_BASE_SNAP_SECONDS 1
 
@@ -1058,8 +1069,8 @@ typedef unsigned char coco_sound_type;
 
 #define COCO_SOUND_AIRBURST           0
 #define COCO_SOUND_MISSILE_LAUNCH     1
-#define COCO_SOUND_COPTER_CANNON      2
-#define COCO_SOUND_SPARK              3
+#define COCO_SOUND_AA_GUN             2
+#define COCO_SOUND_SPARK1             3
 #define COCO_SOUND_ROCKET_HIT         4
 #define COCO_SOUND_BOMB_HIT           5
 #define COCO_SOUND_SCREAM1            6
@@ -1073,10 +1084,11 @@ typedef unsigned char coco_sound_type;
 #define COCO_SOUND_MECH_TAKE_OFF      14
 #define COCO_SOUND_PLASMA_CANNON      15
 #define COCO_SOUND_SUMMON_POP         16
+#define COCO_SOUND_SPARK2             17
 
 /* sounds get 0-(coco_game_sounds_size - 1), and have some arrays that big
    in gamesho. */
-#define COCO_GAME_SOUNDS_SIZE         17
+#define COCO_GAME_SOUNDS_SIZE         18
 
 
 #define COCO_FX_NONE             255
@@ -1434,8 +1446,8 @@ struct coco_cstate {
 };
 
 
-#define COCO_DASHBOARD_BASELINE (5 + COCO_RADAR_Y + COCO_RADAR_H)
-
+#define COCO_DASHBOARD_Y (COCO_RADAR_Y + COCO_RADAR_H)
+#define COCO_DASHBOARD_BASELINE (5 + COCO_DASHBOARD_Y)
 
 coco_u32 coco_draw_frame_number;
 
@@ -1456,7 +1468,7 @@ coco_u32 coco_draw_frame_number;
 #define COCO_COPTER_MAX_ANGULAR_SPEED 4 /* coco_angle/frame */
 /* DX_MAX and DY_MAX are true for gunship, not true for bubble_copter,
    which is slower. */
-#define COCO_COPTER_DX_MAX 22
+#define COCO_COPTER_DX_MAX 21
 #define COCO_COPTER_DY_MAX 14
 #define COCO_MECH_WALKING_DX_MAX 14
 #define COCO_MECH_JUMPING_DX_MAX 20
@@ -1467,9 +1479,9 @@ coco_u32 coco_draw_frame_number;
 #define COCO_MECH_POWER 2
 #define COCO_PLASMA_ENERGY 14
 #define COCO_MUNITION_COLLISION_PRIORITY 25
-#define COCO_BULLET_SPEED 30 /* can't be higher than balloon_w */
-#define COCO_PLASMA_SPEED 25
-#define COCO_BULLET_LIFESPAN 20
+#define COCO_BULLET_SPEED 27 /* can't be higher than balloon_w */
+#define COCO_PLASMA_SPEED 24
+#define COCO_BULLET_LIFESPAN 19
 #define COCO_BULLET_RANGE \
   (COCO_BULLET_SPEED * (COCO_BULLET_LIFESPAN-1))
 #define COCO_TANK_GUN_MAX_ELEVATION 20
@@ -1723,6 +1735,12 @@ coco_bool
 coco_sobject_is_obscured( coco_sobject *sobject, coco_sstate *sstate );
 
 
+coco_gnum 
+coco_copter_velocity_offset_old_skool( coco_sobject *camera, 
+                                       coco_sobject_cl *cla,
+                                       coco_sstate *sstate );
+
+
 /* dashboard.c */
 struct coco_dashboard_item {
   char *name; /* not used by user */
@@ -1816,6 +1834,10 @@ extern struct coco_tutorial_info coco_tutorial_infos[COCO_TUTORIAL_INFO_SIZE];
 
 extern struct coco_tutorial_info *coco_tutorial;
 
+
+/* console.c */
+
+void coco_console_draw( coco_bool fullscreen );
 
 /* clsho.c */
 

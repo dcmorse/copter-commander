@@ -1018,8 +1018,29 @@ coco_bullet_update_state( coco_sobject *sobject,
                           coco_sobject_cl *cl, 
                           coco_sstate *sstate )
 {
-  return (COCO_BULLET_EXPIRATION_DATE( sobject ) != sstate->time)
-    && coco_sobject_update_state( sobject, cl->super, sstate ); /* call-next-method */
+  if (COCO_BULLET_EXPIRATION_DATE( sobject ) == sstate->time)
+    return COCO_FALSE;
+  /* call-next-method */
+  else if (!coco_sobject_update_state( sobject, cl->super, sstate ))
+    return COCO_FALSE;
+  else
+    {
+      coco_gnum dx = COCO_SOBJECT_DX( sobject );
+      coco_gnum dy = COCO_SOBJECT_DY( sobject );
+      COCO_BULLET_DISTANCE_LEFT( sobject ) -= sqrt( dx*dx + dy*dy );
+      if (COCO_BULLET_DISTANCE_LEFT( sobject ) > 0)
+        { /* drag */
+          coco_gnum mv = COCO_SOBJECT_MUZZLE_VELOCITY( sobject );
+          if (dx > mv)       dx--;
+          else if (dx < -mv) dx++;
+          if (dy > mv)       dy--;
+          else if (dy < -mv) dy++;
+          COCO_SOBJECT_DX( sobject ) = dx;
+          COCO_SOBJECT_DY( sobject ) = dy;
+          return COCO_TRUE;
+        }
+      else return COCO_FALSE;
+    }
 }
 
 coco_bool 
@@ -1189,10 +1210,14 @@ coco_bullet_kaboom( coco_sobject *sobject,
         }
       coco_init_spark( spark, COCO_SPARK_CLASS, x, y, dx, dy );
       {
-        int r = rand();
         /* only make sound sometimes to reduce load on system */
-        if (0 == (r&3))
-          coco_make_snd( COCO_SOUND_SPARK, sstate, x, y );
+        if (rando&64)
+          {
+            coco_make_snd( (rando&128)?COCO_SOUND_SPARK1:COCO_SOUND_SPARK2,
+                           sstate, x, y );
+            coco_cookie( "playing spark %d\n", 
+                         (rando&128)?COCO_SOUND_SPARK1:COCO_SOUND_SPARK2 );
+          }
       }
     }
   /* call-next-method */
@@ -1338,7 +1363,8 @@ coco_copter_mech_delete( coco_sobject *sobject,
   int cam_idx = COCO_SOBJECT_CAMERA_INDEX( sobject );
   coco_nationality nat = COCO_SOBJECT_NATIONALITY( sobject );
   coco_gnum velo_offset
-    = coco_camera_velocity_offset( sobject, COCO_SOBJECT_CL( sobject ) );
+    = coco_camera_velocity_offset( sobject, COCO_SOBJECT_CL( sobject ),
+                                   sstate );
   coco_center_of_mass_obsolete( sobject, COCO_SOBJECT_CL( sobject ),
                        COCO_SOBJECT_RASTER_INDEX( sobject ),
                        &xmid, &ymid );
@@ -1404,6 +1430,8 @@ coco_copter_toggle_facing( coco_sobject *sobject, coco_sobject_cl *cl )
     = (COCO_SOBJECT_ANGLE( sobject ) + (int)128) & 255;
 }
 
+#define COCO_SIGN_SQRT( x ) ((((x)<0)?-1:1) * sqrt( abs( x ) ))
+
 void
 coco_copter_fire_bullet_coords( coco_sobject *copter, coco_sobject_cl *cl,
                                 coco_sobject *target_ignore, 
@@ -1412,10 +1440,9 @@ coco_copter_fire_bullet_coords( coco_sobject *copter, coco_sobject_cl *cl,
 {
   coco_sobject_cl *bcl = COCO_SOBJECT_BULLET_CLASS( copter );
   coco_angle aofa = COCO_SOBJECT_ANGLE( copter );
-  *dx_return = COCO_COS( aofa ) * bcl->muzzle_velocity
-    + COCO_SOBJECT_DX_PUBLIC( copter );
-  *dy_return = COCO_SIN( aofa ) * bcl->muzzle_velocity
-    /*+ COCO_SOBJECT_DY_PUBLIC( copter ) feels too unstable */;
+  coco_gnum dxp = COCO_SOBJECT_DX_PUBLIC( copter );
+  *dx_return = COCO_COS( aofa ) * bcl->muzzle_velocity + dxp;
+  *dy_return = COCO_SIN( aofa ) * bcl->muzzle_velocity; /* +dyp too unstable */
   coco_sobject_weapon_hardpoint_coords( copter, x_return, y_return );
 }
 
@@ -1502,11 +1529,17 @@ coco_copter_fire_bullet( coco_sobject *copter, coco_sobject_cl *cl,
                          coco_sstate *sstate, coco_sobject *target_or_null )
 {
   unsigned short bullets = COCO_COPTER_BULLETS( copter );
-  if (bullets > 0)
+  if ((bullets > 0) && !COCO_COPTER_GUN_COOLDOWN( copter ))
     {
-      COCO_COPTER_BULLETS( copter ) = bullets - 1;
       /* call-next-method */
-      return coco_fire_bullet( copter, cl->super, sstate, target_or_null );
+      coco_sobject *bul
+        = coco_fire_bullet( copter, cl->super, sstate, target_or_null );
+      if (bul)
+        {
+          COCO_COPTER_BULLETS( copter ) = bullets - 1;
+          COCO_COPTER_GUN_COOLDOWN( copter ) = COCO_TRUE;
+        }
+      return bul;
     }
   else return NULL;
 }
@@ -1741,25 +1774,60 @@ coco_copter_pad_update( coco_sobject *copter, coco_sobject_cl *cl,
 
 
 coco_gnum 
-coco_every_camera_velocity_offset( coco_sobject *camera, coco_sobject_cl *cla )
+coco_every_camera_velocity_offset( coco_sobject *camera, coco_sobject_cl *cla,
+                                   coco_sstate *sstate )
 {
   return 0;
 }
 
 coco_gnum 
-coco_copter_velocity_offset( coco_sobject *camera, coco_sobject_cl *cla )
+coco_copter_velocity_offset( coco_sobject *camera, 
+                             coco_sobject_cl *cla,
+                             coco_sstate *sstate )
 {
-  coco_gnum dx_max = COCO_SOBJECT_DX_MAX( camera );
-  /* really slow copters get less offset to help them see behind */
-  dx_max = COCO_MAX( dx_max, COCO_COPTER_DX_MAX-6 );
-  return (dx_max>0)
-    ? (COCO_SOBJECT_DX( camera ) * (COCO_OFFICIAL_WINDOW_W>>2) / dx_max)
-    : 0;
+  coco_gnum old, raw, new;
+  coco_nationality nat = COCO_SOBJECT_NATIONALITY( camera );
+  coco_gnum x = COCO_SOBJECT_X( camera )
+    + COCO_MINI_POINT_X( coco_sobject_com( camera ) );
+  old = COCO_CAMERA_OLD_VELOCITY_OFFSET( camera );
+  raw = coco_copter_velocity_offset_old_skool( camera, 
+                                               COCO_SOBJECT_CL( camera ),
+                                               sstate );
+  if (abs( old ) < abs( raw ))
+    {
+      coco_bool sticky = COCO_FALSE;
+      COCO_DO_SSTATE_OBJECTS( target, sstate,
+      {
+        if (COCO_ENEMY_P( nat, COCO_SOBJECT_NATIONALITY( target ) )
+            && coco_sobject_subtype_p( COCO_SOBJECT_CL( target ), 
+                                       COCO_CAMERA_CLASS )
+            && !coco_sobject_subtype_p( COCO_SOBJECT_CL( target ), 
+                                        COCO_INVISO_CAMERA_CLASS ))
+          {
+            coco_gnum delta = x
+              - COCO_MINI_POINT_X( coco_sobject_com( target ))
+              - COCO_SOBJECT_X( target );
+            if ((abs( delta ) <= (3*COCO_OFFICIAL_WINDOW_W/4)))
+              {
+                if ((delta<0) == (raw<0))
+                  sticky = COCO_TRUE;
+                else goto be_raw;
+              }
+          }
+      });
+      if (sticky)
+        return old;
+    }
+ be_raw:
+  new = coco_tend_towards( old, raw, 12 ); /* don't snap camera too hard */
+  COCO_CAMERA_OLD_VELOCITY_OFFSET( camera ) = new;
+  return new;
 }
 
 
 coco_gnum 
-coco_mech_velocity_offset( coco_sobject *camera, coco_sobject_cl *cla )
+coco_mech_velocity_offset( coco_sobject *camera, coco_sobject_cl *cla,
+                           coco_sstate *sstate )
 {
   switch (COCO_SOBJECT_NATIONALITY( camera )) {
   case COCO_GOOD_GUYS: return -COCO_OFFICIAL_WINDOW_W>>3;

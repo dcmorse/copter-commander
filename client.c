@@ -995,6 +995,7 @@ coco_cstate_draw( struct coco_cstate *cstate )
         }
     }
   coco_end_point_drawing();
+  /* coco_console_draw( COCO_FALSE ); */
   if (COCO_NEUTRAL != cstate->game_over_nationality)
     coco_draw_game_over_message( cstate->game_over_nationality );
   if (!coco_draw_background_before_everything_else)

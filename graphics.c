@@ -314,6 +314,15 @@ coco_draw_rectangle( coco_gnum x0, coco_gnum y0,
 }
 
 void 
+coco_draw_rectangle_hollow( coco_gnum x0, coco_gnum y0,
+                            coco_gnum x1, coco_gnum y1 )
+{
+  glPolygonMode( GL_FRONT_AND_BACK, GL_LINE );
+  glRecti( x0, y0, x1, y1 );
+}
+
+
+void 
 coco_draw_line( coco_gnum x0, coco_gnum y0, 
                 coco_gnum x1, coco_gnum y1 )
 {
@@ -532,6 +541,19 @@ struct coco_font coco_fixed_font = {
 struct coco_font coco_huge_font = {
   "-*-lucida-bold-r-*-*-34-*-*-*-*-*-*-*", NULL, 0
 };
+
+/* syntactic sugar */
+int 
+coco_font_string_width( const char *string,
+                        int nchars_or_minus_one,
+                        struct coco_font *font )
+{
+  int asc, w, h;
+  coco_font_string_dimensions( string, nchars_or_minus_one, font,
+                               &w, &h, &asc );
+  return w;
+}
+
 
 /* Now featuring multi-line support. */
 void 

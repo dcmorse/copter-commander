@@ -333,12 +333,15 @@ coco_sobject *coco_copter_fire_bullet( coco_sobject *copter,
 
 
 coco_gnum coco_every_camera_velocity_offset( coco_sobject *camera, 
-                                             coco_sobject_cl *cla );
+                                             coco_sobject_cl *cla,
+                                             coco_sstate *sstate );
 coco_gnum coco_copter_velocity_offset( coco_sobject *camera, 
-                                       coco_sobject_cl *cla );
+                                       coco_sobject_cl *cla,
+                                       coco_sstate *sstate );
 
 coco_gnum coco_mech_velocity_offset( coco_sobject *camera, 
-                                     coco_sobject_cl *cla );
+                                     coco_sobject_cl *cla,
+                                     coco_sstate *sstate );
 
 void sobject_ignore_neutral_buiding( coco_sobject *unit, coco_sobject_cl *cla,
                                      coco_sobject *building );

@@ -565,3 +565,62 @@ coco_time_pad_end( struct timeval *private, struct timeval *how_long )
     coco_warn_printf( "Sleeping select failed with errno=%d: %s\n",
                       errno, coco_errno_string( errno ) );
 }
+
+/* returns CURRENT, modified towards GOAL by as much as BY.  If BY is
+   negative, returns CURRENT away from GOAL by as much as BY. */
+
+int
+coco_tend_towards( int current, int goal, int by )
+{
+  int delta = goal - current;
+  if (by <= 0)
+    {
+      if (delta >= 0)
+        return current + by;
+      else 
+        return current - by;
+    }
+  else
+    {
+      if (delta >= 0)
+        {
+          if (delta > by)
+            return current + by;
+          else return goal;
+        }
+      else 
+        {
+          if (-delta > by)
+            return current - by;
+          else return goal;
+        }
+    }
+  /* tested with this function:
+  void
+  coco_test_tend_towards( int current, int goal, int by, int answer )
+  {
+    int x = coco_tend_towards( current,goal,by );
+    coco_cookie( "coco_tend_towards( %d %d %d ) => %d %s\n", current, goal, by,
+                 x, (x==answer) ? "" : "WRONG" );
+  }
+
+  coco_test_tend_towards( 0, 10, 4, 4 );
+  coco_test_tend_towards( 0, 10, -4, -4 );
+  coco_test_tend_towards( 10, 0, 4, 6 );
+  coco_test_tend_towards( 10, 0, -4, 14 );
+  coco_test_tend_towards( 0, 10, 14, 10 );
+  coco_test_tend_towards( 0, 10, -14, -14 );
+  coco_test_tend_towards( 10, 0, 14, 0 );
+  coco_test_tend_towards( 10, 0, -14, 24 );
+  coco_test_tend_towards( 0, -10, 4, -4 );
+  coco_test_tend_towards( 0, -10, -4, 4 );
+  coco_test_tend_towards( -10, 0, 4, -6 );
+  coco_test_tend_towards( -10, 0, -4, -14 );
+  coco_test_tend_towards( 0, -10, 14, -10 );
+  coco_test_tend_towards( 0, -10, -14, 14 );
+  coco_test_tend_towards( -10, 0, 14, 0 );
+  coco_test_tend_towards( -10, 0, -14, -24 );
+ */
+
+}
+

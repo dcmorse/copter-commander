@@ -1,4 +1,15 @@
+2001-07-18  David Morse  <dm@bomberlan.net>
+
+	* methods.c (coco_copter_velocity_offset): latching camera
+
+2001-07-17  David Morse  <dm@bomberlan.net>
+
+	* server.c (coco_copter_update_state): halve copter cannon rate of
+	fire.
+
 2001-07-16  David Morse  <dm@bomberlan.net>
+
+	* methods.c (coco_bullet_update_state): add drag.
 
 	* language.c (coco_strdup): renamed from coco_string_malloc_copy
 	because that's what it is.

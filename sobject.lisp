@@ -146,7 +146,7 @@
    ("airburst_sound_type" "COCO_SOUND_AIRBURST" "coco_sound_type" 
                           :allocation :every-class)
    ;; used by things that fire guns.
-   ("fire_bullet_sound_type" "COCO_SOUND_COPTER_CANNON" "coco_sound_type"
+   ("fire_bullet_sound_type" "COCO_SOUND_AA_GUN" "coco_sound_type"
                              :allocation :every-class)
    ;; used only by guns
    ;; you might think it would be more usefull than that,
@@ -319,10 +319,11 @@
   (("camera_index" :arg)
    ("collision_priority" "50")
    ("default_blip_color_index" 
-       "COCO_MAKE_BLIP_TRIPLET( COCO_BLIP_FRY_PLAYER, COCO_BLIP_EMY_PLAYER, COCO_BLIP_EMY_PLAYER )")))
+       "COCO_MAKE_BLIP_TRIPLET( COCO_BLIP_FRY_PLAYER, COCO_BLIP_EMY_PLAYER, COCO_BLIP_EMY_PLAYER )")
+   ("old_velocity_offset" "0" "coco_gnum")))
 
 (c-define-generic-function "camera_velocity_offset" "sobject"
-                           "coco_gnum" ())
+                           "coco_gnum" (("sstate" "coco_sstate *")))
 
 (c-define-method "camera_velocity_offset" "camera"
                  "coco_every_camera_velocity_offset")
@@ -358,6 +359,7 @@
    ("paratroopers" "0"                                "unsigned char")
    ("engitroopers" "0"                                "unsigned short")
    ("fuel"         "COCO_SOBJECT_MAX_FUEL(inst)"      "unsigned short")
+   ("gun_cooldown" "COCO_FALSE" "coco_bool") ; every other turn
    ("missile_cooldown" "COCO_FALSE" "coco_bool")
    ;; when to set missile_cooldown to false again
    ("missile_cooldown_time" nil     "coco_u32") 
@@ -391,7 +393,7 @@
    ("gen_dashboard_items" "coco_copter_dashboard_items")
    ("emits_smoke_when_damaged" "COCO_TRUE")
    ("kits"        "COCO_SOBJECT_MAX_KITS( inst )" "unsigned char");
-   )
+   ("fire_bullet_sound_type" "COCO_SOUND_TANK_GUN"))
   :init-by-list-fn :automatic)
 
 (c-define-method "emit_smoke" "copter" "coco_copter_emit_smoke")
@@ -1054,6 +1056,7 @@
    ("thickness"       "2")
    ("muzzle_velocity" "COCO_BULLET_SPEED")
    ("lifespan"        "COCO_BULLET_LIFESPAN")
+   ("distance_left"   "COCO_SOBJECT_MUZZLE_VELOCITY( inst ) * COCO_SOBJECT_LIFESPAN( inst )" "coco_gnum")
    ("spark_count"  "1")
    ("default_blip_color_index" 
        "COCO_MAKE_BLIP_TRIPLET( COCO_BLIP_FRY_BULLET, COCO_BLIP_EMY_BULLET, COCO_BLIP_EMY_BULLET )")))

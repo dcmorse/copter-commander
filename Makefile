@@ -160,7 +160,7 @@ HDR_FILES = forward-sobject.h methods.h sobject.h coco.h raster.h \
 
 # All C files, except for those dealing with the GUI, and those dealing with sound
 GAME_C_FILES = language.c clsho.c simple-command-line.c graphics.c network.c \
-               gamesho.c methods.c comp.c  \
+               gamesho.c methods.c comp.c console.c \
                background-${COCO_APPEARANCE_BASE}.c client.c sobject.c \
 	       screenshot.c server.c ccl.c globals.c main.c dashboard.c
 
