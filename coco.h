@@ -1086,6 +1086,8 @@ coco_bool coco_screenshot( char *file_name );
 /* client.c */
 
 
+extern int coco_eye_candy;
+
 
 /* These may change if the user figures out how to resize despite our best
    efforts.  They are not used by the server.  The game graphics are

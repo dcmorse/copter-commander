@@ -18,9 +18,10 @@
  */
 
 #include <GL/gl.h>
-#include "background.h"
 #include <stdlib.h>             /* for rand() */
 #include <time.h>               /* for localtime() */
+#include <assert.h>
+#include "background.h"
 
 #define COCO_STAR_COUNT ((COCO_OFFICIAL_WINDOW_W*COCO_OFFICIAL_WINDOW_H)>>11)
 
@@ -32,8 +33,11 @@ void
 coco_set_sky_color( void )
 {
   int hour;
+  assert( 0 <=  coco_eye_candy );
   if ((coco_sky_option >= 0) && (coco_sky_option < COCO_SKY_LIMIT))
     coco_sky_color = coco_sky_option;
+  else if (coco_eye_candy <= 6)
+    coco_sky_color = COCO_NIGHT;
   else
     {
       time_t tt;

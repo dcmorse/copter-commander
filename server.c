@@ -3083,6 +3083,45 @@ coco_find_sobject_in_range( coco_sstate *sstate, coco_sobject_cl *cl,
   return NULL;
 }
 
+coco_sobject *
+coco_find_sobject_if( coco_sstate * sstate, 
+                      coco_bool (* predicate)( coco_sobject *, void * ),
+                      void *handy )
+{
+  COCO_DO_SSTATE_OBJECTS( sobject, sstate, {
+    if (predicate( sobject, handy ))
+      return sobject;
+  });
+  return NULL;
+}
+
+/* predicate for coco_find_sobject_if(),
+   find explosions near an object.  */
+coco_bool
+coco_boot_camp_headquarters_mayhem( coco_sobject *sobject, void *hqp )
+{
+  coco_sobject *hq = hqp;
+  coco_sobject_cl *scl = COCO_SOBJECT_CL( sobject );
+  if (abs( COCO_SOBJECT_X( sobject ) - COCO_SOBJECT_X( hq )) < 100)
+    {
+      if (coco_sobject_subtype_p( scl, COCO_EXPLOSION_CLASS )
+          && (COCO_BETWEENA( COCO_EXPLOSION_BOMB_BASE,
+                             COCO_SOBJECT_RASTER_INDEX( sobject ),
+                             COCO_EXPLOSION_BOMB_BASE 
+                             + COCO_EXPLOSION_BOMB_COUNT )
+              || COCO_BETWEENA( COCO_EXPLOSION_NAPALM_BASE,
+                                COCO_SOBJECT_RASTER_INDEX( sobject ),
+                                COCO_EXPLOSION_NAPALM_BASE 
+                                + COCO_EXPLOSION_NAPALM_COUNT )))
+        return COCO_TRUE;
+      else if ((COCO_SOBJECT_Y( sobject ) > COCO_GROUND_Y + 1)
+               && coco_sobject_subtype_p( scl, COCO_SPARK_CLASS ))
+        return COCO_TRUE;
+    }
+  return COCO_FALSE;
+}
+
+
 
 coco_angle
 coco_point_arrow_at( coco_gnum x, coco_gnum y, coco_sstate *sstate,
@@ -3124,6 +3163,8 @@ coco_update_boot_camp( coco_sstate *sstate,
   coco_bool angle_on = COCO_FALSE;
   coco_angle angle = 0;
   coco_nationality nat = coco_players[player_index].nationality;
+  coco_nationality enat
+    = (nat==COCO_GOOD_GUYS) ? COCO_BAD_GUYS : COCO_GOOD_GUYS;
 
   switch (major_mission) {
   case 0:
@@ -3254,12 +3295,114 @@ coco_update_boot_camp( coco_sstate *sstate,
             }
           else if (sstate->time == congratulations_time)
             {
+              int i;
+              coco_sobject *bunker 
+                = coco_find_sobject( sstate, COCO_BUNKER_CLASS, 
+                                     COCO_FALSE, 1 /* count */, -1 );
+              coco_gnum bunker_x 
+                = bunker ? COCO_SOBJECT_X( bunker ) : sstate->board_w>>1;
+              for (i=0; i<3; i++)
+                {
+                  coco_gnum x = (bunker_x>>1) - i*120;
+                  coco_sobject *sobject
+                    = coco_sstate_allocate_sobject( sstate );
+                  if (!sobject) goto escape;
+                  if (i<2)
+                    coco_init_tank( sobject, COCO_TANK_CLASS, x, enat );
+                  else 
+                    coco_init_firetruck( sobject, COCO_FIRETRUCK_CLASS, 
+                                         x, enat );
+                }
               major_mission = 2;
               minor_mission = 8;
+            escape:
+              ;
             }
         }
         break;
       };
+    }
+    break;
+  case 2:
+    switch (minor_mission) {
+    case 6: /* good work! */
+      {
+        static coco_bool congratulations_on = COCO_FALSE;
+        static coco_u32 congratulations_time;
+        if (!congratulations_on)
+          {
+            congratulations_on = COCO_TRUE;
+            congratulations_time
+              = COCO_U32_ADD_N_MODULAR( sstate->time,
+                                        3 * COCO_IDEAL_FRAMES_PER_SECOND );
+          }
+        else if (sstate->time == congratulations_time)
+          {
+            major_mission = 3;
+            minor_mission = 11;
+          }
+      }
+      break;
+    case 8: /* kill tank */
+    case 9: /* dodge!! */
+    case 10: /* how to fire guns */
+      {
+        coco_sobject *missile
+          = coco_find_sobject( sstate, COCO_MISSILE_CLASS,
+                               COCO_TRUE, 1, enat );
+        coco_sobject *bullet
+          = coco_find_sobject( sstate, COCO_BULLET_CLASS,
+                               COCO_TRUE, 1, enat );
+        coco_sobject *tank
+          = coco_find_sobject( sstate, COCO_TANK_CLASS, 
+                               COCO_TRUE, 1 /* count */, enat );
+        if (missile || bullet)
+          {
+            coco_cookie( "missile=%p bullet=%p\n", missile, bullet );
+            minor_mission = 9;
+          }
+        else if (tank)
+          {
+            coco_gnum dx, dy;
+            angle_on = COCO_TRUE;
+            angle 
+              = coco_point_arrow_at_sobject( tank, sstate, cam_object_or_null,
+                                             player_index  );
+            if (cam_object_or_null)
+              {
+                dx = COCO_SOBJECT_X( cam_object_or_null ) 
+                  - COCO_SOBJECT_X( tank );
+                dy = COCO_SOBJECT_Y( cam_object_or_null )
+                  - COCO_SOBJECT_Y( tank );
+                if (abs( dx ) + abs( dy ) < COCO_VIEWABLE_H)
+                  minor_mission = 10;
+                else minor_mission = 8;
+              }
+            else minor_mission = 8;
+          }
+        else
+          {
+            minor_mission = 6;
+          }
+      }
+      break;
+    }
+    break;
+  case 3:
+    switch (minor_mission) {
+    case 11:
+      {
+        coco_sobject *hq = coco_find_sobject( sstate, COCO_HEADQUARTERS_CLASS,
+                                              COCO_TRUE, 1, enat );
+        coco_sobject *mayhem;
+        if (!hq) break; /* never happens */
+        mayhem = coco_find_sobject_if( sstate, 
+                                       coco_boot_camp_headquarters_mayhem,
+                                       (void *) hq );
+        if (mayhem)
+          minor_mission = 12;
+      }
+      break;
     }
     break;
   default:

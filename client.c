@@ -39,6 +39,16 @@
 #include "rasters.h"
 
 
+/* this variable, somewhat new, controls how much unneccesary graphics
+   touches get put into the game.  0 means draw nothing unnessary, no
+   matter how cheap, 10 is a typical consumer level accellerated OpenGL
+   card of 2000.  Mesa wieghs in around 3.  This is not used everywhere it
+   could be. -1 means it hasn't been initialzed yet, i.e. before
+   coco_setup_misc_graphics().  */
+int coco_eye_candy = -1;
+
+
+
 /* _Window dimensions______________________________________________ */
 
 /* these are read-only except to the *-window.c files */
@@ -721,6 +731,30 @@ coco_copter_draw( coco_cobject *cobject, coco_sobject_cl *cla )
 }
 
 
+
+void
+coco_cloud_draw( coco_cobject *cobject, coco_sobject_cl *cla )
+{
+  if (coco_eye_candy >= 2)
+    {
+      /* calculate and call next method */
+      coco_sobject_cl *scla = cla;
+      do scla = scla->super;
+      while (scla->cobject_draw == coco_cloud_draw);
+      assert( scla );
+      scla->cobject_draw( cobject, cla->super );
+    }
+  else
+    {
+      struct coco_raster *r = COCO_COBJECT_RASTER( cobject );
+      coco_cnum x = COCO_COBJECT_X( cobject );
+      coco_cnum y = COCO_COBJECT_Y( cobject );
+      coco_cnum y1 = y+(r->h>>1)+5;
+      coco_draw_color( COCO_COLOR_WHITE );
+      coco_draw_rectangle( x+10, y+10, x+r->w-10, y1 );
+      coco_draw_rectangle( x+20, y1, x+r->w-25, y+r->h-10 );
+    }
+}
 
 
 
@@ -2605,7 +2639,6 @@ coco_client_exec( void )
     = coco_load_sound_palette( coco_game_sound_names, 
                                COCO_GAME_SOUNDS_SIZE,
                                coco_game_sound_map );
-  coco_init_background();
   coco_make_window();
   coco_set_client_state( COCO_CLIENT_DEMO );
   coco_play_intro_movie();

@@ -151,7 +151,7 @@ coco_help_message()
           "  -s HOST, --server=HOST  Search HOST for games (default %s).\n"
           "  --team=TEAM             TEAM may be either \"left\" or \"right\".\n"
           "  --name=NICKNAME         Set nickname (default is username).\n"
-          "  --sky=N                 Set background N=0,1,...%d (default by time of day)\n"
+          "  --sky=N                 Set background N=0,1,...%d\n"
           "%s",
           /* split here otherwise
              string length is greater than the minimum length `509' ISO
@@ -159,7 +159,8 @@ coco_help_message()
           coco_product_description, coco_port, coco_server,
           COCO_SKY_LIMIT-1,
           "  --single-buffer         Use single buffered visuals only.\n"
-          "  --blend-alpha           Use pretty but expensive graphics.\n"
+          "  --eye-candy=N           N=[0-20] controls rendering quality. 20=highest.\n"
+          "  --blend-alpha           High quality graphics transperancy.\n"
           "  --no-blend-alpha        Opposite of above.\n"
           "  --gnome-options         send further options to gnome (--coco-options term'd)\n"
           "\n"

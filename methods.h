@@ -629,6 +629,8 @@ void coco_cobject_sound_draw( coco_cobject *cobject, coco_sobject_cl *cla );
 
 void coco_missile_draw( coco_cobject *cobject, coco_sobject_cl *cla );
 
+void coco_cloud_draw( coco_cobject *cobject, coco_sobject_cl *cla );
+
 void coco_mech_draw( coco_cobject *cobject, coco_sobject_cl *cla );
 
 void coco_spark_draw( coco_cobject *cobject, coco_sobject_cl *cla );

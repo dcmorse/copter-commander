@@ -329,6 +329,20 @@ coco_process_client_arguments( int argc, char **argv )
           coco_sky_option = strtoul( argv[i] + 6, NULL, 10 );
           COCO_CHECK_SKY_OPTION( coco_sky_option );
         }
+      else if (0==strcmp( "--eye-candy", argv[i] ))
+        {
+          i++;
+          if (i<argc)
+            coco_eye_candy = strtoul( argv[i], NULL, 10 );
+          else coco_fatal_printf( COCO_ERROR_BAD_COMMAND_LINE,
+                                  "Missing argument to \"%s\" option.\n",
+                                  argv[i-1] );
+          COCO_CHECK_SKY_OPTION( coco_sky_option );
+        }
+      else if (0==strncmp( "--eye-candy=", argv[i], 12 ))
+        {
+          coco_eye_candy = strtoul( argv[i] + 12, NULL, 10 );
+        }
       else coco_fatal_printf( COCO_ERROR_BAD_COMMAND_LINE,
                                "Unknown option \"%s\".\n",
                                argv[i] );

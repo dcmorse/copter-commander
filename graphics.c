@@ -22,6 +22,7 @@
 #include <string.h>
 #include <assert.h>
 #include "coco.h"
+#include "background.h"
 
 /* read here but set by window.h */
 coco_bool coco_double_buffer = COCO_TRUE;
@@ -402,22 +403,30 @@ coco_setup_misc_graphics( void )
 
   renderer = glGetString( GL_RENDERER );
 
-  if (-1==coco_blend_alpha)
-    coco_blend_alpha =
-      !(strstr( (const char *) renderer, "Mesa" ) 
-        && strstr( (const char *) renderer, "Indirect" ));
+  if (coco_eye_candy < 0) /* sniff for software mesa */
+    coco_eye_candy = (strstr( (const char *) renderer, "Mesa" ) 
+                      && (strstr( (const char *) renderer, "Indirect" )
+                          || strstr( (const char *)glGetString( GL_VENDOR ),
+                                     "Brian Paul")))
+      ? 4 : 10;
   
 
-  printf( "GL_VENDOR     %s\n", glGetString( GL_VENDOR ) );
-  printf( "GL_RENDERER   %s\n", renderer );
-  printf( "GL_VERSION    %s\n", glGetString( GL_VERSION ) );
+  if (-1==coco_blend_alpha)
+    coco_blend_alpha = coco_eye_candy > 4;
+  
+
+  printf( "GL_VENDOR      %s\n", glGetString( GL_VENDOR ) );
+  printf( "GL_RENDERER    %s\n", renderer );
+  printf( "GL_VERSION     %s\n", glGetString( GL_VERSION ) );
+  printf( "coco_eye_candy %d\n", coco_eye_candy );
 #ifdef COCO_DEBUG
-  printf( "GL_EXTENSIONS %s\n", glGetString( GL_EXTENSIONS) );
+  printf( "GL_EXTENSIONS  %s\n", glGetString( GL_EXTENSIONS) );
 #endif
 
 #ifdef COCO_DEBUG
   coco_warn_gl_errors( "setup_misc_graphics" );
 #endif
+  coco_init_background();
 }
 
 /* Set rasterpos to X,Y even if that's off screen. */

@@ -1,4 +1,15 @@
+2001-06-04  David Morse  <dm@bomberlan.net>
+
+	* server.c (coco_update_boot_camp): more work.
+
+	*  : Change firetruck radically an van graphics slightly.  
+
 2001-06-02  David Morse  <dm@bomberlan.net>
+
+	* graphics.c (coco_setup_misc_graphics): introduce coco_eye_candy
+	for abstract graphics quality.
+
+	* client.c (coco_cloud_draw): react on coco_eye_candy.
 
 	* tiffs/rgba-8-blend/headquarters-green.xcf: Change from turtle to
 	jawa-crawler.

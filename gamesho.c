@@ -520,7 +520,6 @@ const char *coco_major_missions[] = {
   "Welcome to Copter Boot Camp!",
   "Ferry men to Checkpoint Charlie.",
   "Enemy armor advancing on Checkpoint Charlie.  Take 'em out, quick!",
-  "Knock out the enemy gun to the west.",          
   "Enemy Command Crawler sighted.  Take it out!",          
 };
 
@@ -534,12 +533,9 @@ const char *coco_minor_missions[] = {
   "Good Work!",
   "Fly to your pillbox.",
   "Fly to the enemy.",
-  "Use SHIFT for guns, `Z` for bombs.",
-  "Well Done!",
-  /* recycle fly to the enemy */
-  "Ouch!  Maybe send in men to take it out on foot...",
-  "Outstanding!",
-  "Holy Moley!  Dodge those missiles!",
+  "DODGE !!",
+  "Use SHIFT for guns, `Z` for bombs, LEFT-CLICK to turn around.",
+  "Blow it up and you graduate from Boot with full honors!",
   "That armor's to strong for copters!  Order a Demolition `V'an instead.",
   "When a van reaches that crawler, we'll see just how thick that armor is...",
 };

@@ -563,11 +563,14 @@
    ("canonical_w"  "COCO_CLOUD1_RASTER_W")
    ("clip_to_board" "COCO_TRUE")
    ("default_blip_color_index" 
-       "COCO_BLIP_TRIPLET_TRANSPARENT"))
+       "COCO_BLIP_TRIPLET_TRANSPARENT")
+   ("cobject_draw"  "coco_cloud_draw"))
   :init-by-list-fn :automatic)
 
 (c-define-method "sobject_update_state" "cloud" 
                  "coco_cloud_update_state")
+
+
 
 (c-define-class "balloon_part" ("sobject")
   ())
