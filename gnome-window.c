@@ -370,7 +370,9 @@ coco_manage_X_key_repeat( Display *xdisplay, coco_bool for_desktop )
   static enum { COCO_RS_UNINITIALIZED,
 		COCO_RS_GAME,
 		COCO_RS_DESKTOP } repeat_state = COCO_RS_UNINITIALIZED;
-  if (for_desktop && (COCO_RS_UNINITIALIZED != repeat_state))
+  if (!xdisplay) 
+    return;
+  else if (for_desktop && (COCO_RS_UNINITIALIZED != repeat_state))
     {
       if (x_repeat_state)
 	{
@@ -529,6 +531,7 @@ coco_input_event_callback( GtkWidget *area, GdkEvent *event )
 void 
 coco_kill_window( void )
 {
+  coco_manage_X_key_repeat( coco_gnome_get_x_display_with_evil(), COCO_TRUE );
   if (coco_root_window)
     gtk_widget_destroy( coco_root_window );
 }

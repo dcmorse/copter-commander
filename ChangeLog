@@ -1,12 +1,16 @@
 2002-01-29  David Morse  <svref@yahoo.com>
 
+	* glx-window.c (coco_kill_window): Restore key autorepeat on
+	window-close.
+
 	* gnome-window.c (coco_manage_X_key_repeat): Suspend key autorepeat
-	on window focus.  [ #?????? ]
+	on window focus.  [ #510054 ]
+	(coco_kill_window): Restore key autorepeat on window-close.
 
 2002-01-28  David Morse  <svref@yahoo.com>
 
 	* glx-window.c (coco_manage_X_key_repeat): Suspend key autorepeat
-	on window focus.  [ #?????? ]
+	on window focus.  [ #510054 ]
 	
 	* server.c (coco_mech_update_state): remove input buffer hack.
 
