@@ -922,16 +922,16 @@ coco_cloud_update_state( coco_sobject *sobject,
   coco_u32 time = sstate->time;
   coco_u32 phase = COCO_CLOUD_CLOUD_TIME_PHASE( sobject );
   
-  if ((COCO_U32_ADD_N_MODULAR( time, phase ) & 127)==0)
+  if ((COCO_U32_ADD_N_MODULAR( time, phase ) & 63)==0)
     {
       int num = rand(); /* jus call rand once, reuse different bits */
       switch (COCO_SOBJECT_DY( sobject )) {
       case 1:
       case -1: 
-        if (num&1) COCO_SOBJECT_DY( sobject ) = 0; break;
+        if (num&3) COCO_SOBJECT_DY( sobject ) = 0; break;
       case 0: 
-        if (!(num&3))
-          COCO_SOBJECT_DY( sobject ) = (num&4) ? -1 : 1;
+        if (!(num&7))
+          COCO_SOBJECT_DY( sobject ) = (num&8) ? -1 : 1;
         break;
       default:
         /* never get here */
@@ -943,10 +943,10 @@ coco_cloud_update_state( coco_sobject *sobject,
       switch (COCO_SOBJECT_DX( sobject )) {
       case 1:
       case -1: 
-        if (num&8) COCO_SOBJECT_DX( sobject ) = 0; break;
+        if (num&16) COCO_SOBJECT_DX( sobject ) = 0; break;
       case 0: 
-        if (!(num&12))
-          COCO_SOBJECT_DX( sobject ) = (num&16) ? -1 : 1;
+        if (!(num&56))
+          COCO_SOBJECT_DX( sobject ) = (num&64) ? -1 : 1;
         break;
       default:
         /* never get here */
@@ -1594,8 +1594,10 @@ coco_drop_bomb( coco_sobject *copter, coco_sobject_cl *cl,
           COCO_COPTER_BOMBS( copter ) = bombs - 1;
           COCO_COPTER_LAST_BOMB_DROP_TIME( copter ) = sstate->time;
           coco_init_bomb( bomb, COCO_BOMB_CLASS, copter_facing, 
-                          COCO_SOBJECT_X( copter ) + COCO_MINI_POINT_X( hp ),
-                          COCO_SOBJECT_Y( copter ) + COCO_MINI_POINT_Y( hp ),
+                          COCO_SOBJECT_X( copter ) + COCO_MINI_POINT_X( hp )
+                          - (COCO_BOMB_EAST_RASTER_W>>1),
+                          COCO_SOBJECT_Y( copter ) + COCO_MINI_POINT_Y( hp )
+                          - COCO_BOMB_EAST_RASTER_H,
                           COCO_SOBJECT_DX( copter ),
                           COCO_SOBJECT_DY( copter ),
                           COCO_SOBJECT_NATIONALITY( copter ) );

@@ -26,6 +26,10 @@
 /* read here but set by window.h */
 coco_bool coco_double_buffer = COCO_TRUE;
 
+static void coco_begin_alpha_blending( void );
+static void coco_end_alpha_blending( void );
+
+
 /* changes to this order need to be reflected in the (e.g.) COCO_INDEX_BLUE
    defines in coco.h */
 /* The Oooold palette, which you can delete next time you read this.
@@ -192,7 +196,12 @@ coco_draw_raster_rotate( coco_gnum x, coco_gnum y,
                          coco_gnum w, coco_gnum h,
                          struct coco_raster *raster )
 {
+  enum coco_raster_format format = raster->format;
+  coco_bool do_blending 
+    = (format==COCO_RGBA_8_BLEND) && coco_blend_alpha;
   GLuint id;
+  if (do_blending)
+    coco_begin_alpha_blending();
   glPolygonMode( GL_FRONT_AND_BACK, GL_FILL );
   id = COCO_RASTER_TEXTURE_ID( raster );
   glEnable( GL_TEXTURE_2D );
@@ -212,6 +221,8 @@ coco_draw_raster_rotate( coco_gnum x, coco_gnum y,
   }
   glEnd();
   glDisable( GL_TEXTURE_2D );
+  if (do_blending)
+    coco_end_alpha_blending();
 #ifdef COCO_DEBUG
   coco_warn_gl_errors( "coco_draw_raster_rotate" );
 #endif /* COCO_DEBUG */

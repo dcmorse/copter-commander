@@ -914,7 +914,7 @@ extern struct coco_raster *coco_med_metal_shrapnel_rasters[COCO_MED_METAL_RASTER
 extern struct coco_raster *coco_big_metal_shrapnel_rasters[COCO_BIG_METAL_RASTER_COUNT];
 #define COCO_SMOKE_RASTER_COUNT 3
 extern struct coco_raster *coco_smoke_rasters[COCO_SMOKE_RASTER_COUNT];
-#define COCO_CLOUD_RASTER_COUNT 1
+#define COCO_CLOUD_RASTER_COUNT 3
 extern struct coco_raster *coco_cloud_rasters[COCO_CLOUD_RASTER_COUNT];
 #define COCO_BALLOON_RASTER_COUNT 3
 extern struct coco_raster *coco_balloon_rasters[COCO_BALLOON_RASTER_COUNT];

@@ -1,5 +1,19 @@
 2001-05-18  David Morse  <dm@bomberlan.net>
 
+	* Double bomb size.
+
+	* methods.c (coco_cloud_update_state): Make clouds more likely to
+	hold still.
+
+	* sobject.lisp (cloud): replace cloud.tif with cloud1.tif,
+	cloud2.tif, cloud3.tif
+
+	* tiffs/rgba-8-blend/bubble-green-w.xcf: revise bubble copter
+	graphic.
+
+	* graphics.c (coco_begin_rotated_view): honor alpha blending of
+	raster.
+
 	* Makefile (.PRECIOUS): add this to keep make from deleting
 	intermediate file.
 

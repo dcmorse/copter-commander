@@ -137,7 +137,9 @@ struct coco_raster *coco_smoke_rasters[COCO_SMOKE_RASTER_COUNT] = {
 };
 
 struct coco_raster *coco_cloud_rasters[COCO_CLOUD_RASTER_COUNT] = {
-  &coco_cloud_raster
+  &coco_cloud1_raster,
+  &coco_cloud2_raster,
+  &coco_cloud3_raster,
 };
 
 
