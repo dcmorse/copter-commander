@@ -1,21 +1,15 @@
                   Copter Commander Implementation Notes.
                                      
-0.    Environment
+0.    Environment Overview
       A. C at runtime
-      B. Lisp data compiles into C
-         1. oo compiler -> sobjects
-         2. tiff compiler -> raster structs
-            a) Man Libtiff was too hard for me to deal with, hence
-               the current course of action.
-            b) Current source distribution can't compile its tiffs
-               to c files, unless you happen to own Mirai ($$).
-            c) Raster-dumper.lisp holds the interesting part of
-               the translation program.  It *is* GPL.  Its in the
-               copter-commander source distribution, as are the
-               source tiffs.
-      C. Sounds (.wav) and Levels (.ccl) are external to executable
-      D. Rasters are internal to executable
-         1. There are about 100 of them.
+      B. External data compiles into C
+         1. oo compiler (lisp) -> sobjects (C)
+         2. tiff compiler (tiff) -> raster structs (C)
+      C. External data loaded dynamically:
+         1. Sounds (.wav)
+         2. Levels (.ccl)
+         3. Not so fast at loading as the bake-ins, but there are fewer 
+            of them.
 I.    Network Architecture
       A. Client-Server
          1. Client is the window the user interacts with.
@@ -149,14 +143,14 @@ III.  Graphics
          4. Dimensions available at compile time for known image
             (e.g. COCO_COBRA_GREEN_E_RASTER_W) or run time for
             variable image (e.g. raster.w).
-         5. Alpha blending brings Mesa to its knees, so its off
-            by default, and switchable on command line or hotkey.
+         5. Alpha blending brings Mesa to its knees, so its command
+            line switchable, and by default is on if GL_RENDERER 
+            is not Mesa.
       C. Textures implement sprite rotation.
          1. Used for copters only
          2. Also use tiff compiler, but are 2^n wide by 2^m high to
             satisfy OpenGL.
          3. Speed hit under Mesa OpenGL implementation
-         4. Nvidia corruption bug - workaround is Control-n
       D. Other primitives
          1. Rotatable missiles are drawn as polygons.
             a) predates adoption of textures for copter drawing.
@@ -166,6 +160,7 @@ III.  Graphics
             c) the ground
             d) bullets
             e) starscape
+            f) the sky
 IV.   Sound
       A. Multiple backends.
          1. api is defined in sound.h
@@ -258,9 +253,18 @@ VIII. System Construction
          4. Really coco_u32, coco_i32, coco_u16, coco_i16 are the base 
             types.  If the system finds that sizeof( short ) != 16 bits
             it panics and asks for assitance.  Similarly for ints.
-IX.   History and Scale
+IX.   Computer Player AI
+      A. It is dumb as sand.
+         1. but its still fun :)
+      B. coco_comp_think() looks down a prioritized list for a situation
+         it should react to.  When it finds a match, it does it.
+      C. Currently (1.1) its a "Copter" without a "Commander":
+         It never spends its money.
+X.    History and Scale
       A. Version 1.0 took about 15 months of real time to create.  Probably
          2-4 man months of 40 hour weeks were spent developing it.
+         1. Version 2.0 is well on its way to taking 3 man months.
+         2. Moved to Sourceforge around the start of 1.1.
       B. The first prototype was in Allegro Common Lisp, and wasn't 
          client-server.  It was mostly to get a grasp of what was needed
          for the oo-compiler.  It took under a week and had only copters,

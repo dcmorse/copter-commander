@@ -1,5 +1,12 @@
 2001-05-17  David Morse  <dm@bomberlan.net>
 
+	* Makefile (art): added target.
+
+	* DEVEL: Updated with some 1.1 news.
+
+	* make-rasters.sh: Add sexy "...done" feedback while doing heavy
+	things.
+
 	* tiff-compile.c: created.
 
 2001-05-16  David Morse  <dm@bomberlan.net>

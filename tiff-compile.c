@@ -143,26 +143,37 @@ coco_write_raster_source( FILE *s, uint32 *p, uint32 w, uint32 h,
   fprintf( s, "\n" );
   
   f = bitmap
-    ? "static unsigned char coco_pixels[(COCO_%s_RASTER_W+7>>3)*COCO_BOMB_SOUTH_RASTER_H] = {\n"
-    : "static unsigned char coco_pixels[COCO_%s_RASTER_W*COCO_BOMB_SOUTH_RASTER_H*4] = {\n";
+    ? "static unsigned char coco_pixels[(((COCO_%s_RASTER_W+31)>>5)<<2)*COCO_%s_RASTER_H] = {\n"
+    : "static unsigned char coco_pixels[COCO_%s_RASTER_W*COCO_%s_RASTER_H*4] = {\n";
 
   fprintf( s, f, upname, upname );
   
   if (bitmap)
     for (y=0; y < h; y++)
       {
+        int ww;
+
         fprintf( s, " " );
-        for (x=0; x < w; x+=8)
+
+        ww = w;
+        while (ww & 0x1F) ww++; /* word align */
+
+        for (x=0; x < ww; x+=8)
           {
             unsigned char acc = 0;
             int subx;
             for (subx=0; subx<8; subx++)
               {
-                uint32 pix = p[x+subx+(y*w)];
-                unsigned char r = TIFFGetR( pix );
-                unsigned char g = TIFFGetG( pix );
-                unsigned char b = TIFFGetB( pix );
-                unsigned char a = TIFFGetA( pix );
+                unsigned char r, g, b, a;
+                if (x<w)
+                  {
+                    uint32 pix = p[x+subx+(y*w)];
+                    r = TIFFGetR( pix );
+                    g = TIFFGetG( pix );
+                    b = TIFFGetB( pix );
+                    a = TIFFGetA( pix );
+                  }
+                else r = g = b = a = 0;
                 if (!((r==trans_r)&&(g==trans_g)&&(b==trans_b)&&(a==trans_a)))
                   {
                     int luma = (r+g+b) * a / 255;
@@ -247,12 +258,11 @@ coco_tiff_compile( char *infile, char *outh, char *outc, char *cname,
   pixels = coco_tiff_load( infile, &w, &h, error_descrip );
   if (!pixels) return 0;
    
-  if (log_file) fprintf( log_file, "%25s ", outh );
+  if (log_file) fprintf( log_file, "." );
   f = fopen( outh, "w" );
   COCO_FAIL_ON_FAIL( f, "Couldn't open output header file" );
   coco_write_raster_header( f, pixels, w, h, fmt, cname );
   COCO_FAIL_ON_FAIL( 0==fclose( f ), "Couldn't close output header file" );
-  if (log_file) fprintf( log_file, "%25s\n", outc );
   f = fopen( outc, "w" );
   COCO_FAIL_ON_FAIL( f, "Couldn't open output src file" );
   bname = coco_basename( outh );
@@ -390,8 +400,10 @@ coco_tiff_compile_dir( char *indir, char *outdir,
       fname = entry->d_name;
       if (coco_is_tiff_extension( fname ))
         {
-          char *error_descrip, *cname, *outh, *outc;
+          char *error_descrip, *cname, *outh, *outc, *outh_base;
           char *pname = coco_directory_plus_file( indir, fname, 0 );
+          if (!pname)
+            break;
           if (!coco_tiff_names( pname, outdir, &cname, &outh, &outc ))
             break;
           if (!(cname && outh && outc)) 
@@ -400,7 +412,10 @@ coco_tiff_compile_dir( char *indir, char *outdir,
                              0, 0, 0, 
                              coco_tiff_is_black_coded( pname ) ? 255 : 0,
                              &error_descrip );
-          fprintf( rasters_h, "#include \"%s\"\n", outh );
+          outh_base = coco_basename( outh );
+          if (!outh_base) break;
+          fprintf( rasters_h, "#include \"%s.h\"\n", outh_base );
+          free( outh_base );
           free( cname );
           free( outh );
           free( outc );
@@ -413,7 +428,7 @@ coco_tiff_compile_dir( char *indir, char *outdir,
 }
 
 /* returns 0 on fail */
-int
+static int
 coco_file_write_date( const char *path, time_t *ti )
 {
   struct stat s;
@@ -436,18 +451,18 @@ coco_tiff_compile_system( char *indir, char *outdir )
   char *rasters_h = coco_directory_plus_file( outdir, "rasters.h", 0 );
   time_t rasters_h_time;
 
-  fprintf( stderr, "YOU\n" );
   if (!rasters_h) return 0;
   if (!coco_file_write_date( rasters_h, &rasters_h_time ))
     rasters_h_time = 0;
 
+  recompile = 1; 
+  /* above line was:
   recompile = 0;
   for (i=0; i<3; i++)
     {
       char *subindir = coco_directory_plus_file( indir, subdirs[i], 0 );
       DIR *dir;
       struct dirent *entry;
-      fprintf( stderr, "Examining %s\n", subindir );
       dir = opendir( subindir );
       if (NULL == dir)
         break;
@@ -458,7 +473,6 @@ coco_tiff_compile_system( char *indir, char *outdir )
           if (NULL == entry)
             break;
           fname = entry->d_name;
-          fprintf( stderr, "  %s\n", fname );
           if (coco_is_tiff_extension( fname ))
             {
               time_t tiff_time;
@@ -466,6 +480,7 @@ coco_tiff_compile_system( char *indir, char *outdir )
                 tiff_time = 0;
               if (tiff_time <= rasters_h_time)
                 {
+                  if (log_file) fprintf( log_file, "\"%s\" has changed.\n", fname );
                   recompile = 1;
                   break;
                 }
@@ -475,10 +490,12 @@ coco_tiff_compile_system( char *indir, char *outdir )
       free( subindir );
       if (recompile) break;
     }
+  */
   if (recompile)
     {
       FILE *rasters_h_fd = fopen( rasters_h, "w" );
       if (NULL==rasters_h) return 0;
+      if (log_file) fprintf( log_file, "Compiling \".tiffs\" to \".c\"s" );
       for (i=0; i<3; i++)
         {
           char *subindir = coco_directory_plus_file( indir, subdirs[i], 0 );
@@ -488,8 +505,10 @@ coco_tiff_compile_system( char *indir, char *outdir )
             fprintf( stderr, "problems with directory \"%s\"\n", subindir );
           free( subindir );
         }
+      if (log_file) fprintf( log_file, "done.\n" );
       fclose( rasters_h_fd );
     }
+  else if (log_file) fprintf( log_file, "No rasters require rebuilding.\n" );
   free( rasters_h );
   return 1;
 }

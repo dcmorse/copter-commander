@@ -29,6 +29,8 @@
 # make glx-copter-commander - make bare bones gui-less version of game
 # make install              - install files into the system
 # make clean                - remove temporary files
+# (past here maintainer only)
+# make art		    - run this after modifying tiffs
 # make distclean            - remove distributed temporary files (for devel)
 # make tarball              - make snapshot for distribution
 # make TAGS                 - make emacs tags file
@@ -206,6 +208,14 @@ rstr-%/built: rstr-%/rasters.h
 	cd rstr-$*;\
 	../make-rasters.sh
 
+# tiff-compile only does its thing if the files are out of date.
+# so in essence it already manages its dependancies.
+rstr-%/rasters.h: tiff-compile
+	./tiff-compile tiffs `dirname $@`
+
+# force recompile of tiffs (changes to which are not otherwise sensed by this makefile)
+art: tiff-compile
+	./tiff-compile tiffs ${COCO_RASTER_DIRECTORY}
 
 # Some decisions are put off until configure time then included into
 # coco.h
@@ -374,7 +384,8 @@ clean:
 distclean: clean
 	rm -f object-time.h object-time.lisp \
 	  sobject.c sobject.h forward-sobject.h \
-	  oo-compiler.lib oo-compiler.fas
+	  oo-compiler.lib oo-compiler.fas \
+	  rstr-*/*.c rstr-*/*.h
 
 COCO_TAR_DIRECTORY=copter-commander-${COCO_MAJOR_VERSION}.${COCO_MINOR_VERSION}
 COCO_TAR_FILE=copter-commander-${COCO_MAJOR_VERSION}.${COCO_MINOR_VERSION}.tar
