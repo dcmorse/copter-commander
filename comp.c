@@ -127,6 +127,9 @@ coco_comp_compute_needed_bombs( coco_cobject *targ, coco_cobject *self,
 }
 
 
+/* other copters are frothy if they're more than this number from horizontal */
+#define COCO_COMP_FROTHY_ANGLE 4
+
 
 /* perform side effects on self->kpstate, (and self->cruise_altitude) */
 void
@@ -362,6 +365,29 @@ coco_comp_think( struct coco_comp *self,
         self->refuelling = COCO_TRUE; /* go get some bombs to deal w/ these turkeys */
         return;
       }
+  }
+
+
+  { /* don't clump with other friendly copters */
+    int myci = cstate->cobject_camera_index;
+    for (ci=0; ci<myci; ci++)
+      if ((abs(COCO_COBJECT_X( cobjs+ci ) - COCO_COBJECT_X( cself )) < 300)
+          && coco_sobject_subtype_p( COCO_COBJECT_CL( cobjs+ci ), 
+                                     COCO_COPTER_CLASS )
+          && (self->nationality
+              == COCO_COBJECT_NATIONALITY_GUESS( cobjs+ci )))
+        {
+          coco_angle angle = COCO_COBJECT_ANGLE( cobjs+ci );
+          if (((angle > COCO_COMP_FROTHY_ANGLE) 
+               && (angle < (128 - COCO_COMP_FROTHY_ANGLE)))
+              || ((angle > (128 + COCO_COMP_FROTHY_ANGLE))
+                  && (angle < (256 - COCO_COMP_FROTHY_ANGLE))))
+            {
+              coco_cookie( "%d not crowding %d\n", myci, ci );
+              state_return->pointer_x = 0;
+              return;
+            }
+        }
   }
 
 
