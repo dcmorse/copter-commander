@@ -1,3 +1,8 @@
+2001-06-02  David Morse  <dm@bomberlan.net>
+
+	* tiffs/rgba-8-blend/headquarters-green.xcf: Change from turtle to
+	jawa-crawler.
+
 2001-06-01  David Morse  <dm@bomberlan.net>
 
 	* gamesho.c: fixup coco_torso_parts and coco_leg_parts.
