@@ -41,8 +41,10 @@
 */
 
 
+#include <stdlib.h>
 #include <stdio.h>
 #include <ctype.h>
+#include <string.h>
 
 #define NTYPES 7
 

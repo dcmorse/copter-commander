@@ -249,7 +249,7 @@ coco_balloon_update_state( coco_sobject *balloon,
                  COCO_SOBJECT_INDEX( balloon ),
                  COCO_BALLOON_LINE_INDEX( balloon ) );
   */
-  if ((COCO_U32_ADD_N_MODULAR( time, phase ) & 127)==0)
+  if ((COCO_U32_ADD_N_MODULAR( time, phase ) & 15)==0)
     {
       int num = rand(); /* jus call rand once, reuse different bits */
       switch (COCO_SOBJECT_DY( balloon )) {

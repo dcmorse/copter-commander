@@ -22,6 +22,7 @@
 #include <X11/Xatom.h>
 #include <GL/glx.h> /* includes the necessary X11 headers */
 #include <assert.h>
+#include <stdlib.h> /* for exit */
 #include "coco.h"
 
 char *coco_gnu_info_string = "For\n"

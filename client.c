@@ -1784,7 +1784,7 @@ coco_handle_client_message( struct coco_stream *str,
                                   ntohs(message.port.port ), COCO_TRUE);
               coco_cookie( "\n" );
 #endif
-              if (-1 == connect( udpfd, (struct sockaddr*)&sockaddr, sizeof( sockaddr ) ))
+              if (-1 == connect( udpfd, &sockaddr, sizeof( sockaddr ) ))
                 coco_fatal_printf( COCO_ERROR_NETWORK_BROKEN,
                                    "Udp connect() failed with errno=%d: %s\n",
                                    errno, coco_errno_string( errno ) );
@@ -2037,7 +2037,7 @@ coco_client_connect_to_server( enum coco_network_error *err_return,
   coco_cookie( "\n" );
 #endif
 
-  if (-1==connect( hailfd, (struct sockaddr*) &sockaddr, sizeof( sockaddr ) ))
+  if (-1==connect( hailfd, &sockaddr, sizeof( sockaddr ) ))
     {
       coco_assign_network_error( COCO_NETERROR_CONNECT_TCP,
                                  err_return, err_arg_return );

@@ -18,6 +18,7 @@
  */
 
 #include <assert.h>
+#include <string.h> /* for strcmp */
 #include "coco.h"
 
 

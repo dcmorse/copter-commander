@@ -299,7 +299,7 @@ coco_server_setup( int *tcpfd, int *out_udpfd,
   sockaddr.sin_family = PF_INET;
   sockaddr.sin_port = htons( coco_port );
   sockaddr.sin_addr.s_addr = htonl( INADDR_ANY );
-  if (-1==bind( listenfd, (struct sockaddr*)&sockaddr, sizeof( sockaddr ) ))
+  if (-1==bind( listenfd, &sockaddr, sizeof( sockaddr ) ))
     coco_fatal_printf( COCO_ERROR_NETWORK_BROKEN,
                        "Bind failed with errno=%d: %s\n",
                        errno, coco_errno_string( errno ) );
@@ -1509,7 +1509,7 @@ coco_send_cstate( int udpfd, int plr_index, void *cstate_buf, size_t buf_size )
   */
 
   sendto_result = sendto( udpfd, cstate_buf, buf_size, 0,
-                          (struct sockaddr*)&sockaddr, sizeof( sockaddr ) );
+                          &sockaddr, sizeof( sockaddr ) );
   if (-1 == sendto_result)
     switch (errno) {
     case EAGAIN:
@@ -1577,7 +1577,7 @@ coco_read_client_packet( int udpfd, coco_sstate *sstate )
 
   while (1) {
     recv_result = recvfrom( udpfd, &pkt, sizeof( pkt ), 0,
-                            (struct sockaddr*)&sockaddr, &sockaddr_size ); 
+                            &sockaddr, &sockaddr_size ); 
     if (recv_result != sizeof( pkt ))
       {
         if (-1 == recv_result)

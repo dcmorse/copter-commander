@@ -20,6 +20,7 @@
 #include <string.h>
 #include <alloca.h>
 #include <assert.h>
+#include <stdlib.h>             /* for exit */
 #include "coco.h"
 
 coco_bool
@@ -141,7 +142,11 @@ coco_help_message()
           "  --list-levels           Show built in levels.\n"
           "\n"
           "Client Options:\n"
-          "  -s HOST, --server=HOST  Search HOST for games (default %s).\n"
+          "  -s HOST, --server=HOST  Search HOST for games (default %s).\n%s",
+          /* split here otherwise
+             string length is greater than the minimum length `509' ISO
+             C89 is required to support */
+          coco_product_description, coco_port, coco_server,
           "  --single-buffer         Use single buffered visuals only.\n"
           "  --blend-alpha           Use pretty but expensive graphics.\n"
           "  --gnome-options         send further options to gnome (--coco-options terminated)\n"
@@ -149,9 +154,7 @@ coco_help_message()
           "Server Options:\n"
           "  --log=FILE              Route diagnostics to a file (default stdout).\n"
           "  -q, --quiet             Do not produce diagnostics.\n"
-          "  --level=FILE            Load level from file.\n",
-
-          coco_product_description, coco_port, coco_server );
+          "  --level=FILE            Load level from file.\n" );
   exit( 0 );
 }
 
