@@ -1,6 +1,6 @@
 2001-07-18  David Morse  <dm@bomberlan.net>
 
-	* methods.c (coco_copter_velocity_offset): latching camera
+	* methods.c (coco_copter_velocity_offset): latching camera.
 
 2001-07-17  David Morse  <dm@bomberlan.net>
 

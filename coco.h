@@ -1837,7 +1837,8 @@ extern struct coco_tutorial_info *coco_tutorial;
 
 /* console.c */
 
-void coco_console_draw( coco_bool fullscreen );
+void coco_console_draw( void );
+
 
 /* clsho.c */
 

@@ -26,6 +26,7 @@
 #include <stdarg.h>
 #include <assert.h>
 #include "coco.h"
+#include "rasters.h" /* for close, maximize, minimize */
 
 /* commands:
    /help [command]
@@ -45,6 +46,28 @@
    /delcomp [nationality]
    /vote [motion] [bool]
    */
+
+
+enum coco_console_deployment_ coco_console_deployment;
+
+void
+coco_set_console_deployment( enum coco_console_deployment_ d )
+{
+  coco_console_deployment = d;
+}
+
+
+/* only relevant when not fullscreen */
+#define COCO_CONSOLE_LINES 3 /* lines of text to display */
+
+#define COCO_CONSOLE_X_MARGIN 5 /* pixels */
+#define COCO_CONSOLE_Y_MARGIN 5 /* pixels */
+
+/* actually 1 less than this because of sentinel */
+#define COCO_CONSOLE_MAX_LINES 30
+
+#define COCO_CONSOLE_MAX_CHARS_PER_LINE 512 /* max chars_per_line */
+
 
 
 #define COCO_CONSOLE_INT_UNBOUND INT_MIN
@@ -270,25 +293,53 @@ coco_console_eval( const char *line )
     }
 }
 
+void
+coco_console_metrics( int *x, int *y, int *w, int *h, struct coco_font **font,
+                      int *nlines_ )
+{
+  struct coco_font *ffont = &coco_default_font;
+  int fis = COCO_FONT_INTERLINE_SPACING( ffont );
+  int nlines;
+  if (font) *font = &coco_default_font;
+  switch (coco_console_deployment) {
+  COCO_HIDDEN: 
+    nlines = 0; 
+    if (x) *x=0; if (y) *y=0;
+    if (w) *w=0; if (h) *h=0;
+    if (nlines) *nlines_ = nlines;
+    return;
+  COCO_MINIMAL: nlines = COCO_CONSOLE_LINES; break;
+  COCO_FULLSCREEN:
+    nlines = ((coco_real_window_h-COCO_CONSOLE_Y_MARGIN) / fis);
+    break;
+  }
+  if (nlines) *nlines_ = nlines;
+  if (x) *x = 0;
+  if (w) *w = coco_real_window_w;
+  if (coco_console_deployment == COCO_FULLSCREEN)
+    {
+      if (y) *y = 0;
+      if (h) *h = coco_real_window_h;
+    }
+  else
+    {
+      coco_gnum hh = COCO_MAX( fis*nlines+COCO_CONSOLE_Y_MARGIN,
+                               coco_real_window_h - COCO_DASHBOARD_Y );
+      if (h) *h = hh;
+      if (y) *y = (coco_real_window_h - hh);
+    }
+}
 
-/* only relevant when not fullscreen */
-#define COCO_CONSOLE_LINES 3 /* lines of text to display */
 
-/* actually 1 less than this because of sentinel */
-#define COCO_CONSOLE_MAX_LINES 30
-
-#define COCO_CONSOLE_MAX_CHARS_PER_LINE 512 /* max chars_per_line */
-
-#define COCO_CONSOLE_X_MARGIN 5 /* pixels */
-#define COCO_CONSOLE_Y_MARGIN 5 /* pixels */
-
-int coco_console_chars_cursor = 0;
+int coco_console_chars_insert_idx = 0;
 /* big n*m "frame buffer" of chars.  The extra 1 char on the end is to
    detect memory corruption.  */
 char coco_console_chars[COCO_CONSOLE_MAX_LINES
                        *COCO_CONSOLE_MAX_CHARS_PER_LINE + 1]
  = {((char) 1)}; /* (char) 1 terminated */
 
+int coco_console_cursor_line = 0;
+int coco_console_cursor_char = 0;
 
 void
 coco_console_printf( const char *fmt, ... )
@@ -298,15 +349,15 @@ coco_console_printf( const char *fmt, ... )
   va_start( ap, fmt );
   assert( !coco_console_chars[COCO_CONSOLE_MAX_LINES
                              * COCO_CONSOLE_MAX_CHARS_PER_LINE] );
-  coco_console_chars_cursor
-    = (coco_console_chars_cursor+1) % COCO_CONSOLE_MAX_LINES;
+  coco_console_chars_insert_idx
+    = (coco_console_chars_insert_idx+1) % COCO_CONSOLE_MAX_LINES;
   buf = coco_console_chars
-    + (coco_console_chars_cursor*COCO_CONSOLE_MAX_CHARS_PER_LINE);
+    + (coco_console_chars_insert_idx*COCO_CONSOLE_MAX_CHARS_PER_LINE);
   if (vsnprintf( buf, COCO_CONSOLE_MAX_CHARS_PER_LINE, fmt, ap ) 
       > COCO_CONSOLE_MAX_CHARS_PER_LINE)
     coco_warn_printf( "coco_console_printf had to truncate due to long"
                       " line\n" );
-  coco_console_chars[((coco_console_chars_cursor+1) % COCO_CONSOLE_MAX_LINES)
+  coco_console_chars[((coco_console_chars_insert_idx+1) % COCO_CONSOLE_MAX_LINES)
                     * COCO_CONSOLE_MAX_CHARS_PER_LINE]
     = ((char) 1);
   coco_cookie( "coco_console_printf() => \"%s\"\n", buf );
@@ -315,31 +366,31 @@ coco_console_printf( const char *fmt, ... )
   va_end( ap );
 }
 
+const char *
+coco_console_get_current_string( void )
+{
+  return coco_console_chars
+    + (coco_console_chars_insert_idx*COCO_CONSOLE_MAX_CHARS_PER_LINE);
+}
+
 
 void
-coco_console_draw( coco_bool fullscreen )
+coco_console_set_current_string( char *string )
 {
-  struct coco_font *font = &coco_default_font;
-  int fis = COCO_FONT_INTERLINE_SPACING( font );
-  int nlines
-    = fullscreen ? ((coco_real_window_h-COCO_CONSOLE_Y_MARGIN) / fis)
-    : COCO_CONSOLE_LINES;
-  int x, y, w, h, x1, y1, line;
+  char *buf = coco_console_chars
+    + (coco_console_chars_insert_idx*COCO_CONSOLE_MAX_CHARS_PER_LINE);
+  strncpy( buf, string, COCO_CONSOLE_MAX_CHARS_PER_LINE );
+  buf[COCO_CONSOLE_MAX_CHARS_PER_LINE-1] = '\0';
+}
+
+void
+coco_console_draw( void )
+{
+  struct coco_font *font;
+  int x, y, w, h, x1, y1, line, nlines;
   assert( !coco_console_chars[COCO_CONSOLE_MAX_LINES
                              * COCO_CONSOLE_MAX_CHARS_PER_LINE] );
-  x = 0;
-  w = coco_real_window_w;
-  if (fullscreen)
-    {
-      y = 0;
-      h = coco_real_window_h;
-    }
-  else
-    {
-      h = COCO_MAX( fis*nlines+COCO_CONSOLE_Y_MARGIN,
-                    coco_real_window_h - COCO_DASHBOARD_Y );
-      y = coco_real_window_h - h;
-    }
+  coco_console_metrics( &x, &y, &w, &h, &font, &nlines );
   x1 = x + w;
   y1 = y + h;
   coco_draw_color( COCO_COLOR_CONSOLE_BG );
@@ -349,21 +400,60 @@ coco_console_draw( coco_bool fullscreen )
   line = 0;
   while (line < nlines)
     {
+      int xx, yy;
       char *str = coco_console_chars
-        + (((coco_console_chars_cursor - line + COCO_CONSOLE_MAX_LINES)
+        + (((coco_console_chars_insert_idx - line + COCO_CONSOLE_MAX_LINES)
             % COCO_CONSOLE_MAX_LINES)
            * COCO_CONSOLE_MAX_CHARS_PER_LINE);
       if (((char) 1) == *str) break;
-      coco_draw_string( x + COCO_CONSOLE_X_MARGIN, 
-                        y + fis*line + COCO_CONSOLE_Y_MARGIN,
-                        str, -1, font, COCO_BOTTOM );
+      xx = x + COCO_CONSOLE_X_MARGIN;
+      yy = y + COCO_FONT_INTERLINE_SPACING( font )*line
+        + COCO_CONSOLE_Y_MARGIN;
+      if (line == coco_console_cursor_line)
+        {
+          int xxx, cl;
+          cl = COCO_MIN( coco_console_cursor_line, strlen( str ) );
+          xxx = xx + coco_font_string_width( str, cl, font );
+          coco_draw_color( COCO_COLOR_RED );
+          coco_draw_rectangle( xxx, yy-1, xxx + 3,
+                               yy+coco_font_height( font )+1 );
+          coco_draw_color( COCO_COLOR_CONSOLE_FG );
+        }
+      coco_draw_string( xx, yy, str, -1, font, COCO_BOTTOM );
       line++;
     }
+  
+  { /* draw wm icons */
+    int i, ix;
+    int space = 3;
+    for (i=0, ix=x1; i<2; i++)
+      {
+        struct coco_raster *r = ((i==0) 
+                                 ? &coco_close_raster 
+                                 : ((coco_console_fullscreen 
+                                     ? &coco_minimize_raster
+                                     : &coco_maximize_raster)));
+        ix -= space + r->w;
+        coco_draw_raster( ix, y1-space-r->h, r );
+      }
+  }
   assert( !coco_console_chars[COCO_CONSOLE_MAX_LINES
                              * COCO_CONSOLE_MAX_CHARS_PER_LINE] );
   {
     static int ntimes = 0;
-    if ((ntimes++%10)==5)
+    if ((ntimes++%50)==5)
       coco_console_printf( "foo bamboo %d", ntimes );
   }
+}
+
+void
+coco_console_mouse_button( int x, int y, coco_key button, coco_bool is_press )
+{
+  
+}
+
+void
+coco_console_key_press( coco_key key )
+{
+  
 }
