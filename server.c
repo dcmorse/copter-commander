@@ -31,8 +31,9 @@
 #include "coco.h"
 #include "rasters.h"       /* for raster dimensions */
 
-/* true iff launced with --tutorial flag */
-coco_bool coco_tutorial = COCO_FALSE;
+/* NULL iff not launced with --tutorial flag, otherwise points
+ * to the right entry of coco_tutorial_infos. */
+struct coco_tutorial_info *coco_tutorial = NULL;
 
 coco_sobject *
 coco_find_camera( coco_sstate *sstate, int p_or_c_index, coco_bool is_comp );
@@ -58,7 +59,7 @@ static coco_bool coco_send_everyone_compflux_message( void );
 static coco_bool coco_send_everyone_votestate_message( coco_sstate *sstate );
 static coco_bool coco_send_player_compflux_messages( int plr_idx );
 
-static coco_sstate the_coco_sstate = { COCO_FALSE, NULL, 0, 0, 0 };
+static coco_sstate the_coco_sstate; /* = { COCO_FALSE, NULL, NULL, 0, 0, 0 }; */
 
 /* reader for sstates, called by toplevel functions */
 coco_sstate *
@@ -213,12 +214,20 @@ coco_sstate_delete_sobject( coco_sstate *sstate,
     coco_schedule_comp_respawn_maybe( comp_index, sstate );
 }
 
-coco_sstate *
+void
 coco_init_sstate( coco_sstate *sstate, coco_gnum width )
 {
   int i;
+  sstate->game_in_progress = COCO_FALSE;
+  sstate->level_name = NULL;
+  sstate->sobjects = NULL;
+  sstate->sobject_fill_index = 0;
+  sstate->sobject_size = 0;
+  /* does nothing */
+  /*
   for (i=0; i < sstate->sobject_size; i++)
     COCO_SOBJECT_IN_USE( COCO_SSTATE_OBJECT_REF( sstate, i ) ) = COCO_FALSE;
+  */
   sstate->time = 0;
   sstate->board_w = width;
   sstate->game_over_nationality = COCO_NEUTRAL;
@@ -243,9 +252,7 @@ coco_init_sstate( coco_sstate *sstate, coco_gnum width )
   for (i=0; i < COCO_MAX_NOMINATIONS; i++)
     sstate->nominations[i].action_code = COCO_NOMINATE_NOT_IN_USE;
   sstate->nominations_cursor = 0;
-  return sstate;
 }
-
 
 
 #ifdef COCO_INIT_HOOK /* an old, bad idea */
@@ -2256,17 +2263,35 @@ coco_server_exec( void )
   int tcpfd, in_udpfd, out_udpfd;
   char *level_error;
   unsigned short in_udp_port;
-  coco_sstate *sstate_dummy;
+  coco_sstate *sstate = coco_get_sstate();
   assert( coco_level_text );
-  level_error = coco_load_level_definition( coco_level_text, &sstate_dummy );
+  level_error = coco_load_level_definition( coco_level_text, sstate );
   if (level_error)
     coco_fatal_printf( COCO_ERROR_BAD_LEVEL,
                        "Problem loading level \"%s\"\n",
                        level_error );
-  coco_init_comps( coco_get_sstate() );
+  coco_init_comps( sstate );
   coco_server_setup( &tcpfd, &out_udpfd, &in_udpfd, &in_udp_port );
   coco_server_loop( tcpfd, out_udpfd, in_udpfd, in_udp_port );
 }
+
+/* ________________________________________________________________ */
+
+void
+coco_setup_boot_camp( coco_sstate *sstate )
+{
+}
+
+void
+coco_setup_first_blood( coco_sstate *sstate )
+{
+}
+
+void
+coco_setup_hammer_blow( coco_sstate *sstate )
+{
+}
+
 
 
 /* _Bottling up the game state for udp___________________________________ */
@@ -2374,6 +2399,17 @@ coco_balloon_line_to_cobject( coco_sobject *sobject, coco_sobject_cl *cl,
 
 
 void
+coco_tutorial_write_mission_objectives( struct coco_cstate_serial_header *str,
+                                        coco_sstate *sstate, 
+                                        coco_sobject *cam_object_or_null,
+                                        int player_index )
+{
+  /* .... TTT */
+}
+
+
+
+void
 coco_write_cstate_serial_header( struct coco_cstate_serial_header *str, 
                                  coco_sstate *sstate, 
                                  coco_sobject *cam_object_or_null,
@@ -2392,6 +2428,8 @@ coco_write_cstate_serial_header( struct coco_cstate_serial_header *str,
   str->board_w = sstate->board_w;
   str->dx = cam_object_or_null ? COCO_SOBJECT_DX( cam_object_or_null ) : 0;
   str->dy = cam_object_or_null ? COCO_SOBJECT_DY( cam_object_or_null ) : 0;
+  coco_tutorial_write_mission_objectives( str, sstate, 
+                                          cam_object_or_null, player_index );
   if (cam_object_or_null 
       && coco_sobject_subtype_p( COCO_SOBJECT_CL( cam_object_or_null ),
                                  COCO_COPTER_CLASS ))

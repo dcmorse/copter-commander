@@ -453,3 +453,38 @@ const char *coco_comp_names[] = {
   "Death Nugget"
 };
 const int coco_ncomp_names = ((sizeof( coco_comp_names ))/(sizeof( char * )));
+
+
+const char *coco_major_missions[] = {
+  "Ferry men to checkpoint charlie.",
+  "Enemy armor advancing on checkpoint charlie.  Take 'em out, quick!",
+  "Knock out the enemy gun to the west.",          
+  "Enemy Command Crawler sighted.  Take it out!",          
+};
+
+const char *coco_minor_missions[] = {
+  "Order men with `M'.",
+  "Let your men climb into your copter by landing on the ground in front of them.",
+  "Fly closer to Checkpoint Charlie.",
+  "Press SPACE to drop your infantry.",
+  "Wait for them to walk inside.",
+  "Good Work!.",
+  "Fly to the enemy."
+  "Use SHIFT for guns, `Z` for bombs.",
+  "Well Done!",
+  /* recycle fly to the enemy */
+  "Ouch!  Maybe send in men to take it out on foot...",
+  "Outstanding!"
+  "Holy Moley!  Dodge those missiles!",
+  "That armor's to strong for copters!  Order a Demolition `V'an instead.",
+  "When a van reaches that crawler, we'll see just how thick that armor is...",
+};
+
+struct coco_tutorial_info coco_tutorial_infos[COCO_TUTORIAL_INFO_SIZE] =
+{
+  { "boot-camp", coco_setup_boot_camp, 0, 0 },
+  { "first-blood", coco_setup_first_blood, 1, 0 },
+  { "hammer-blow", coco_setup_hammer_blow, 2, 0 },
+};
+
+

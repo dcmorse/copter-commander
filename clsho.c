@@ -24,7 +24,7 @@
 #include "coco.h"
 
 coco_bool
-coco_level_filename_p( char *filename )
+coco_level_filename_p( char *filename, coco_bool tutorial )
 {
   if (NULL==filename)
     return COCO_FALSE;
@@ -32,15 +32,17 @@ coco_level_filename_p( char *filename )
     {
       size_t len = strlen( filename );
       return (len >= (1+COCO_LEVEL_SUFFIX_LENGTH))
-        && (0==strcmp( "." COCO_LEVEL_SUFFIX, filename + len
-                       - (COCO_LEVEL_SUFFIX_LENGTH + 1) ));
+        && (0==strcmp( (tutorial
+                        ? ("." COCO_TUTORIAL_SUFFIX)
+                        : ("." COCO_LEVEL_SUFFIX)), 
+                       filename + len - (COCO_LEVEL_SUFFIX_LENGTH + 1) ));
     }
 }
 
 static coco_bool
 coco_find_first_level_file( char *filename, void *raw_data )
 {
-  if (coco_level_filename_p( filename ))
+  if (coco_level_filename_p( filename, COCO_FALSE ))
     {
       char **data = raw_data;
       assert( data );
@@ -75,7 +77,7 @@ coco_massage_level_file_name( char **level_file_name_in_out,
                            "Could not find any .ccl levels in %s\n",
                            coco_level_directory );
     }
-  if (coco_level_filename_p( *level_file_name_in_out ))
+  if (coco_level_filename_p( *level_file_name_in_out, !!coco_tutorial ))
     return COCO_TRUE;
   else
     {
@@ -176,7 +178,7 @@ coco_version_message( void )
 coco_bool
 coco_list_level_file_callback( char *filename, void *data )
 {
-  if (coco_level_filename_p( filename ))
+  if (coco_level_filename_p( filename, COCO_FALSE ))
     {
       int size = strlen( filename ) - COCO_LEVEL_SUFFIX_LENGTH;
       char *filename_suffixless = alloca( size );

@@ -51,6 +51,8 @@ static struct coco_message_votestate coco_old_votestate;
 
 /* ________________________________________________________________ */
 
+coco_bool coco_start_game_asap = COCO_FALSE;
+
 /* only referenceable if coco_have_game_message. */
 char coco_game_status_string[COCO_GAME_STATUS_SIZE];
 
@@ -2032,7 +2034,8 @@ coco_handle_client_message( struct coco_stream *str,
         }
 
         coco_call_message_notifications( COCO_MESSAGE_GAME, &message );
-
+        if (coco_start_game_asap)
+          coco_send_play_message_maybe();
         break;
       case COCO_MESSAGE_PLAY:
         coco_cookie( "GOT PLAY MSG\n" );

@@ -556,13 +556,13 @@ coco_map_level_text( char *filename, char **error_message )
    failure.  If the passed sstate_return is NULL, it means just check for
    syntax without actually building permanent sstate data structures.  */
 char *
-coco_load_level_definition( char *from, coco_sstate **sstate_return )
+coco_load_level_definition( char *from, coco_sstate *sstate_return )
 {
+  char *level_name;
   coco_bool syntax_check_only = sstate_return == NULL;
   int ident_size;
   char *macro_buf;
-  if (!syntax_check_only) *sstate_return = NULL;
-  from = coco_clear_whitespace( from );
+   from = coco_clear_whitespace( from );
   if (*from == '(')
     from++;
   else return coco_load_level_error( from,
@@ -591,13 +591,16 @@ coco_load_level_definition( char *from, coco_sstate **sstate_return )
       return msg;
     }
 
-  /* fast-forward past ignored level name */
   ident_size = coco_read_identifier_size( from );
   if (ident_size>0) 
-    from = coco_read_identifier( from, NULL );
+    {
+      level_name = syntax_check_only 
+        ? NULL : coco_malloc( ident_size * sizeof( char ) );
+      from = coco_read_identifier( from, level_name );
+    }
   else coco_load_level_error( from, "missing level name" );
   {
-    coco_sstate *sstate;
+    coco_sstate sstate;
     coco_lnum versions[2];
     coco_lnum lev_version, width;
     int i;
@@ -624,9 +627,8 @@ coco_load_level_definition( char *from, coco_sstate **sstate_return )
       return coco_string_malloc_copy( "Couldn't find level width" );
     from = coco_clear_whitespace( from );
 
-    if (syntax_check_only)
-      sstate = NULL;
-    else sstate = coco_init_sstate( coco_get_sstate(), width );
+    if (!syntax_check_only)
+      coco_init_sstate( &sstate, width );
 
     if ('(' != *from)
       return coco_load_level_error( from, "Missing open paren in units list" );
@@ -773,7 +775,7 @@ coco_load_level_definition( char *from, coco_sstate **sstate_return )
                   coco_sobject *sobject
                     = syntax_check_only 
                     ? NULL
-                    : coco_sstate_allocate_sobject( sstate );
+                    : coco_sstate_allocate_sobject( &sstate );
                   coco_sobject_cl *cla;
                   coco_sobject *(* fn)
                     (coco_sobject *, coco_sobject_cl *, coco_lnum *);
@@ -838,7 +840,7 @@ coco_load_level_definition( char *from, coco_sstate **sstate_return )
           coco_gnum max_pad_x = COCO_GNUM_MIN;
           int min_pad_idx = -1;
           int max_pad_idx = -1;
-          COCO_DO_SSTATE_OBJECTS( sobject, sstate, {
+          COCO_DO_SSTATE_OBJECTS( sobject, &sstate, {
             if (coco_sobject_subtype_p( COCO_SOBJECT_CL( sobject ), 
                                         COCO_LANDING_PAD_CLASS ))
               {
@@ -859,8 +861,8 @@ coco_load_level_definition( char *from, coco_sstate **sstate_return )
             return coco_string_malloc_copy( "Couldn't find any landing pads." );
           else
             {
-              sstate->teams[0].landing_pad_index = max_pad_idx;
-              sstate->teams[1].landing_pad_index = min_pad_idx;
+              sstate.teams[0].landing_pad_index = max_pad_idx;
+              sstate.teams[1].landing_pad_index = min_pad_idx;
             }
         }
       if (!syntax_check_only)

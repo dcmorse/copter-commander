@@ -160,7 +160,6 @@ GAME_C_FILES = language.c clsho.c simple-command-line.c graphics.c network.c \
 
 # Gnome GUI files
 # (note how they cleverly start with "gnome-", so I can easily pass extra flags.)
-# GNOME_C_FILES = gnome-window.c gnome-command-line.c gnome-kennel.c
 GNOME_C_FILES = gnome-window.c gnome-kennel.c gnome-ident.c
 
 # GLX GUI files
@@ -392,7 +391,7 @@ ${COCO_TAR_FILE}:
 	rm -f ${COCO_TAR_DIRECTORY}/configure-time.h ;\
 	mkdir ${COCO_TAR_DIRECTORY}/levels ${COCO_TAR_DIRECTORY}/sounds ;\
 	cp sounds/*.wav ${COCO_TAR_DIRECTORY}/sounds ;\
-	cp levels/*.ccl ${COCO_TAR_DIRECTORY}/levels ;\
+	cp levels/*.ccl levels/*.cct ${COCO_TAR_DIRECTORY}/levels ;\
 	set +e ;\
 	find ${COCO_TAR_DIRECTORY} -name \*~ -print | xargs rm -f ;\
 	find ${COCO_TAR_DIRECTORY} -name CVS -print | xargs rm -rf ;\
@@ -427,6 +426,7 @@ install:
 	install glx-copter-commander ${COCO_BIN_DIRECTORY} ;\
 	install -m u=rw,go=r keybindings.txt manual.txt copyright ${COCO_DOC_DIRECTORY} ;\
 	install -m u=rw,go=r levels/*.ccl ${COCO_LEVEL_DIRECTORY} ;\
+	install -m u=rw,go=r levels/*.cct ${COCO_LEVEL_DIRECTORY} ;\
 	install -m u=rw,go=r sounds/*.wav ${COCO_SOUND_DIRECTORY}
 
 COCO_RPM_RELEASE=1

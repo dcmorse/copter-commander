@@ -1,5 +1,8 @@
 2001-05-10  David Morse  <dm@bomberlan.net>
 
+	* clsho.c (coco_level_filename_p): support both .ccl and .cct:
+	copter commander tutorial.
+
 	* gnome-window.c (coco_join_game_interactively): created,
 	preparing the way for a progress dialog.  Joining code cleaned up.
 

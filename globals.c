@@ -29,6 +29,7 @@ FILE *coco_server_log;
 
 char *coco_level_text = NULL;
 
+const char *coco_local_server = "localhost";
 char *coco_server = "localhost";
 coco_bool coco_server_specified_p = COCO_FALSE;
 coco_bool coco_server_malloced_p = COCO_FALSE;

@@ -41,8 +41,12 @@
 
 /* Fwd defs________________________________________________ */
 
-coco_bool coco_join_game_interactively( char *server, int port, int ntry,
-                                        GtkWindow *parent_window );
+void coco_make_server_process( coco_bool tutorial, int left_comps, 
+                               int right_comps, char *full_level_file_name,
+                               int iport );
+coco_bool coco_join_game_interactively( const char *server, int port, int ntry,
+                                        GtkWindow *parent_window, 
+                                        coco_bool join_asap );
 
 void coco_load_font( struct coco_font *font );
 GtkWidget * coco_menubar_new( GtkWidget *window1 );
@@ -1486,7 +1490,8 @@ coco_use_join_dialog( GtkWidget *parent_window )
       coco_port = coco_port_editor_get_value( port_input );
 
       if (coco_join_game_interactively( coco_server, coco_port, 1, 
-                                        GTK_WINDOW( dialog ) ))
+                                        GTK_WINDOW( dialog ),
+                                        COCO_FALSE ))
         {
           gnome_dialog_close( GNOME_DIALOG( dialog ) );
           gtk_widget_show( coco_chatroom_dialog_new( GTK_WINDOW( coco_root_window ) ) );
@@ -1564,14 +1569,14 @@ coco_add_menuitem_for_ccl_strings( char *filename, void *raw_closure )
 {
   struct coco_built_in_level_menu_closure *closure = raw_closure;
   size_t len = strlen( filename );
-  if (coco_level_filename_p( filename ))
+  if (coco_level_filename_p( filename, COCO_FALSE ))
     {
       int i;
       char ch;
       char *after_slash;
       after_slash = filename;
       for (i=0; (ch = filename[i]) != '\0'; i++)
-        if (ch == COCO_DIRECTORY_SEPERAOTOR_CHAR)
+        if (ch == COCO_DIRECTORY_SEPARATOR_CHAR)
           after_slash = filename + i + 1;
       {
         GtkWidget *menuitem;
@@ -1622,37 +1627,6 @@ coco_gtk_set_wait_cursor( GtkWidget *window, coco_bool wait )
   gdk_window_set_cursor
     ( gtk_widget_get_toplevel( window )->window, wait ? cursor : NULL ) ;
 }
-
-
-struct coco_tutorial_info {
-  char *name;
-  void (* setup)(coco_sstate *);
-};
-
-static void
-coco_setup_boot_camp( coco_sstate *sstate )
-{
-}
-
-static void
-coco_setup_first_blood( coco_sstate *sstate )
-{
-}
-
-static void
-coco_setup_hammer_blow( coco_sstate *sstate )
-{
-}
-
-
-#define COCO_TUTORIAL_INFO_SIZE 3
-
-static struct coco_tutorial_info coco_tutorial_infos[COCO_TUTORIAL_INFO_SIZE] =
-{
-  { "boot-camp", coco_setup_boot_camp },
-  { "first-blood", coco_setup_first_blood },
-  { "hammer-blow", coco_setup_hammer_blow },
-};
 
 
 GtkWidget *
@@ -1722,7 +1696,23 @@ coco_use_tutorial_dialog( GtkWidget *parent_window )
   button_idx = gnome_dialog_run( GNOME_DIALOG( dialog ) );
   coco_cookie( "button_idx = %d\n", button_idx );
   if (0==button_idx) /* OK button pressed */
-    coco_cookie( "radio = %d\n", coco_tutorial_dialog_get_selected( dialog ) );
+    {
+      int radio_idx = coco_tutorial_dialog_get_selected( dialog );
+      char *pathname, filename[200];
+      assert( radio_idx >= 0 );
+      assert( radio_idx < COCO_TUTORIAL_INFO_SIZE );
+      g_snprintf( filename, 200, "%s.%s", coco_tutorial_infos[radio_idx].name, 
+                  COCO_TUTORIAL_SUFFIX );
+      pathname = g_concat_dir_and_file( coco_level_directory, filename );
+      coco_make_server_process( COCO_TRUE, 
+                                coco_tutorial_infos[radio_idx].left_comps,
+                                coco_tutorial_infos[radio_idx].right_comps,
+                                pathname, coco_port );
+      g_free( pathname );
+      coco_join_game_interactively( coco_local_server, coco_port, 
+                                    COCO_LOCALHOST_JOIN_TRIES,
+                                    GTK_WINDOW( dialog ), COCO_TRUE );
+    }
   if (GNOME_IS_DIALOG( dialog )) /* maybe its already dead */
     gnome_dialog_close( GNOME_DIALOG( dialog ) );
 }
@@ -1730,6 +1720,67 @@ coco_use_tutorial_dialog( GtkWidget *parent_window )
 
 
 #ifdef COCO_IGNORE
+
+/*
+
+On 10 May 2001 08:47:00 -0700, Dave Morse wrote:
+> 
+> 
+> > ----------
+> > From:       Dave Morse[SMTP:DM-GTK@BOMBERLAN.NET]
+> > Sent:       Thursday, May 10, 2001 9:47:00 AM
+> > To:         gtk-app-devel-list@gnome.org
+> > Subject:    dialog with timeout
+> > Auto forwarded by a Rule
+> > 
+> _________________________________________________
+> |Connecting to 12.34.56.78:9012                 |
+> |_______________________________________________|
+> |                                               |
+> |                                               |
+> | [==============            (try 2/10)      ]  |  <-- progress bar
+> |                                               |
+> |                                               |
+> |                                       CANCEL  |
+> |_______________________________________________|
+> 
+> 
+> I'm trying to create a modal dialog with a timeout.  The interface is
+> connecting to a remote service.  This may fail up to ten times, each try
+> should be seperated by 1 second of "idleness", where idleness means
+> checking to see if the user has clicked the Cancel button, etc.  
+> 
+> How to do it?
+
+
+From: Lance Capser <lmcapser@bigfoot.com>
+Subject: Re: dialog with timeout
+To: dm-gtk@bomberlan.net
+Cc: gtk-app-devel-list@gnome.org
+Date: 10 May 2001 13:04:39 -0600
+X-Mailer: Evolution/0.10 (Preview Release)
+In-Reply-To: <15098.47092.929007.314994@ork.bomberlan.net>
+
+I'll take a crack at this one :)
+
+First, create a standard dialog box with the cancel button set to close
+the dialog.  Make the dialog modal and call gtk_window_set_transients to
+force the dialog to stay on top of the parent window.  For the retries
+and the progress bar, call gtk_timeout_add() and set it to call a
+"retry" function every second.  In the retry func, try to connect to the
+remote service and update the progress bar (you will need to do
+while(gtk_events_pending()) {gtk_main_iteration()} to update the
+progress bar on the screen while still in the timeout func).  If you
+successfully connect, close the dialog and return TRUE to disable the
+timout.  Otherwise, leave the dialog on screen and return FALSE - this
+will leave the timeout in place to call you back again in another
+second.
+
+Simple :)
+
+
+*/
+
 /* parent_window may be NULL */
 GtkWidget *
 coco_join_progress_dialog_new( GtkWindow *parent_window, char *host, int port,
@@ -1759,13 +1810,15 @@ coco_join_progress_dialog_new( GtkWindow *parent_window, char *host, int port,
 
 /* returns success */
 coco_bool
-coco_join_game_interactively( char *server, int port, int ntry,
-                              GtkWindow *parent_window /* NON NULL */)
+coco_join_game_interactively( const char *server, int port, int ntry,
+                              GtkWindow *parent_window /* NON NULL */,
+                              coco_bool join_asap)
 {
   enum coco_network_error cerror;
   int uerror = 0;
   coco_bool have_error = COCO_TRUE;
   int i;
+  coco_start_game_asap = join_asap;
   for (i=0; i<ntry; i++)
     {
       if (coco_client_connect_to_server( &cerror, &uerror ))
@@ -1823,10 +1876,17 @@ coco_make_server_process( coco_bool tutorial, int left_comps, int right_comps,
       sprintf( port, "%d", iport );
       sprintf( lcomps, "%d", left_comps );
       sprintf( rcomps, "%d", right_comps );
-      execlp( coco_run_name, coco_run_name, "server", "--quiet",
-              "--level", full_level_file_name, "--port", port,
-              "--left-comps", lcomps, 
-              "--right-comps", rcomps , NULL );
+      if (tutorial)
+        execlp( coco_run_name, coco_run_name, "server", "--quiet",
+                "--level", full_level_file_name, "--port", port,
+                "--left-comps", lcomps, 
+                "--right-comps", rcomps , "--tutorial", NULL );
+      else
+        execlp( coco_run_name, coco_run_name, "server", "--quiet",
+                "--level", full_level_file_name, "--port", port,
+                "--left-comps", lcomps, 
+                "--right-comps", rcomps , NULL );
+
     }
   else if (-1==pid)
     coco_fatal_printf( COCO_ERROR_OUT_OF_MEMORY,
@@ -2111,8 +2171,10 @@ coco_use_new_game_dialog( GtkWidget *parent_window )
 
           coco_make_server_process( COCO_FALSE, lcompsi, rcompsi, level_file,
                                     coco_port );
-          joined = coco_join_game_interactively( coco_server, coco_port, 10,
-                                                 GTK_WINDOW( dialog ) );
+          joined = coco_join_game_interactively( coco_local_server, coco_port, 
+                                                 COCO_LOCALHOST_JOIN_TRIES,
+                                                 GTK_WINDOW( dialog ),
+                                                 COCO_FALSE );
           g_free( level_file );
           if (joined)
             {

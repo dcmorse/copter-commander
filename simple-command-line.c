@@ -71,13 +71,48 @@ int coco_process_shared_arguments( int idx, int argc, char **argv )
   return idx;
 }
 
+/* coco_mallocs return value */
+char *
+coco_sloppy_filename_to_symname( const char *levelname )
+{
+  int i;
+  int len = strlen( levelname );
+  int end = len;
+  int start = 0;
+  int cpylen;
+  char *cpy;
+
+  for (i=len-1; i>=0; i--)
+    if (levelname[i] == '.')
+      {
+        end = i-1;
+        break;
+      }
+  if (i<0) 
+    i = len-1;
+  else 
+    i = i; /* i NOT reset */
+  for (; i>=0; i--)
+    if (levelname[i] == COCO_DIRECTORY_SEPARATOR_CHAR)
+      {
+        start = i+1;
+        break;
+      }
+  cpylen = end - start + 1;
+  cpy = coco_malloc( cpylen );
+  memcpy( cpy, levelname + start, cpylen );
+  return cpy;
+}
+
 unsigned long coco_command_line_left_comps = 0;
 unsigned long coco_command_line_right_comps = 0;
 
 /* Returns true if the main program should run */
-coco_bool coco_process_server_arguments( int argc, char **argv )
+coco_bool 
+coco_process_server_arguments( int argc, char **argv )
 {
   int j, i=0;
+  coco_bool tutorial = COCO_FALSE;
   coco_bool level_file_name_malloced_p = COCO_FALSE;
   char *log_file_name = NULL;
   char *level_file_name = NULL;
@@ -142,13 +177,31 @@ coco_bool coco_process_server_arguments( int argc, char **argv )
       else if (0==strncmp( "--level=", argv[i], 10 ))
         level_file_name = argv[i] + 10;
       else if (0==strcmp( "--tutorial", argv[i] ))
-        coco_tutorial = COCO_TRUE;
+        tutorial = COCO_TRUE;
       else coco_fatal_printf( COCO_ERROR_BAD_COMMAND_LINE,
                                "Unknown option \"%s\".\n",
                                argv[i] );
       i++;
     }
   coco_set_log_file( log_file_name );
+  if (tutorial)
+    {
+      char *symname = coco_sloppy_filename_to_symname( level_file_name );
+      int i;
+      for (i=0; i<COCO_TUTORIAL_INFO_SIZE; i++)
+        if (0==strcmp( symname, coco_tutorial_infos[i].name ))
+          {
+            coco_tutorial = coco_tutorial_infos + i;
+            coco_free( symname );
+            symname = NULL;
+            break;
+          }
+        else coco_fatal_printf( COCO_ERROR_LEVEL_FILE_NOT_FOUND,
+                                "\"%s\" can't be found in the "
+                                "tutorial_info table.\n",
+                                symname );
+    }
+
   if (!coco_massage_level_file_name( &level_file_name,
                                      &level_file_name_malloced_p ))
     coco_fatal_printf( COCO_ERROR_BAD_COMMAND_LINE,

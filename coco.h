@@ -7,7 +7,7 @@
  * the Free Software Foundation; either version 2 of the License, or
  * (at your option) any later version.
  * 
-j * This program is distributed in the hope that it will be useful,
+ * This program is distributed in the hope that it will be useful,
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
  * GNU General Public License for more details.
@@ -36,7 +36,9 @@ j * This program is distributed in the hope that it will be useful,
 /* The file name extention of level files. */
 #define COCO_LEVEL_SUFFIX "ccl"
 #define COCO_LEVEL_SUFFIX_LENGTH 3
-
+/* The file name extension of tutorial files */
+#define COCO_TUTORIAL_SUFFIX "cct"
+/* use COCO_LEVEL_SUFFIX_LENGTH for length */
 
 /* general types */
 
@@ -250,7 +252,7 @@ void coco_time_cookie( char *label );
 
 #define COCO_PI 3.14159265358979323846
 
-#define COCO_DIRECTORY_SEPERAOTOR_CHAR '/'
+#define COCO_DIRECTORY_SEPARATOR_CHAR '/'
 
 int coco_map_directory( const char *directory, 
                         coco_bool (* fn)( char *, void * ),
@@ -293,7 +295,7 @@ void coco_set_nickname( char *value );
 
 void coco_set_log_file( char *log_file_name );
 
-coco_bool coco_level_filename_p( char *filename );
+coco_bool coco_level_filename_p( char *filename, coco_bool tutorial );
 
 coco_bool coco_massage_level_file_name( char **level_file_name_in_out, 
                                         coco_bool *
@@ -663,6 +665,10 @@ struct coco_cstate_serial_header {
   coco_i32 board_w;
   coco_i32 dx;
   coco_i32 dy;
+  unsigned char major_mission; /* 255 = none */
+  unsigned char minor_mission;  /* 255 = none */
+  coco_bool angle_on;
+  coco_angle angle; /* only use if angle_on */
   struct coco_dashboard_info dashinfo;
 };
 
@@ -1038,6 +1044,17 @@ extern coco_gnum coco_game_fx_radius[COCO_GAME_SOUNDS_SIZE];
 extern const char *coco_comp_names[];
 extern const int coco_ncomp_names;
 
+struct coco_tutorial_info {
+  char *name;
+  void (* setup)(coco_sstate *);
+  int left_comps;
+  int right_comps;
+};
+
+#define COCO_TUTORIAL_INFO_SIZE 3
+
+extern struct coco_tutorial_info coco_tutorial_infos[COCO_TUTORIAL_INFO_SIZE];
+
 /* sound.c -- a virtual source file supported by (at least) mute-sound.c
    and openal-sound.c */
 /* Api split into a seperate file to promote porting. */
@@ -1055,6 +1072,8 @@ extern coco_gnum coco_real_window_w;
 extern coco_gnum coco_real_window_h;
 
 extern char coco_game_status_string[COCO_GAME_STATUS_SIZE];
+
+extern coco_bool coco_start_game_asap;
 
 typedef int coco_clientstate;
 #define COCO_CLIENT_TABULA_RASA 0
@@ -1283,8 +1302,9 @@ void coco_send_play_message_maybe( void );
 
 /* server.c */
 
-extern coco_bool coco_tutorial;
+extern struct coco_tutorial_info *coco_tutorial;
 
+#define COCO_LOCALHOST_JOIN_TRIES 10
 #define COCO_COMP_FAVORITE_COPTER_CLASS COCO_COBRA_CLASS
 #define COCO_GROUND_UNIT_WARP_IN_X 80
 #define COCO_GROUND_UNIT_WARP_OUT_X 600
@@ -1391,7 +1411,8 @@ struct coco_nomination_status {
 /* Holds the state of the game on the server */
 struct coco_sstate_struct {
   coco_bool game_in_progress;
-  coco_sobject *sobjects; /* read with COCO_SSTATE_OBJECT_REF */
+  char *level_name;       /* malloc'ed (never freed) */
+  coco_sobject *sobjects; /* read with COCO_SSTATE_OBJECT_REF, realloced */
   int sobject_fill_index; /* all entries before this are used */
   int sobject_size;       /* number of elts in sobjects */
   coco_u32 time;
@@ -1428,6 +1449,9 @@ coco_sstate *coco_get_sstate( void );
 coco_gnum coco_get_board_w( void );
 void coco_server_exec( void );
 
+void coco_setup_boot_camp( coco_sstate *sstate );
+void coco_setup_first_blood( coco_sstate *sstate );
+void coco_setup_hammer_blow( coco_sstate *sstate );
 
 coco_sobject *coco_sstate_allocate_sobject( coco_sstate *sstate );
 
@@ -1454,7 +1478,7 @@ coco_get_collision_recti( coco_sobject *sobject, coco_gnum *x0, coco_gnum *x1,
                           coco_gnum *y0, coco_gnum *y1 );
 
 
-coco_sstate *
+void
 coco_init_sstate( coco_sstate *sstate, coco_gnum width );
 
 
@@ -1523,13 +1547,14 @@ void coco_sobject_weapon_hardpoint_coords( coco_sobject *sobject,
 /* ccl.h */
 
 char *coco_map_level_text( char *filename, char **error_message );
-char *coco_load_level_definition( char *from, coco_sstate **sstate_return );
+char *coco_load_level_definition( char *from, coco_sstate *sstate_return );
 
 
 /* globals.c : parsed command line switches */
 extern int coco_command_line_inhibit_double_buffer;
 extern int coco_port;
 extern FILE *coco_server_log; /* write using coco_log_printf() */
+extern const char *coco_local_server; /* = "localhost", used when spawning thru gui */
 extern char *coco_server;
 extern coco_bool coco_server_specified_p;
 extern coco_bool coco_server_malloced_p;

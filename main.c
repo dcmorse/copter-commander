@@ -50,7 +50,9 @@ coco_run_sanity_checks( void )
                        test );
 }
 
-int main(int argc, char **argv)
+
+int 
+main(int argc, char **argv)
 {
   int server;
 
@@ -62,20 +64,12 @@ int main(int argc, char **argv)
   if (server)
     {
       if (coco_process_server_arguments( argc, argv ))
-        {
-          coco_server_exec();
-        }
+        coco_server_exec();
     }
   else
     {
       if (coco_process_client_arguments( argc, argv ))
-        {
-          coco_cookie( "port %d, host %s, buffer %s\n", 
-                       coco_port, coco_server, 
-                       coco_command_line_inhibit_double_buffer
-                       ? "single" : "double" );
-          coco_client_exec();
-        }
+        coco_client_exec();
     }
   return 0;
 }
