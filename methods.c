@@ -938,11 +938,6 @@ coco_cloud_update_state( coco_sobject *sobject,
         COCO_SOBJECT_DY( sobject ) >>= 1;
       }
 
-      /* check to make sure we don't drift too low.  Don't have to worry
-      about top, left, or right, because clip_to_board is on.  */
-      if ((COCO_SOBJECT_Y( sobject ) <= COCO_CLOUD_FLOOR)
-          && (COCO_SOBJECT_DY( sobject ) < 0))
-        COCO_SOBJECT_DY( sobject ) = 0;
         
         
       switch (COCO_SOBJECT_DX( sobject )) {
@@ -958,6 +953,11 @@ coco_cloud_update_state( coco_sobject *sobject,
         COCO_SOBJECT_DX( sobject ) >>= 1;
       }
     }
+  /* check to make sure we don't drift too low.  Don't have to worry
+     about top, left, or right, because clip_to_board is on.  */
+  if ((COCO_SOBJECT_Y( sobject ) <= COCO_CLOUD_FLOOR)
+      && (COCO_SOBJECT_DY( sobject ) < 0))
+    COCO_SOBJECT_DY( sobject ) = 0;
   /* call-next-method */
   return coco_sobject_update_state( sobject, cl->super, sstate );
 }
