@@ -944,7 +944,7 @@ coco_client_disconnect( void )
   coco_server_addr_in_nbo = 0;
   if (coco_get_client_udp_fd() != -1)
     {
-      coco_close_fd( coco_get_client_udp_fd() );
+      coco_close_fd( coco_get_client_udp_fd(), COCO_FALSE );
       coco_set_client_udp_fd( -1 );
     }
   {
@@ -953,7 +953,7 @@ coco_client_disconnect( void )
       {
         if (coco_server_stream.fd != -1)
           {
-            coco_close_fd( coco_server_stream.fd );
+            coco_close_fd( coco_server_stream.fd, COCO_TRUE );
             coco_server_stream.fd = -1;
           }
         coco_server_stream.buffer_in_use = 0;
@@ -1847,14 +1847,9 @@ coco_set_client_udp_fd( int value )
 void
 coco_client_shutdown( coco_bool exit_too )
 {
-  int i;
-  int fds[2];
   coco_exit_sound_system();
-  fds[0] = coco_get_client_udp_fd();
-  fds[1] = coco_get_server_message_file_descriptor();
-  for (i=0; i<2; i++)
-    if (fds[i] != -1)
-      coco_close_fd( fds[i] );
+  coco_close_fd( coco_get_client_udp_fd(), COCO_FALSE );
+  coco_close_fd( coco_get_server_message_file_descriptor(), COCO_TRUE );
   coco_kill_window();
   coco_cookie( "Graceful client shutdown complete.\n" );
   if (exit_too)

@@ -400,7 +400,7 @@ coco_handle_connection_request( int listenfd,
           /* intentionally ignore return value: */
           coco_write_message( &coco_shut_out_stream, 
                               (coco_msg_ptr) &coco_server_full_message );
-          coco_close_fd( connfd );
+          coco_close_fd( connfd, COCO_TRUE );
           return;
         }
       if ((!coco_write_message( str, (union coco_message *) &coco_my_version ))
@@ -449,7 +449,7 @@ coco_handle_player_quit( int player_index )
         }
     }
   player->in_use = COCO_FALSE;
-  coco_close_fd( coco_streams[player_index].fd );
+  coco_close_fd( coco_streams[player_index].fd, COCO_TRUE );
 
   coco_reset_player_globals( player_index );
 
@@ -1703,13 +1703,13 @@ void
 coco_server_shutdown( int listenfd, int out_udpfd, int in_udpfd )
 {
   int i;
-  if (listenfd != -1)  coco_close_fd( listenfd );
-  if (out_udpfd != -1) coco_close_fd( out_udpfd );
+  if (listenfd != -1)  coco_close_fd( listenfd, COCO_FALSE );
+  if (out_udpfd != -1) coco_close_fd( out_udpfd, COCO_FALSE );
   if ((out_udpfd != in_udpfd) && (in_udpfd != -1))
-    coco_close_fd( in_udpfd );
+    coco_close_fd( in_udpfd, COCO_FALSE );
   for (i=0; i<COCO_MAX_PLAYERS; i++)
     if (coco_players[i].in_use)
-      coco_close_fd( coco_streams[i].fd );
+      coco_close_fd( coco_streams[i].fd, COCO_TRUE );
   coco_log_printf( "Graceful server shutdown complete.\n" );
   exit( 0 );
 }

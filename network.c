@@ -55,15 +55,21 @@ coco_get_protocol( char *name )
 }
 
 
+/* shutdown_too should be true if its a connected (i.e. tcp) stream */
 void 
-coco_close_fd( int fd )
+coco_close_fd( int fd, coco_bool shutdown_too )
 {
-  if ((shutdown( fd, SHUT_RDWR) == -1))
-    coco_warn_printf( "shutdown failed with errno=%d: %s\n", errno, 
-                       coco_errno_string( errno ) );
-  if (-1==close( fd ))
-    coco_warn_printf( "close failed with errno=%d: %s\n", errno, 
-                       coco_errno_string( errno ) );
+  if (fd >= 0)
+    {
+      if (shutdown_too && (shutdown( fd, SHUT_RDWR) == -1))
+        coco_warn_printf( "shutdown failed with errno=%d: %s\n", errno, 
+                          coco_errno_string( errno ) );
+      if (-1==close( fd ))
+        coco_warn_printf( "close failed with errno=%d: %s\n", errno, 
+                          coco_errno_string( errno ) );
+    }
+  else coco_warn_printf( "Attempt to coco_close_fd( %d, %s )\n",
+                         fd, shutdown_too ? "COCO_TRUE" : "COCO_FALSE" );
 }
 
 /* returns the old blockingness, NB we only honor blockingness of messages

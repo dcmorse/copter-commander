@@ -770,7 +770,7 @@ struct protoent *coco_get_protocol( char *name );
 coco_bool coco_set_fd_blocking( int fd, coco_bool block );
 coco_bool coco_get_fd_blocking( int fd );
 
-void coco_close_fd( int fd );
+void coco_close_fd( int fd, coco_bool shutdown_too );
 
 int coco_make_udp_fd( unsigned short *port_return,
                       enum coco_network_error *err_return, 

@@ -36,7 +36,7 @@
 # make srpm                 - make RPM snapshot and place in ./dist
 #
 # If your name is David Morse, you probably want to compile with
-# make CC=/usr/local/bin/gcc COCO_LEVEL_DIRECTORY=/home/dm/coco/levels COCO_SOUND_DIRECTORY=/home/dm/coco/sounds copter-commander
+# make COCO_OPTIMIZATION_FLAGS=-"g -DCOCO_DEBUG" CC=/usr/local/bin/gcc COCO_LEVEL_DIRECTORY=/home/dm/coco/levels COCO_SOUND_DIRECTORY=/home/dm/coco/sounds copter-commander
 # or if you're on cramwurm
 # make COCO_SOUND=mute COCO_GL_INCLUDE_DIRECTORY=/usr/local/include COCO_GL_LIB_DIRECTORY=/usr/local/lib COCO_LEVEL_DIRECTORY=/home/dm/coco/levels COCO_SOUND_DIRECTORY=/home/dm/coco/sounds glx-copter-commander
 
