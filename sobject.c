@@ -1331,7 +1331,7 @@ coco_sobject_cl coco_sobject_classes[] = {
     COCO_NIGH_INVULNERABLE,             /* health_max */
     COCO_NIGH_INVULNERABLE,             /* damage */
     COCO_FALSE,                         /* clip_to_board */
-    COCO_MAKE_BLIP_TRIPLET( COCO_BLIP_FRY_BUILDING, COCO_BLIP_EMY_BUILDING, COCO_BLIP_NEUTRAL_BUILDING ), /* default_blip_color_index */
+    COCO_MAKE_BLIP_TRIPLET( COCO_BLIP_LANDING_PAD, COCO_BLIP_LANDING_PAD, COCO_BLIP_LANDING_PAD ), /* default_blip_color_index */
     COCO_LANDING_PAD_RASTER_W,          /* canonical_w */
     1 /* placeholder */,                /* canonical_h */
     -1,                                 /* z */

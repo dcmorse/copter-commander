@@ -599,7 +599,7 @@
    ("cobject_guess_nationality_fn" "coco_neutral_guess_nationality")
    ("canonical_w"  "COCO_LANDING_PAD_RASTER_W")
    ("default_blip_color_index" 
-       "COCO_MAKE_BLIP_TRIPLET( COCO_BLIP_FRY_BUILDING, COCO_BLIP_EMY_BUILDING, COCO_BLIP_NEUTRAL_BUILDING )"))
+       "COCO_MAKE_BLIP_TRIPLET( COCO_BLIP_LANDING_PAD, COCO_BLIP_LANDING_PAD, COCO_BLIP_LANDING_PAD )"))
   :init-by-list-fn :automatic)
 
 (c-define-class "headquarters" ("building")

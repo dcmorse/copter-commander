@@ -24,9 +24,9 @@ if [ "2" != $sizeof_short ]
   else 
     echo typedef short coco_i16\;   
     echo typedef unsigned short coco_u16\;
-    echo \#define COCO_I16_MAX SHORT_MAX
-    echo \#define COCO_I16_MIN SHORT_MIN
-    echo \#define COCO_U16_MAX USHORT_MAX
+    echo \#define COCO_I16_MAX SHRT_MAX
+    echo \#define COCO_I16_MIN SHRT_MIN
+    echo \#define COCO_U16_MAX USHRT_MAX
     echo
     exit 0
 fi ;

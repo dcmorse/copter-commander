@@ -71,6 +71,7 @@ typedef coco_i16 coco_cnum;         /* client screen-origin relative */
 #define COCO_CNUM_HTON( cnum ) (COCO_I16_HTON( cnum ))
 #define COCO_CNUM_NTOH( cnum ) (COCO_I16_NTOH( cnum ))
 typedef coco_i16 coco_rxnum; /* x pixels on low-res radar screen. */
+#define COCO_RXNUM_MAX COCO_I16_MAX
 #define COCO_RXNUM_HTON( rxnum ) (COCO_I16_HTON( rxnum ))
 #define COCO_RXNUM_NTOH( rynum ) (COCO_I16_NTOH( rynum ))
 typedef signed char coco_rynum; /* y pixels on low-res radar screen. */
@@ -397,7 +398,8 @@ extern const coco_color coco_blip_to_color[];
 #define COCO_BLIP_FRY_BULLET 12
 #define COCO_BLIP_FRY_INFANTRY 15
 #define COCO_BLIP_FRY_BALLOON 16
-/* next entry is 17 */
+#define COCO_BLIP_LANDING_PAD 17
+/* next entry is 18 */
 
 typedef coco_u32 coco_blip_triplet;
 #define COCO_BLIP_TRIPLET_FRY( citriplet ) (255 & ((citriplet)>>16))
@@ -1423,6 +1425,7 @@ struct coco_comp {
   char name[COCO_PLAYER_NAME_MAX];
   coco_gnum cruise_altitude; /* altitude to seek when idle */
   coco_gnum overgun;         /* small y offset gunning emy copter */
+  coco_bool refuelling;
 };
 
 struct coco_comp coco_comps[COCO_MAX_COMPS];

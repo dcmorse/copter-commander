@@ -515,6 +515,7 @@ coco_init_comps( void )
       coco_comps[i].index = i;
       coco_comps[i].cruise_altitude = COCO_VIEWABLE_H;
       coco_comps[i].overgun = 5;
+      coco_comps[i].refuelling = COCO_FALSE;
     }
 }
 

@@ -411,4 +411,5 @@ const coco_color coco_blip_to_color[/* <= 256 */] = {
   COCO_COLOR_KHAKI,
   COCO_COLOR_GREY_C,      
   COCO_COLOR_KHAKI,
+  COCO_COLOR_GREY_C,      
 };

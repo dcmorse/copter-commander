@@ -1,3 +1,9 @@
+2001-04-03  David Morse  <dm@bomberlan.net>
+
+	* comp.c (coco_comp_think): Add refuel and mad-charge routines.
+
+	* configure-sizeof-short.sh (sizeof_short): un-misspell SHRT_MAX
+
 2001-03-31  David Morse  <dm@bomberlan.net>
 
 	* server.c (coco_format_sstate_to_buffer): Blip at center of mass,
