@@ -3,6 +3,7 @@
 	* Makefile (${COCO_TAR_FILE}): add oo-compiler.fas and
 	oo-compiler.lib to dependancies, so that they're never
 	forgotten (like they were in 1.7).
+	(${COCO_TAR_FILE}): Ooops, forgot object-time.h/.lisp.
 
 	* INSTALL: [ #510323 ] Sprinkle pleas for help
 
