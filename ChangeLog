@@ -1,3 +1,8 @@
+2001-05-10  David Morse  <dm@bomberlan.net>
+
+	* gnome-window.c (coco_join_game_interactively): created,
+	preparing the way for a progress dialog.  Joining code cleaned up.
+
 2001-04-06  David Morse  <dm@bomberlan.net>
 
 	* comp.c (coco_comp_think): goto_area added.

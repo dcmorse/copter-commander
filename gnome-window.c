@@ -41,6 +41,9 @@
 
 /* Fwd defs________________________________________________ */
 
+coco_bool coco_join_game_interactively( char *server, int port, int ntry,
+                                        GtkWindow *parent_window );
+
 void coco_load_font( struct coco_font *font );
 GtkWidget * coco_menubar_new( GtkWidget *window1 );
 
@@ -1448,8 +1451,6 @@ coco_use_join_dialog( GtkWidget *parent_window )
   button_index = gnome_dialog_run( GNOME_DIALOG( dialog ) );
   if (0==button_index)
     {
-      enum coco_network_error cerror;
-      int uerror = 0;
       GtkWidget *host_input_gtk 
         = gnome_entry_gtk_entry( GNOME_ENTRY( host_input ) );
       char *text = gtk_entry_get_text( GTK_ENTRY( host_input_gtk ) );
@@ -1484,24 +1485,14 @@ coco_use_join_dialog( GtkWidget *parent_window )
 
       coco_port = coco_port_editor_get_value( port_input );
 
-      if (coco_client_connect_to_server( &cerror, &uerror ))
+      if (coco_join_game_interactively( coco_server, coco_port, 1, 
+                                        GTK_WINDOW( dialog ) ))
         {
           gnome_dialog_close( GNOME_DIALOG( dialog ) );
           gtk_widget_show( coco_chatroom_dialog_new( GTK_WINDOW( coco_root_window ) ) );
           return COCO_TRUE;
         }
-      else
-        {
-          char *errorstr 
-            = coco_user_level_network_error_message( cerror, uerror, 
-                                                     COCO_FALSE );
-          gnome_dialog_run_and_close
-            (GNOME_DIALOG
-             ( gnome_error_dialog_parented( errorstr, 
-                                            GTK_WINDOW( dialog ) )));
-          coco_free( errorstr );
-          goto RETRY;
-        }
+      else goto RETRY;
     }
   else /* its 1 (CANCEL) or -1 (KILL), or something suspicious */
     {
@@ -1736,6 +1727,113 @@ coco_use_tutorial_dialog( GtkWidget *parent_window )
     gnome_dialog_close( GNOME_DIALOG( dialog ) );
 }
 
+
+
+#ifdef COCO_IGNORE
+/* parent_window may be NULL */
+GtkWidget *
+coco_join_progress_dialog_new( GtkWindow *parent_window, char *host, int port,
+                               GtkWidget **progress_return )
+{
+  int i;
+  char str[100];
+  GtkBox *vbox;
+  GtkWidget *dialog;
+  GtkWidget *progress;
+
+  g_snprintf( str, sizeof( str ), "connecting to %s:%d", host, port );
+  str[sizeof( str )-1] = '\0';
+  dialog = gnome_dialog_new( str, GNOME_STOCK_BUTTON_CANCEL, NULL );
+  vbox = GTK_BOX( GNOME_DIALOG( dialog )->vbox );
+  if (parent_window)
+    gnome_dialog_set_parent( GNOME_DIALOG( dialog ), parent_window );
+  progress = gtk_progress_bar_new();
+  gtk_progress_bar_set_orientation( GTK_PROGRESS_BAR( progress ),
+                                    GTK_PROGRESS_LEFT_TO_RIGHT );
+  gtk_box_pack_start( vbox, progress, TRUE, TRUE, 0 );
+  gtk_widget_show( progress );
+  if (progress_return) *progress_return = progress;
+  return dialog;
+}
+#endif /* COCO_IGNORE */
+
+/* returns success */
+coco_bool
+coco_join_game_interactively( char *server, int port, int ntry,
+                              GtkWindow *parent_window /* NON NULL */)
+{
+  enum coco_network_error cerror;
+  int uerror = 0;
+  coco_bool have_error = COCO_TRUE;
+  int i;
+  for (i=0; i<ntry; i++)
+    {
+      if (coco_client_connect_to_server( &cerror, &uerror ))
+        {
+          have_error = COCO_FALSE;
+          break;
+        }
+      else if (!((COCO_NETERROR_CONNECT_TCP == cerror)
+                 && (ECONNREFUSED == uerror)))
+        {
+          have_error = COCO_TRUE;
+          break;
+        }
+      else /* retryable error */ 
+        {
+          
+          have_error = COCO_TRUE;
+          /*
+          should post progress dialog with cancel button
+          if ((0==i) && (ntry > 1))
+            dialog = coco_join_progress_dialog_new( parent_window, 
+                                                    server, port, &progress );
+            ...                                        
+          */
+          sleep( 1 );
+        } 
+    }
+  if (have_error)
+    {
+      char *errorstr 
+        = coco_user_level_network_error_message( cerror, uerror,
+                                                 COCO_TRUE );
+      gnome_dialog_run_and_close
+        ( GNOME_DIALOG
+          ( gnome_error_dialog_parented( errorstr, parent_window) ) );
+      coco_free( errorstr );
+      return COCO_FALSE;
+    }
+  else return COCO_TRUE;
+
+}
+
+
+void
+coco_make_server_process( coco_bool tutorial, int left_comps, int right_comps,
+                          char *full_level_file_name, int iport )
+{
+  pid_t pid;
+
+  pid = fork();
+
+  if (0==pid)
+    {
+      char port[10], lcomps[10], rcomps[10];
+      sprintf( port, "%d", iport );
+      sprintf( lcomps, "%d", left_comps );
+      sprintf( rcomps, "%d", right_comps );
+      execlp( coco_run_name, coco_run_name, "server", "--quiet",
+              "--level", full_level_file_name, "--port", port,
+              "--left-comps", lcomps, 
+              "--right-comps", rcomps , NULL );
+    }
+  else if (-1==pid)
+    coco_fatal_printf( COCO_ERROR_OUT_OF_MEMORY,
+                       "fork() failed: %s\n",
+                       coco_errno_string( errno ) );
+  /* else we're still the client, and everything is good. */
+}
 
 
 #define COCO_NEW_GAME_FRAME_COUNT 3
@@ -2004,73 +2102,31 @@ coco_use_new_game_dialog( GtkWidget *parent_window )
         }
       else 
         {
-          pid_t pid;
+          coco_bool joined;
+          int rcompsi = (int) (GTK_ADJUSTMENT( right_comps_adj )->value);
+          int lcompsi = (int) (GTK_ADJUSTMENT( left_comps_adj )->value);
+
+          /* assign global value */
           coco_port = coco_port_editor_get_value( port_ed );
-          pid = fork();
-          if (0==pid)
+
+          coco_make_server_process( COCO_FALSE, lcompsi, rcompsi, level_file,
+                                    coco_port );
+          joined = coco_join_game_interactively( coco_server, coco_port, 10,
+                                                 GTK_WINDOW( dialog ) );
+          g_free( level_file );
+          if (joined)
             {
-              char port[10], lcomps[10], rcomps[10];
-              sprintf( port, "%d", coco_port );
-              sprintf( lcomps, "%d", 
-                       (int) (GTK_ADJUSTMENT( left_comps_adj )->value) );
-              sprintf( rcomps, "%d",
-                       (int) (GTK_ADJUSTMENT( right_comps_adj )->value) );
-              coco_cookie( "lcomps=%s rcomps=%s\n", lcomps, rcomps );
-              execlp( coco_run_name, coco_run_name, "server", "--quiet",
-                      "--level", level_file, "--port", port,
-                      "--left-comps", lcomps, 
-                      "--right-comps", rcomps , NULL );
+              gnome_dialog_close( GNOME_DIALOG( dialog ) );
+              coco_free( closure.selection );
+              gtk_widget_show( coco_chatroom_dialog_new
+                               ( GTK_WINDOW( coco_root_window ) ) );
+              return COCO_TRUE;
             }
-          else if (-1==pid)
-            coco_fatal_printf( COCO_ERROR_OUT_OF_MEMORY,
-                               "fork() failed: %s\n",
-                               coco_errno_string( errno ) );
           else
             {
-              int i;
-              coco_bool have_error = COCO_TRUE;
-              enum coco_network_error cerror;
-              int uerror = 0;
-              coco_cookie( "Child server process spawned, "
-                           "gonna try to connect." );
-              
-              /* yeah, this is a crappy job.  Should handle events and
-                 give a cancel button.  But how? :/ */
-              for (i=0; i<3; i++)
-                {
-                  if (coco_client_connect_to_server( &cerror, &uerror ))
-                    {
-                      have_error = COCO_FALSE;
-                      break;
-                    }
-                  else if (!((COCO_NETERROR_CONNECT_TCP == cerror)
-                             && (ECONNREFUSED == uerror)))
-                    break;
-                  sleep( 1 );
-                }
-              if (have_error)
-                {
-                  char *errorstr 
-                    = coco_user_level_network_error_message( cerror, uerror,
-                                                             COCO_TRUE );
-                  gnome_dialog_run_and_close
-                    ( GNOME_DIALOG
-                      ( gnome_error_dialog_parented( errorstr, 
-                                                     GTK_WINDOW( dialog )
-                                                     ) ) );
-                  g_free( level_file );
-                  coco_free( errorstr );
-                  coco_gtk_set_wait_cursor( dialog, COCO_FALSE );
-                  goto RETRY;
-                }
+              coco_gtk_set_wait_cursor( dialog, COCO_FALSE );
+              goto RETRY;
             }
-          coco_cookie( "Port = %d\nLevel = %s\n", coco_port, level_file );
-          gnome_dialog_close( GNOME_DIALOG( dialog ) );
-          g_free( level_file );
-          coco_free( closure.selection );
-          gtk_widget_show( coco_chatroom_dialog_new
-                        ( GTK_WINDOW( coco_root_window ) ) );
-          return COCO_TRUE;
         }
     }
   else /* its 1 (CANCEL) or -1 (KILL), or something suspicious */
