@@ -49,9 +49,9 @@ GtkWidget * coco_menubar_new( GtkWidget *window1 );
 static GtkWidget *coco_root_window = NULL;
 static GtkWidget *coco_gl_window = NULL;
 
-char *coco_gnu_info_string = "For\n"
-"more information about these matters\n"
-"use the Help menu.";
+char *coco_gnu_info_string = "\n"
+"Consult the `Help' menu for more\n"
+"information.";
 char *coco_low_tech_menu = NULL;
 coco_bool coco_use_keyboard_for_gui_p = COCO_FALSE;
 
