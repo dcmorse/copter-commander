@@ -412,9 +412,11 @@ c-header.strlit: c-header.txt string-literalize.sh
 
 globals.o: COPYING.strlit manual.strlit keybindings.strlit
 
+# -lm added to shut up somebody's box.  
+# [ #499186 ] tiff-compile doesn't compile -dm 01-03-2002
 tiff-compile: tiff-compile.c raster.h c-header.strlit
 	${CC} ${CFLAGS_UNANSI} -I${COCO_LIBTIFF_INCLUDE_DIRECTORY} \
-	  -o $@ $@.c -L${COCO_LIBTIFF_LIB_DIRECTORY} -ltiff
+	  -o $@ $@.c -L${COCO_LIBTIFF_LIB_DIRECTORY} -ltiff -lm
 
 sizeof: sizeof.c
 	${CC} ${CFLAGS} -o sizeof sizeof.c

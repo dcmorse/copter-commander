@@ -44,14 +44,14 @@ Making due with glx-copter-commander:
 
 Two executables are made: copter-commander, linked against gnome
 libraries, and glx-copter-commander, linked against bare X and OpenGL.
-This version has an obvuscated UI, but its easy to build on wierd systems
+This version has an obfuscated UI, but its easy to build on wierd systems
 without gnome, say, Irix.  
 
 Most of your setup you do with the command line.  First start a server:
 
-  glx-copter-commander server --level balloon-run
+  glx-copter-commander server --level flashpoint
 
-Then start a client with
+Then start one or more clients with
 
   glx-copter-commander --host <SERVER>
 

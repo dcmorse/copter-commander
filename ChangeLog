@@ -1,3 +1,12 @@
+2002-01-03  David Morse  <svref@yahoo.com>
+
+	* Makefile (tiff-compile): -lm since libtiff needs it but is
+	appearantly too dumb to ask for it.  [ #499186 ] tiff-compile
+	doesn't compile
+	
+	* tiff-compile.c: #include <stdlib.h> for [ #499186 ] tiff-compile
+	doesn't compile
+
 2001-12-23  David Morse  <dm@bomberlan.net>
 
 	* globals.c: coco_version_string easier to maintian, fixes about
@@ -8,7 +17,14 @@
 	(coco_handle_client_message): disconnect after game over, don't
 	close.  Fixes [ #490088 ] game over kills process even with gnome.
 
+2001-12-19  David Morse  <svref@yahoo.com>
+
+	* INSTALL: fix typeo
+
 2001-12-13  David Morse  <svref@yahoo.com>
+
+	* levels/*.ccl: Incremented version of all levels to 1.7.  Right
+	AFTER 1.7 went out.  Damn!
 
 	* DEVEL: fix [ #492278 ] DEVEL is out of date
 

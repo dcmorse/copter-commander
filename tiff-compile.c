@@ -23,6 +23,7 @@
 
 #include <tiffio.h>
 #include <stdio.h>
+#include <stdlib.h>    /* for exit */
 #include <ctype.h>
 #include <assert.h>
 #include <malloc.h>
