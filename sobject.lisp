@@ -538,12 +538,6 @@
    ("airburst_sound_type" "COCO_SOUND_BIG_AIRBURST")
    ("cost"        "20")
    ("dashboard_icon" "&coco_mech_icon_raster") ;; XXX wrong
-   ("input_buffers" nil
-    ;; intentially left uninitialized.  Don't have aggregate initializers
-    ;; in oo-compiler, I think.
-    ;; Will be sorted out after ~3 frames of confusion anyway.
-    ("COCO_BIT_VEC_VAR( "
-     ", COCO_MECH_BUFFERED_BUTTONS_HACK*COCO_MECH_BUFFERED_TURNS_HACK )"))
    ("gen_dashboard_items" "coco_mech_dashboard_items")
    ("emits_smoke_when_damaged" "COCO_TRUE"))
   :init-by-list-fn :automatic)

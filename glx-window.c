@@ -282,6 +282,43 @@ coco_bool coco_mouse_in_window_p()
   return coco_mouse_in_window_p_private;
 }
 
+/* this function is duplicated textually in gnome-window.c for
+   encapsulation purposes.  Bugs in one == bugs in the other. */
+/* if for_desktop, restores the key repeat preference recorded on last
+   focus in.  Otherwise turns off key repeat, so that, e.g., mech run
+   keys don't hiccup. */
+void 
+coco_manage_X_key_repeat( Display *xdisplay, coco_bool for_desktop )
+{
+  static coco_bool x_repeat_state = COCO_FALSE;
+  static enum { COCO_RS_UNINITIALIZED,
+		COCO_RS_GAME,
+		COCO_RS_DESKTOP } repeat_state = COCO_RS_UNINITIALIZED;
+  if (for_desktop && (COCO_RS_UNINITIALIZED != repeat_state))
+    {
+      if (x_repeat_state)
+	{
+	  XAutoRepeatOn( xdisplay );
+	  x_repeat_state = COCO_FALSE;
+	  coco_cookie( "Re-enabling X Server key autorepeat\n" );
+	}
+      repeat_state = COCO_RS_DESKTOP;
+    }
+  else if (!for_desktop) 	/* for game */
+    {
+      XKeyboardState xkbstate;
+      XGetKeyboardControl( xdisplay, &xkbstate );
+      /* |= in case of multiple unmatched enter events */
+      x_repeat_state |= !! xkbstate.global_auto_repeat;
+      if (x_repeat_state) 
+	{
+	  XAutoRepeatOff( xdisplay );
+	  coco_cookie( "Disabling X Server key autorepeat\n" );
+	}
+      repeat_state = COCO_RS_GAME;
+    }
+}
+
 void
 coco_handle_ui_events( void )
 {
@@ -365,11 +402,16 @@ coco_handle_ui_events( void )
 		  if (ispress) coco_key_press( key, NULL, keystate );
 		  else coco_key_release( key, keystate );
 		}
+	      if (xevent.type == EnterNotify)
+		coco_manage_X_key_repeat( xdisplay, COCO_FALSE );
+	      else if (xevent.type == LeaveNotify)
+		coco_manage_X_key_repeat( xdisplay, COCO_TRUE );
+
 	    }
           if (xevent.type == EnterNotify)
-            coco_mouse_in_window_p_private = COCO_TRUE;
+	    coco_mouse_in_window_p_private = COCO_TRUE;
           else if (xevent.type == LeaveNotify)
-            coco_mouse_in_window_p_private = COCO_FALSE;
+	    coco_mouse_in_window_p_private = COCO_FALSE;
         }
         break;
       case Expose:

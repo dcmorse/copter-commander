@@ -1480,8 +1480,7 @@ coco_u32 coco_draw_frame_number;
 
 /* server.c */
 
-#define COCO_MECH_BUFFERED_BUTTONS_HACK 3 /* left, jump, center */
-#define COCO_MECH_BUFFERED_TURNS_HACK 3
+
 #define COCO_LOCALHOST_JOIN_TRIES 10
 #define COCO_COMP_FAVORITE_COPTER_CLASS COCO_COBRA_CLASS
 #define COCO_GROUND_UNIT_WARP_IN_X 80

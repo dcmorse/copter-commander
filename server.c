@@ -1854,8 +1854,6 @@ coco_power_shield( coco_sobject *sobject, coco_sobject_cl *class,
                                       ||(((ri)>=((lo)+COCO_LEFTY_LEG_PART)) \
                                          &&((ri)<((hi)+COCO_LEFTY_LEG_PART))))
 
-/* Only used when its important to filter out typeomatic key presses */
-#define COCO_MECH_PRESSED( key ) (coco_get_bit( input->key_state, (key) )||coco_get_bit( old_input->key_state, (key) ))
 
 void
 coco_mech_pad_update( coco_sobject *sobject, coco_sobject_cl *cl, 
@@ -1995,35 +1993,13 @@ coco_mech_update_state( coco_sobject *sobject,
   }
 
   {
-    coco_bit_vec_ref ib = COCO_MECH_INPUT_BUFFERS( sobject );
-    int max = COCO_MECH_BUFFERED_BUTTONS_HACK * COCO_MECH_BUFFERED_TURNS_HACK;
-    int i = max;
-    /* shift old buffer back in time */
-    for (;i>=COCO_MECH_BUFFERED_BUTTONS_HACK;i--)
-      coco_set_bit( ib, i, 
-                    coco_get_bit( ib, i-COCO_MECH_BUFFERED_BUTTONS_HACK ) );
-    coco_set_bit( ib, 0, 
-                  coco_get_bit( input->key_state, COCO_CHAR_TO_KEY( 'z' ) )
-                  || coco_get_bit( input->key_state, COCO_KEY_LEFT_ARROW ) );
-    coco_set_bit( ib, 1, 
-                  coco_get_bit( input->key_state, COCO_CHAR_TO_KEY( 'x' ) )
-                  || coco_get_bit( input->key_state, COCO_KEY_UP_ARROW ) );
-    coco_set_bit( ib, 2, 
-                  coco_get_bit( input->key_state, COCO_CHAR_TO_KEY( 'c' ) )
-                  || coco_get_bit( input->key_state, COCO_KEY_RIGHT_ARROW ) );
-#if (3 != COCO_MECH_BUFFERED_BUTTONS_HACK)
-#error buffer the other buttons here
-#endif
-    butleft = butright = butup = COCO_FALSE;
-    for (i=0; i<max; i+=COCO_MECH_BUFFERED_BUTTONS_HACK)
-      if (coco_get_bit( ib, i )) { butleft = COCO_TRUE; break; }
-    for (i=1; i<max; i+=COCO_MECH_BUFFERED_BUTTONS_HACK)
-      if (coco_get_bit( ib, i )) { butup = COCO_TRUE; break; }
-    for (i=2; i<max; i+=COCO_MECH_BUFFERED_BUTTONS_HACK)
-      if (coco_get_bit( ib, i )) { butright = COCO_TRUE; break; }
+    butleft = coco_get_bit( input->key_state, COCO_CHAR_TO_KEY( 'z' ) )
+      || coco_get_bit( input->key_state, COCO_KEY_LEFT_ARROW );
+    butup = coco_get_bit( input->key_state, COCO_CHAR_TO_KEY( 'x' ) )
+      || coco_get_bit( input->key_state, COCO_KEY_UP_ARROW );
+    butright = coco_get_bit( input->key_state, COCO_CHAR_TO_KEY( 'c' ) )
+      || coco_get_bit( input->key_state, COCO_KEY_RIGHT_ARROW );
   }
-
-
 
   if (coco_get_bit( input->key_state, COCO_LPOINTER ))
     coco_fire_plasma( sobject, COCO_SOBJECT_CL( sobject ), sstate );
@@ -2293,8 +2269,6 @@ coco_mech_update_state( coco_sobject *sobject,
   else COCO_MECH_LANDED_ON_PAD_P( sobject ) = COCO_FALSE;
   return coco_sobject_update_state( sobject, cl->super, sstate );
 }
-
-#undef COCO_MECH_PRESSED
 
 #undef COCO_LEG_RANGE
 

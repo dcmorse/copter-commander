@@ -1,3 +1,17 @@
+2002-01-29  David Morse  <svref@yahoo.com>
+
+	* gnome-window.c (coco_manage_X_key_repeat): Suspend key autorepeat
+	on window focus.  [ #?????? ]
+
+2002-01-28  David Morse  <svref@yahoo.com>
+
+	* glx-window.c (coco_manage_X_key_repeat): Suspend key autorepeat
+	on window focus.  [ #?????? ]
+	
+	* server.c (coco_mech_update_state): remove input buffer hack.
+
+	* sobject.lisp ("mech"): remove input buffer hack.
+
 2002-01-25  David Morse  <svref@yahoo.com>
 
 	* levels/gun-country.ccl (gun-country): at guns removed

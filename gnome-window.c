@@ -194,18 +194,29 @@ struct coco_keyboard_pointer_state *coco_get_keyboard_pointer_state()
 /* ________________________________________________________ */
 
 
+Display *
+coco_gnome_get_x_display_with_evil( void )
+{
+  static Display *xdisplay = NULL;
+  if (xdisplay) return xdisplay;
+  else if (coco_root_window)
+    {
+      GdkWindow *gdk_win = GTK_WIDGET( coco_root_window )->window;
+      xdisplay = GDK_WINDOW_XDISPLAY( gdk_win );
+      return xdisplay;
+    }
+  else return NULL;
+}
+
 int 
 coco_get_x_file_descriptor( void )
 {
   static int xfd = -1;
-  if ((-1==xfd) && coco_root_window)
+  if (-1==xfd)
     {
-      GdkWindow *gdk_win = GTK_WIDGET( coco_root_window )->window;
-      Display *xdisplay = GDK_WINDOW_XDISPLAY( gdk_win );
-      assert( gdk_win && xdisplay );
-      coco_cookie( "XFD = %d\n", ConnectionNumber( xdisplay ) );
-      xfd = ConnectionNumber( xdisplay );
-      return xfd;
+      Display *xdisplay = coco_gnome_get_x_display_with_evil();
+      if ( xdisplay )
+	xfd = ConnectionNumber( xdisplay );
     }
   return xfd;
 }
@@ -344,6 +355,47 @@ coco_gdk_keysym_to_coco_key( guint keysym )
 }
 
 
+
+/* this function is duplicated textually in glx-window.c for
+   encapsulation purposes.  Bugs in one == bugs in the other.  Its
+   making raw X calls because glib doesn't expose a way to shut up the
+   key repeat, not that the x way is a Good Thing.*/
+/* if for_desktop, restores the key repeat preference recorded on last
+   focus in.  Otherwise turns off key repeat, so that, e.g., mech run
+   keys don't hiccup. */
+void 
+coco_manage_X_key_repeat( Display *xdisplay, coco_bool for_desktop )
+{
+  static coco_bool x_repeat_state = COCO_FALSE;
+  static enum { COCO_RS_UNINITIALIZED,
+		COCO_RS_GAME,
+		COCO_RS_DESKTOP } repeat_state = COCO_RS_UNINITIALIZED;
+  if (for_desktop && (COCO_RS_UNINITIALIZED != repeat_state))
+    {
+      if (x_repeat_state)
+	{
+	  XAutoRepeatOn( xdisplay );
+	  x_repeat_state = COCO_FALSE;
+	  coco_cookie( "Re-enabling X Server key autorepeat\n" );
+	}
+      repeat_state = COCO_RS_DESKTOP;
+    }
+  else if (!for_desktop) 	/* for game */
+    {
+      XKeyboardState xkbstate;
+      XGetKeyboardControl( xdisplay, &xkbstate );
+      /* |= in case of multiple unmatched enter events */
+      x_repeat_state |= !! xkbstate.global_auto_repeat;
+      if (x_repeat_state) 
+	{
+	  XAutoRepeatOff( xdisplay );
+	  coco_cookie( "Disabling X Server key autorepeat\n" );
+	}
+      repeat_state = COCO_RS_GAME;
+    }
+}
+
+
 static coco_bool coco_mouse_in_window_p_private = COCO_FALSE;
 
 coco_bool 
@@ -351,7 +403,6 @@ coco_mouse_in_window_p()
 {
   return coco_mouse_in_window_p_private;
 }
-
 
 static gint
 coco_input_event_callback( GtkWidget *area, GdkEvent *event )
@@ -376,6 +427,8 @@ coco_input_event_callback( GtkWidget *area, GdkEvent *event )
 	  yraw = event->crossing.y;
 	  coco_update_bnb_from_gstate( keystate, event->crossing.state, 
 				       COCO_TRUE );
+	  coco_manage_X_key_repeat( coco_gnome_get_x_display_with_evil(),
+				    GDK_LEAVE_NOTIFY == type );
 	}
     }
   else if (coco_use_gii && (GDK_BUTTON_PRESS == type)
@@ -479,6 +532,8 @@ coco_kill_window( void )
   if (coco_root_window)
     gtk_widget_destroy( coco_root_window );
 }
+
+
 
 void
 coco_handle_ui_events( void )
