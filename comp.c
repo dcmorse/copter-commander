@@ -243,6 +243,12 @@ coco_comp_think( struct coco_comp *self,
       return;
     }
 #endif /* COCO_NONLETHAL_AI */
+  coco_cookie( "refueling if %d | %d | %d\n",
+               (cstate->dashinfo.bullets < 12),
+               (cstate->board_w * 1.5 >=      
+                (COCO_COBJECT_CL( cself )->dx_max * cstate->dashinfo.fuel)),
+
+               self->refuelling );
   if ((cstate->dashinfo.bullets < 12) /* low ammo */
       || (cstate->board_w * 1.5 >=          /* low fuel */
           (COCO_COBJECT_CL( cself )->dx_max * cstate->dashinfo.fuel))
@@ -317,14 +323,11 @@ coco_comp_think( struct coco_comp *self,
     tcl = target ? COCO_COBJECT_CL( target ) : NULL;
 
     if (target)
-      {
-        coco_cookie( "in=%d", self->cruise_altitude );
-        self->cruise_altitude = COCO_CLAMP( COCO_INFANTRY_GUN_RANGE, 
-                                            self->cruise_altitude,
-                                            (COCO_VIEWABLE_H*3/4) );
-        coco_cookie( " out=%d min=%d max=%d\n", self->cruise_altitude,
-                     COCO_INFANTRY_GUN_RANGE, (COCO_VIEWABLE_H*3/4) );
-      }
+      self->cruise_altitude = COCO_CLAMP( COCO_INFANTRY_GUN_RANGE, 
+                                          self->cruise_altitude,
+                                          (COCO_VIEWABLE_H*3/4) );
+    if (target)
+      coco_cookie( "have target %s\n", COCO_COBJECT_CL( target )->name );
 
     if (target && (cstate->dashinfo.bombs>0) && 
         (coco_comp_compute_needed_bombs( target, cself, cobjs, 
@@ -342,6 +345,7 @@ coco_comp_think( struct coco_comp *self,
         tmp = coco_sobject_com_by_raster_index( tcl, tri );
         delta = COCO_COBJECT_X( target ) + COCO_MINI_POINT_X( tmp )
           - x - COCO_MINI_POINT_X( mmp );
+
         state_return->pointer_x = (delta>30)
           ? 240
           : ((delta<-30) ? -240 : (delta<<3));
@@ -356,11 +360,31 @@ coco_comp_think( struct coco_comp *self,
         return;
       }
     else if (target && (cstate->dashinfo.bombs==0))
-      self->refuelling = COCO_TRUE; /* go get some bombs to deal w/ these turkeys */
+      {
+        coco_cookie( "getting more bombs\n" );
+        self->refuelling = COCO_TRUE; /* go get some bombs to deal w/ these turkeys */
+        return;
+      }
   }
 
 
-  /* charge like maniac */
-  state_return->pointer_x = COCO_OFFENSIVE_FACING( self->nationality )
-    * COCO_OFFICIAL_WINDOW_W;
+  { /* adjust goto_area, and go there */
+    coco_gnum board_w = cstate->board_w;
+    coco_gnum go = self->goto_area;
+    coco_gnum delta = COCO_RXNUM_TO_GNUM( bself->x, board_w ) - go;
+    coco_facing face = (delta>0)?-1:1;
+    if (abs(delta) < 100)
+      {
+        if (go != board_w>>1)
+          go = board_w>>1;
+        else if (self->nationality == COCO_GOOD_GUYS)
+          go = 0;
+        else go = board_w-1;
+        self->goto_area = go;
+      }
+    
+    /* charge like maniac towards goto_area */
+    state_return->pointer_x = face * COCO_OFFICIAL_WINDOW_W;
+    coco_comp_ensure_facing( face, state_return, self, cself );
+  }
 }

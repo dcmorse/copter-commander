@@ -1474,6 +1474,7 @@ struct coco_comp {
   coco_gnum cruise_altitude; /* altitude to seek when idle */
   coco_gnum overgun;         /* small y offset gunning emy copter */
   coco_bool refuelling;
+  coco_gnum goto_area;
 };
 
 struct coco_comp coco_comps[COCO_MAX_COMPS];

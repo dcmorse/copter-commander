@@ -1,3 +1,7 @@
+2001-04-06  David Morse  <dm@bomberlan.net>
+
+	* comp.c (coco_comp_think): goto_area added.
+
 2001-04-04  David Morse  <dm@bomberlan.net>
 
 	* client.c (coco_bullet_draw): Rifle bullets are red not white.

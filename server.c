@@ -534,6 +534,8 @@ coco_add_comp( coco_nationality nat, coco_sstate *sstate )
         strncpy( coco_comps[i].name, name, COCO_PLAYER_NAME_MAX-1 );
         coco_comps[i].name[COCO_PLAYER_NAME_MAX-1] = '\0';
         coco_comps[i].in_use = COCO_TRUE;
+        coco_comps[i].goto_area = sstate->board_w>>1;
+        coco_cookie( "GO = %d\n", coco_comps[i].goto_area );
         coco_schedule_comp_respawn( i, sstate );
         found = COCO_TRUE;
         break;
