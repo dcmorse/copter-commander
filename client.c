@@ -1044,24 +1044,6 @@ coco_key_press( coco_key key, char *string_or_null,
       coco_free( fname );
       return;
     }
-  else if ((COCO_CHAR_TO_KEY( 'm' ) == key)
-      && coco_get_bit( keystate, COCO_KEY_CONTROL ))
-    {
-      coco_cookie( "RECORDING\n" );
-      if (coco_recording_movie)
-        {
-          coco_recording_movie = COCO_FALSE;
-          coco_display_notice( "Movie saved\n" );
-        }
-      else
-        {
-          coco_recording_movie = COCO_TRUE;
-          coco_movie_frame = 0;
-          coco_movie_number++;
-        }
-      return;
-    }
-
   /* mode-local bindings */
   switch (coco_get_client_state()) {
   case COCO_CLIENT_CHATROOM_DIALOG:
@@ -1180,6 +1162,30 @@ coco_key_press( coco_key key, char *string_or_null,
               coco_display_notice( notice );
             }
           return;
+            
+          /* Super-obscure undocumented feature Su-C-m: 
+             record movie (on/off toggle) */
+        case 'm': 
+          if (coco_get_bit( keystate, COCO_KEY_CONTROL )
+              && coco_get_bit( keystate, COCO_KEY_SUPER ))
+            {
+              if (coco_recording_movie)
+                {
+                  coco_recording_movie = COCO_FALSE;
+                  coco_display_notice( "Movie saved\n" );
+                }
+              else
+                {
+                  coco_recording_movie = COCO_TRUE;
+                  coco_movie_frame = 0;
+                  coco_movie_number++;
+                  coco_display_notice( "Movie recording "
+                                       "(hope you've got lotsa /tmp)\n" );
+                }
+              return;
+            }
+
+
         }
       }
     coco_write_client2server_packet_maybe();

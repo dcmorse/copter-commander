@@ -1,5 +1,9 @@
 2001-03-12  David Morse  <dm@bomberlan.net>
 
+	* keybindings.txt: document C-c is screen-capture
+
+	* client.c (coco_key_press): move record-movie to Su-c-m
+
 	* Makefile: Add ChangeLog to list of tarball components.
 	
 
