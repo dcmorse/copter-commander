@@ -35,6 +35,8 @@ static void *context = NULL;
 
 void coco_play_sound_immediately( coco_sound sound, coco_i32 x, coco_i32 y );
 
+/* in addition to coco_sources, there are now also coco_dedicated_sources, for
+   a particular coco_sound_type of sound. */
 static ALuint coco_sources[COCO_SOUND_NSOURCES];
 static coco_bool coco_sources_allocated[COCO_SOUND_NSOURCES];
 static int coco_next_source = 0;
@@ -227,10 +229,6 @@ coco_play_sound( coco_sound sound, coco_sound_type type,
     }
 }
 
-
-
-
-
 void 
 coco_init_sound_system( void )
 {
@@ -242,7 +240,8 @@ coco_init_sound_system( void )
   context = alcCreateContext( attrlist );
   if (NULL==context)
     {
-      coco_warn_printf( "Couldn't create OpenAL context.  No sound for you.\n" );
+      coco_warn_printf( "Couldn't create OpenAL context.  "
+                        "No sound for you.\n" );
       return;
     }
   { /* init listener */
@@ -261,6 +260,7 @@ coco_init_sound_system( void )
     alListenerfv(AL_VELOCITY, zeroes );
     alListenerfv(AL_ORIENTATION, back );
   }
+
   alGenSources( COCO_SOUND_NSOURCES, coco_sources );
 
   /* setup semi-static arrays for dedicated sources */
@@ -268,7 +268,7 @@ coco_init_sound_system( void )
     coco_allocate_dedicated_sources( j, 0 );
   coco_allocate_dedicated_sources( COCO_SOUND_COPTER_CANNON, 4 );
   coco_allocate_dedicated_sources( COCO_SOUND_ROCKET_HIT, 4 );
-  coco_allocate_dedicated_sources( COCO_SOUND_BOMB_HIT, 4 );
+  coco_allocate_dedicated_sources( COCO_SOUND_BOMB_HIT, 8 );
 }
 
 void

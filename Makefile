@@ -44,7 +44,7 @@
 #                            *** VERSION ***
 
 COCO_MAJOR_VERSION=1
-COCO_MINOR_VERSION=0
+COCO_MINOR_VERSION=1
 
 # ____________________________________________________________________________
 #                           *** VARIABLES ***
@@ -204,7 +204,7 @@ rstr-%/built: rstr-%/rasters.h
 	CFLAGS="${CFLAGS}";\
 	export CC CFLAGS;\
 	cd rstr-$*;\
-	./make-rasters.sh
+	../make-rasters.sh
 
 
 # Some decisions are put off until configure time then included into
@@ -376,10 +376,11 @@ tarball: ${COCO_TAR_FILE}.gz ${COCO_TAR_FILE}.bz2
 # the source distribution.  This is just to fool make into not remaking
 # them (or trying to remake them, then finding there's no clisp
 # installed).
-${COCO_TAR_FILE}: .
+${COCO_TAR_FILE}:
 	rm -rf ${COCO_TAR_DIRECTORY} ${COCO_TAR_FILE}
 	mkdir ${COCO_TAR_DIRECTORY}
-	cp --archive -R Makefile  *.lisp *.fas rstr-* *.c *.h *.txt *.sh \
+	cp --archive -R Makefile  *.lisp *.fas *.c *.h *.txt *.sh \
+	  rstr-*/*.c rstr-*/*.h \
 	  COPYING INSTALL DEVEL GNOME-HACKS ChangeLog copter-commander.png \
          raster-dumper.lisp tiffs \
 	 ${COCO_TAR_DIRECTORY}
@@ -388,6 +389,7 @@ ${COCO_TAR_FILE}: .
 	cp sounds/*.wav ${COCO_TAR_DIRECTORY}/sounds
 	cp levels/*.ccl ${COCO_TAR_DIRECTORY}/levels
 	find ${COCO_TAR_DIRECTORY} -name \*~ -print | xargs rm -f
+	find ${COCO_TAR_DIRECTORY} -name CVS -print | xargs rm -f
 	tar -cf ${COCO_TAR_FILE} ${COCO_TAR_DIRECTORY}
 	rm -rf ${COCO_TAR_DIRECTORY}
 

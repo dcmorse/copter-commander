@@ -67,14 +67,18 @@ struct coco_version_number {
 
 
 /* versions of coco compatible with the current version */
-#define COCO_NETWORK_COMPATIBLE_VERSIONS_SIZE 0
-static struct coco_version_number *coco_network_compatible_versions = NULL;
+#define COCO_NETWORK_COMPATIBLE_VERSIONS_SIZE 1
+static struct coco_version_number coco_network_compatible_versions
+ [COCO_NETWORK_COMPATIBLE_VERSIONS_SIZE]
+ = { { 1, 0 } };
 /* One day, if there is ever a compatible version, this will be replace by
    something like:
 static struct coco_version_number coco_network_compatible_versions[COCO_NETWORK_COMPATIBLE_VERSIONS_SIZE] = { { 1, 1 } } */
 
-#define COCO_LEVEL_FILE_FORMAT_COMPATIBLE_VERSIONS_SIZE 0
-static struct coco_version_number *coco_level_file_format_compatible_versions = NULL;
+#define COCO_LEVEL_FILE_FORMAT_COMPATIBLE_VERSIONS_SIZE 1
+static struct coco_version_number coco_level_file_format_compatible_versions
+ [COCO_NETWORK_COMPATIBLE_VERSIONS_SIZE]
+ = { { 1, 0 } };
 /* One day, if there is ever a compatible version, this will be replace by
    something like:
 static struct coco_version_number coco_level_file_format_compatible_versions[COCO_LEVEL_FILE_FORMAT_COMPATIBLE_VERSIONS_SIZE] = { { 1, 1 } } */
