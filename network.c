@@ -386,6 +386,8 @@ coco_cstate_serial_header_hton( struct coco_cstate_serial_header *str )
   str->cobject_camera_index = COCO_I32_HTON( str->cobject_camera_index );
   str->cam_left      = COCO_I32_HTON( str->cam_left );
   str->board_w       = COCO_I32_HTON( str->board_w );
+  str->dx            = COCO_I32_HTON( str->dx );
+  str->dy            = COCO_I32_HTON( str->dy );
   str->dashinfo.bullets       = COCO_U32_HTON( str->dashinfo.bullets );
   str->dashinfo.bombs         = COCO_U32_HTON( str->dashinfo.bombs );
   str->dashinfo.missiles      = COCO_U32_HTON( str->dashinfo.missiles );
@@ -408,6 +410,8 @@ coco_cstate_serial_header_ntoh( struct coco_cstate_serial_header *str )
   str->cobject_camera_index = COCO_I32_NTOH( str->cobject_camera_index );
   str->cam_left      = COCO_I32_NTOH( str->cam_left );
   str->board_w       = COCO_I32_NTOH( str->board_w );
+  str->dx            = COCO_I32_NTOH( str->dx );
+  str->dy            = COCO_I32_NTOH( str->dy );
   str->dashinfo.bullets       = COCO_U32_NTOH( str->dashinfo.bullets );
   str->dashinfo.bombs         = COCO_U32_NTOH( str->dashinfo.bombs );
   str->dashinfo.missiles      = COCO_U32_NTOH( str->dashinfo.missiles );

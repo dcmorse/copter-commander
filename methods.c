@@ -373,12 +373,12 @@ coco_tank_update_state( coco_sobject *sobject,
     }
   else
     {
-      int raw_angle = 6 + COCO_SOBJECT_HEALTH( sobject )
-        - COCO_SOBJECT_HEALTH_MAX( sobject );
       COCO_SOBJECT_DX( sobject ) = facing * COCO_SOBJECT_DX_MAX( sobject );
       /* depress gun if we're damaged :) */
       COCO_SOBJECT_ANGLE( sobject )
-        = (facing>0) ? raw_angle : 128 - raw_angle;
+        = COCO_TANK_HEALTH_TO_ANGLE( COCO_SOBJECT_HEALTH( sobject ),  
+                                     COCO_SOBJECT_HEALTH_MAX( sobject ),
+                                     facing );
     }
   /* call-next-method */
   return coco_sobject_update_state( sobject, cl->super, sstate );
@@ -571,16 +571,14 @@ coco_rocket_update_state( coco_sobject *sobject,
   coco_facing facing = COCO_SOBJECT_FACING( sobject );
   /* the missile is fired depressed 10 degrees.  At that angle the x
      componet is about 1.0, and the y component about .125. */
-  coco_gnum dx = COCO_SOBJECT_DX( sobject ) 
-    + (facing>0 ? COCO_MISSILE_ACCELL : -COCO_MISSILE_ACCELL);
-  coco_gnum dy = COCO_SOBJECT_DY( sobject ) - (COCO_MISSILE_ACCELL>>3);
+  coco_gnum dx, dy;
   coco_gnum dxmax = COCO_SOBJECT_DX_MAX( sobject );
-  /* friction */
-  dx = dx - (dx>>3);
+  dx = COCO_SOBJECT_DX( sobject ) 
+    + (facing>0 ? COCO_MISSILE_ACCELL : -COCO_MISSILE_ACCELL);
 
-  COCO_SOBJECT_DX( sobject ) = (facing>0) 
-    ? COCO_MIN( dxmax, dx )
-    : COCO_MAX( -dxmax, dx );
+  dx = COCO_MAX( COCO_MIN( dx, dxmax ), -dxmax );
+
+  dy = - abs( dx ) >> 2;
 
   COCO_SOBJECT_DX( sobject ) = dx;
   COCO_SOBJECT_DY( sobject ) = dy;
@@ -1574,13 +1572,16 @@ coco_launch_rocket( coco_sobject *sobject, coco_sobject_cl *cl,
       coco_sobject *rocket = coco_sstate_allocate_sobject( sstate );
       if (rocket)
         {
-          coco_gnum x, y;
+          coco_gnum x, y, sodx;
           COCO_COPTER_ROCKETS( sobject ) = rockets - 1;
           COCO_COPTER_LAST_ROCKET_LAUNCH_TIME( sobject ) = sstate->time;
           coco_sobject_weapon_hardpoint_coords( sobject, &x, &y );
+          sodx = COCO_SOBJECT_DX( sobject );
+          if ((sodx<0)!=(facing<0))
+            sodx=0;
           coco_init_rocket( rocket, COCO_ROCKET_CLASS, facing, x, y,
-                            COCO_SOBJECT_DX( sobject ), 
-                            -8.5,
+                            sodx, 
+                            -abs( sodx )>>2,
                             COCO_SOBJECT_NATIONALITY( sobject ),
                             (facing>0)
                             ? COCO_ROCKET_RIGHT_ANGLE
@@ -2483,6 +2484,22 @@ coco_sndobject_is_visible( coco_sobject *sobject,
     }
   else return (cam_left <= obj_x) && (obj_x <= cam_right);
 }
+
+coco_mini_point
+coco_sobject_weapon_hardpoint_by_raster_index( coco_sobject_cl *cla, 
+                                               unsigned char ri )
+
+{
+  coco_mini_point *hps = cla->weapon_hardpoints;
+  if (hps)
+    return hps[ri];
+  else
+    {
+      struct coco_raster *r = cla->rasters[ri];
+      return COCO_MAKE_MINI_POINT( r->w>>1, r->h>>1 );
+    }
+}
+
 
 
 /* ____ CENTER OF MASS _______________________________________ */

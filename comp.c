@@ -40,9 +40,6 @@ coco_comp_ensure_facing( coco_facing facing,
                          struct coco_comp *self,
                          coco_cobject *cself )
 {
-  coco_cookie( "ensure %d, current = %d, toggle = %d\n",
-               facing, COCO_COPTER_FACING_RIGHT( cself ),
-               (facing != COCO_COPTER_FACING_RIGHT( cself )));
   if ((facing>0) != COCO_COPTER_FACING_RIGHT( cself ))
     coco_comp_key_press( state_return, self, COCO_LPOINTER );
 }
@@ -74,6 +71,61 @@ coco_comp_find_cobject( coco_cobject *cobjs, int ncobjs,
   else 
     return NULL;
 }
+
+
+
+/* computes the number of bombs to be dropped.  For most targets, one bomb
+   is enough, so this just roots through cobjs to find an already in
+   flight bomb.  If it finds one, it returns 0, otherwise it returns 1.
+   For tanks and other tougher targets, it guesses the number needed,
+   subtracts the in-flights, and returns that. */
+int
+coco_comp_compute_needed_bombs( coco_cobject *targ, coco_cobject *self, 
+                                coco_cobject *cobjs, int ncobjs )
+{
+  coco_cobject *cobj;
+  coco_health hmax;
+  int needed;
+  int i;
+  coco_gnum sx, sy;
+  coco_mini_point shp;
+  coco_sobject_cl *cla, *tcla;
+  unsigned char ri;
+
+  tcla = COCO_COBJECT_CL( targ );
+  hmax = tcla->health_max;
+  if (hmax == COCO_NIGH_INVULNERABLE)
+    return 0; /* don't try dropping bombs on it */
+  else if (coco_sobject_subtype_p( tcla, COCO_TANK_CLASS ))
+    {
+      needed = ceil( COCO_TANK_ANGLE_TO_HEALTH( COCO_COBJECT_ANGLE( targ ),
+                                                hmax )
+                     / (double) COCO_BOMB_DAMAGE );
+    }
+  else 
+    needed = ceil( hmax / (double) COCO_BOMB_DAMAGE );
+
+  cla = COCO_COBJECT_CL( self );
+  ri = COCO_COBJECT_RASTER_INDEX( self );
+  shp = coco_sobject_weapon_hardpoint_by_raster_index( cla, ri );
+  sx = COCO_COBJECT_X( self ) + COCO_MINI_POINT_X( shp );
+  sy = COCO_COBJECT_Y( self ) + COCO_MINI_POINT_Y( shp );
+  for (i=0, cobj=cobjs; i<ncobjs; i++, cobj++)
+    if (coco_sobject_subtype_p( COCO_COBJECT_CL( cobj ), COCO_BOMB_CLASS )
+        && (COCO_COBJECT_Y( cobj ) < sy))
+      {
+        coco_gnum lhs = COCO_SOBJECT_X( cobj ) - 40;
+        coco_gnum rhs = COCO_COBJECT_X( cobj ) + 40;
+        if (COCO_BETWEENI( lhs, sx, rhs ))
+          {
+            needed--;
+            if (needed<=0) 
+              return 0;
+          }
+      }
+  return needed;
+}
+
 
 
 /* perform side effects on self->kpstate, (and self->cruise_altitude) */
@@ -172,7 +224,6 @@ coco_comp_think( struct coco_comp *self,
         {
           xgo = -dy
              * (COCO_OFFICIAL_WINDOW_W/(COCO_GUN_DY_THRESHOLD)); /* fence */
-          coco_cookie( "xgo=%d\n", xgo );
         }
       /* move towards it */
       state_return->pointer_x 
@@ -192,8 +243,8 @@ coco_comp_think( struct coco_comp *self,
       return;
     }
 #endif /* COCO_NONLETHAL_AI */
-  if ((cstate->dashinfo.bullets == 0) /* low ammo */
-      || (cstate->board_w >=  /* low fuel */
+  if ((cstate->dashinfo.bullets < 12) /* low ammo */
+      || (cstate->board_w * 1.5 >=          /* low fuel */
           (COCO_COBJECT_CL( cself )->dx_max * cstate->dashinfo.fuel))
       /* || (cstate->dashinfo.fuel < (14 * 155)) TO TEST */
       || self->refuelling)
@@ -254,6 +305,62 @@ coco_comp_think( struct coco_comp *self,
         }
 
     }
+  /* Look for good things to bomb */
+  {
+    coco_cobject *target;
+    coco_sobject_cl *tcl;
+
+    target = coco_comp_find_cobject( cobjs, cstate->cobject_count,
+                                     COCO_GROUND_UNIT_CLASS,
+                                     (self->nationality == COCO_GOOD_GUYS)
+                                     ? COCO_BAD_GUYS : COCO_GOOD_GUYS, x );
+    tcl = target ? COCO_COBJECT_CL( target ) : NULL;
+
+    if (target)
+      {
+        coco_cookie( "in=%d", self->cruise_altitude );
+        self->cruise_altitude = COCO_CLAMP( COCO_INFANTRY_GUN_RANGE, 
+                                            self->cruise_altitude,
+                                            (COCO_VIEWABLE_H*3/4) );
+        coco_cookie( " out=%d min=%d max=%d\n", self->cruise_altitude,
+                     COCO_INFANTRY_GUN_RANGE, (COCO_VIEWABLE_H*3/4) );
+      }
+
+    if (target && (cstate->dashinfo.bombs>0) && 
+        (coco_comp_compute_needed_bombs( target, cself, cobjs, 
+                                         cstate->cobject_count )>0))
+      {
+        coco_mini_point mmp, tmp;
+        int mri, tri;
+        coco_gnum delta, probable_target_dx;
+        coco_sobject_cl *mcl;
+        mcl = COCO_COBJECT_CL( cself );
+        tcl = COCO_COBJECT_CL( target );
+        mri = COCO_COBJECT_RASTER_INDEX( cself );
+        tri = COCO_COBJECT_RASTER_INDEX( target );
+        mmp = coco_sobject_weapon_hardpoint_by_raster_index( mcl, mri );
+        tmp = coco_sobject_com_by_raster_index( tcl, tri );
+        delta = COCO_COBJECT_X( target ) + COCO_MINI_POINT_X( tmp )
+          - x - COCO_MINI_POINT_X( mmp );
+        state_return->pointer_x = (delta>30)
+          ? 240
+          : ((delta<-30) ? -240 : (delta<<3));
+        probable_target_dx = ((self->nationality == COCO_GOOD_GUYS) ? -1 : 1);
+        if ((abs( delta ) < (coco_sobject_subtype_p( tcl, 
+                                                     COCO_DEMO_VAN_CLASS )
+                             ? 6 : 10))
+            && (abs( cstate->dx + probable_target_dx ) < 2))
+          coco_comp_key_press( state_return, self, COCO_CHAR_TO_KEY( 'z' ) );
+        else
+          self->cruise_altitude -= 1;
+        return;
+      }
+    else if (target && (cstate->dashinfo.bombs==0))
+      self->refuelling = COCO_TRUE; /* go get some bombs to deal w/ these turkeys */
+  }
+
+
+  /* charge like maniac */
   state_return->pointer_x = COCO_OFFENSIVE_FACING( self->nationality )
     * COCO_OFFICIAL_WINDOW_W;
 }

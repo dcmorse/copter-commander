@@ -590,5 +590,10 @@ coco_mini_point
 coco_sobject_com_by_raster_index( coco_sobject_cl *cla, unsigned char ri );
 
 coco_mini_point
+coco_sobject_weapon_hardpoint_by_raster_index( coco_sobject_cl *cla, 
+                                               unsigned char ri );
+
+
+coco_mini_point
 coco_cobject_com( coco_cobject *cobject );
 

@@ -1,5 +1,8 @@
 2001-04-03  David Morse  <dm@bomberlan.net>
 
+	* methods.c (coco_launch_rocket): 
+	(coco_rocket_update_state): Rockets fly crisply along 4/1 slope.
+
 	* comp.c (coco_comp_think): Add refuel and mad-charge routines.
 
 	* configure-sizeof-short.sh (sizeof_short): un-misspell SHRT_MAX

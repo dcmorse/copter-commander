@@ -647,6 +647,8 @@ struct coco_cstate_serial_header {
   unsigned char game_over_nationality;
   coco_i32 cam_left;
   coco_i32 board_w;
+  coco_i32 dx;
+  coco_i32 dy;
   struct coco_dashboard_info dashinfo;
 };
 
@@ -1172,6 +1174,7 @@ int coco_neutral_guess_nationality( coco_cobject *cobject );
 int coco_hut_guess_nationality( coco_cobject *cobject );
 int coco_2raster_guess_nationality( coco_cobject *cobject );
 int coco_firetruck_guess_nationality( coco_cobject *cobject );
+int coco_demo_van_guess_nationality( coco_cobject *cobject );
 int coco_infantry_guess_nationality( coco_cobject *cobject );
 
 
@@ -1291,6 +1294,18 @@ void coco_send_play_message_maybe( void );
     if (COCO_SOBJECT_IN_USE( sobject_var ))\
       body\
 }
+
+#define COCO_TANK_HEALTH_TO_ANGLE( health, health_max, facing ) \
+  (((facing)>0) \
+   ? (6 + (health) - (health_max)) \
+   : ((122 - (health) + (health_max))))
+#define COCO_TANK_ANGLE_TO_HEALTH( angle, health_max ) \
+  (((angle)>64) \
+  ? (((angle)>192) \
+     ? (-256 - 6 + (int) (angle) + (health_max)) \
+     : (-122 + (int) (angle) - (health_max))) \
+  : (-6 + (int) (angle) + (health_max)))
+
 
 #include "forward-sobject.h"
 #include "methods.h" /* COCO_SOBJECT_RASTER( sobject ) function in here */

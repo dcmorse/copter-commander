@@ -2294,6 +2294,8 @@ coco_write_cstate_serial_header( struct coco_cstate_serial_header *str,
   str->game_over_nationality = sstate->game_over_nationality;
   str->cam_left = cam_left;
   str->board_w = sstate->board_w;
+  str->dx = cam_object_or_null ? COCO_SOBJECT_DX( cam_object_or_null ) : 0;
+  str->dy = cam_object_or_null ? COCO_SOBJECT_DY( cam_object_or_null ) : 0;
   if (cam_object_or_null 
       && coco_sobject_subtype_p( COCO_SOBJECT_CL( cam_object_or_null ),
                                  COCO_COPTER_CLASS ))

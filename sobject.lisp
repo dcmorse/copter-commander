@@ -709,6 +709,7 @@
   (("raster_index" "((nationality - COCO_GOOD_GUYS)<<1) + (0==(rand()&127))")
    ("rasters"      "coco_demo_van_rasters")
    ("raster_count" "COCO_DEMO_VAN_RASTER_COUNT")
+   ("cobject_guess_nationality_fn" "coco_demo_van_guess_nationality")
    ("shrapnel_count" "4")
    ("health_max"   "2")
    ("canonical_w"   "COCO_VAN_GREEN_RASTER_W")

@@ -220,6 +220,15 @@ coco_firetruck_guess_nationality( coco_cobject *cobject )
 }
 
 int
+coco_demo_van_guess_nationality( coco_cobject *cobject )
+{
+  return (COCO_COBJECT_RASTER_INDEX( cobject ) < 2)
+    ? COCO_GOOD_GUYS
+    : COCO_BAD_GUYS;
+}
+
+
+int
 coco_infantry_guess_nationality( coco_cobject *cobject )
 {
   unsigned char ri = COCO_COBJECT_RASTER_INDEX( cobject );

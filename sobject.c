@@ -1955,7 +1955,7 @@ coco_sobject_cl coco_sobject_classes[] = {
     coco_demo_van_rasters,              /* rasters */
     coco_cobject_ground_unit_y,         /* cobject_y_fn */
     coco_cobject_standard_raster_index, /* cobject_raster_index_fn */
-    coco_2raster_guess_nationality,     /* cobject_guess_nationality_fn */
+    coco_demo_van_guess_nationality,    /* cobject_guess_nationality_fn */
     COCO_BULLET_CLASS,                  /* bullet_class */
     coco_cobject_y_ntoh,                /* cobject_ntoh */
     coco_cobject_rasteroid_draw,        /* cobject_draw */
