@@ -132,7 +132,7 @@ coco_make_udp_fd( unsigned short *port_return,
   sockaddr.sin_family = PF_INET;
   sockaddr.sin_port = htons( 0 ); /* any port? */
   sockaddr.sin_addr.s_addr = htonl( INADDR_ANY );
-  if (-1 == bind( fd, &sockaddr, sizeof( sockaddr ) ))
+  if (-1 == bind( fd, (struct sockaddr *) &sockaddr, sizeof( sockaddr ) ))
     {
       coco_assign_network_error( COCO_NETERROR_BIND_SOCKET,
                                  err_return, err_arg_return );
@@ -142,7 +142,8 @@ coco_make_udp_fd( unsigned short *port_return,
   if (port_return)
     {
       socklen_t sockaddr_size = sizeof( sockaddr );
-      if(-1 == getsockname( fd, &sockaddr, &sockaddr_size ))
+      if(-1 == getsockname( fd, (struct sockaddr *) &sockaddr, 
+                            &sockaddr_size ))
         {
           coco_assign_network_error( COCO_NETERROR_GETSOCKNAME,
                                      err_return, err_arg_return );

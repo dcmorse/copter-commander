@@ -1860,15 +1860,22 @@ coco_infantry_effective_damage( coco_sobject *damagee,
 
 
 
-/* 75% effective against rifle bullets */
+/* 50% effective against rifle bullets, double damage from bombs, 2/3
+   damage from rockets. */
 coco_health
-coco_light_armor_effective_damage( coco_sobject *damagee,
-                                 coco_sobject_cl *damagee_cl,
-                                 coco_sobject *damager )
+coco_gun_effective_damage( coco_sobject *damagee,
+                           coco_sobject_cl *damagee_cl,
+                           coco_sobject *damager )
 {
-  if ((!coco_sobject_subtype_p( COCO_SOBJECT_CL( damager ),
+  if (coco_sobject_subtype_p( COCO_SOBJECT_CL( damager ),
+                              COCO_BOMB_CLASS ))
+    return COCO_SOBJECT_DAMAGE( damager ) << 1;
+  else if (coco_sobject_subtype_p( COCO_SOBJECT_CL( damager ),
+                                   COCO_BOMB_CLASS ))
+    return (COCO_SOBJECT_DAMAGE( damager ) << 1) / 3;
+  else if ((!coco_sobject_subtype_p( COCO_SOBJECT_CL( damager ),
                                 COCO_RIFLE_BULLET_CLASS ))
-      ||!(rand()%3))
+      ||(rand()%1))
     return COCO_SOBJECT_DAMAGE( damager );
   else return 0;
 }

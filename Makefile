@@ -38,7 +38,7 @@
 # make srpm                 - make RPM snapshot and place in ./dist
 #
 # If your name is David Morse, you probably want to compile with
-# make COCO_OPTIMIZATION_FLAGS=-"g -DCOCO_DEBUG" CC=/usr/local/bin/gcc COCO_LEVEL_DIRECTORY=/home/dm/coco/levels COCO_SOUND_DIRECTORY=/home/dm/coco/sounds COCO_SOUND=openal copter-commander
+# make COCO_OPTIMIZATION_FLAGS=-"g -DCOCO_DEBUG" COCO_LEVEL_DIRECTORY=/home/dm/coco/levels COCO_SOUND_DIRECTORY=/home/dm/coco/sounds COCO_SOUND=openal copter-commander
 # or if you're on cramwurm
 # make COCO_SOUND=mute COCO_GL_INCLUDE_DIRECTORY=/usr/local/include COCO_GL_LIB_DIRECTORY=/usr/local/lib COCO_LEVEL_DIRECTORY=/home/dm/coco/levels COCO_SOUND_DIRECTORY=/home/dm/coco/sounds glx-copter-commander
 
@@ -130,6 +130,7 @@ COCO_OPTIMIZATION_FLAGS=-O3
 CFLAGS_UNANSI=-Wall ${COCO_OPTIMIZATION_FLAGS}
 # While everything else uses CFLAGS.
 CFLAGS=-ansi -pedantic ${CFLAGS_UNANSI}
+# CFLAGS=${CFLAGS_UNANSI}
 
 # COMMON LISP COMPILER
 # (Only needed to do development, not to compile from distribution)
@@ -387,7 +388,7 @@ endian: endian.c
 
 clean: tiff-clean
 	rm -f *.o copter-commander glx-copter-commander \
-	  config-time.h *.strlit endian sizeof tiff-compile
+	  configure-time.h *.strlit endian sizeof tiff-compile
 
 distclean: clean
 	rm -f object-time.h object-time.lisp \

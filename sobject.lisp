@@ -466,7 +466,7 @@
    ("rasters"      "coco_cargo_copter_rasters")
    ("rotor_radius" "65")
    ("refund"       "2")
-   ("cost"         "10")
+   ("cost"         "15")
    ("health_max"   "5")
    ("x_force"      "2")
    ("dashboard_icon" "&coco_cargo_copter_icon_raster")
@@ -812,7 +812,7 @@
 
 (c-define-method "kaboom" "gun" "coco_gun_kaboom")
 
-(c-define-method "effective_damage" "gun" "coco_light_armor_effective_damage")
+(c-define-method "effective_damage" "gun" "coco_gun_effective_damage")
 
 (c-define-class "aa_gun" ("gun")
   (("targetable_classes_count" "2")

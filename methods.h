@@ -363,9 +363,9 @@ coco_health coco_heavy_armor_effective_damage( coco_sobject *damagee,
                                                coco_sobject *damager );
 
 
-coco_health coco_light_armor_effective_damage( coco_sobject *damagee,
-                                               coco_sobject_cl *damagee_cl,
-                                               coco_sobject *damager );
+coco_health coco_gun_effective_damage( coco_sobject *damagee,
+                                       coco_sobject_cl *damagee_cl,
+                                       coco_sobject *damager );
 
 coco_health coco_unarmored_effective_damage( coco_sobject *damagee,
                                              coco_sobject_cl *damagee_cl,

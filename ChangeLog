@@ -1,3 +1,10 @@
+2001-06-25  David Morse  <dm@bomberlan.net>
+
+	* server.c (timercmp): many changes to make new glibc shut up.
+
+	* openal-sound.c (coco_init_sound_system): many changes to
+	accomodate OpenAL api drift.
+
 2001-06-06  David Morse  <dm@bomberlan.net>
 
 	* sobject.lisp (cargo_copter): introduce repair kits.

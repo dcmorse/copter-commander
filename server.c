@@ -17,9 +17,22 @@
  * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
  */
 
-#include <sys/time.h>           /* for select */
-#include <sys/types.h>          /* for select */
-#include <unistd.h>             /* for select */
+/* hack to actually get timercmp under glibc
+   Need to actually ensure using glibc before using _BSD_SOURCE. */
+#include <sys/time.h>
+#ifndef timercmp
+/* glibc 2.2 or 2.3 won't define timercmp unless either non "-ansi" or
+   _BSD_SOURCE */
+#define timercmp(a, b, CMP) 						      \
+ (((a)->tv_sec == (b)->tv_sec) ? 					      \
+  ((a)->tv_usec CMP (b)->tv_usec) : 					      \
+  ((a)->tv_sec CMP (b)->tv_sec))
+#endif
+
+
+#include <time.h>               /* for time() */
+#include <sys/types.h>          /* for select() */
+#include <unistd.h>             /* for select() */
 #include <sys/types.h>          /* for socket() */
 #include <sys/socket.h>         /* for socket() */
 #include <assert.h>             /* for struct protoent */
@@ -359,7 +372,7 @@ coco_server_setup( int *tcpfd, int *out_udpfd,
   sockaddr.sin_family = PF_INET;
   sockaddr.sin_port = htons( coco_port );
   sockaddr.sin_addr.s_addr = htonl( INADDR_ANY );
-  if (-1==bind( listenfd, &sockaddr, sizeof( sockaddr ) ))
+  if (-1==bind( listenfd, (struct sockaddr *) &sockaddr, sizeof( sockaddr ) ))
     coco_fatal_printf( COCO_ERROR_NETWORK_BROKEN,
                        "Bind failed with errno=%d: %s\n",
                        errno, coco_errno_string( errno ) );
@@ -2540,7 +2553,7 @@ coco_send_cstate( int udpfd, int plr_index, void *cstate_buf, size_t buf_size )
   */
 
   sendto_result = sendto( udpfd, cstate_buf, buf_size, 0,
-                          &sockaddr, sizeof( sockaddr ) );
+                          (struct sockaddr *) &sockaddr, sizeof( sockaddr ) );
   if (-1 == sendto_result)
     switch (errno) {
     case EAGAIN:
@@ -2710,7 +2723,7 @@ coco_read_client_packet( int udpfd, coco_sstate *sstate )
 
   while (1) {
     recv_result = recvfrom( udpfd, &pkt, sizeof( pkt ), 0,
-                            &sockaddr, &sockaddr_size ); 
+                            (struct sockaddr *) &sockaddr, &sockaddr_size ); 
     if (recv_result != sizeof( pkt ))
       {
         if (-1 == recv_result)
@@ -2856,6 +2869,16 @@ coco_server_shutdown( int listenfd, int out_udpfd, int in_udpfd )
 }
 
 
+/* suddenly not in glibc 2.1 when compiling -ansi */
+#ifndef timercmp
+#define timercmp(a, b, CMP) 						      \
+  (((a)->tv_sec == (b)->tv_sec) ? 					      \
+   ((a)->tv_usec CMP (b)->tv_usec) : 					      \
+   ((a)->tv_sec CMP (b)->tv_sec))
+#endif
+
+
+
 void
 coco_server_loop( int listenfd, int out_udpfd, 
                   int in_udpfd, unsigned short in_udp_port )
@@ -2899,6 +2922,7 @@ coco_server_loop( int listenfd, int out_udpfd,
         coco_fatal_printf( COCO_ERROR_NETWORK_BROKEN,
                            "select failed with errno=%d: %s\n", errno, 
                            coco_errno_string( errno ) );
+ 
       for (i=0; i<=maxfd; i++)
         if (FD_ISSET( i, &readset ))
           {
@@ -2906,8 +2930,8 @@ coco_server_loop( int listenfd, int out_udpfd,
               coco_handle_connection_request( listenfd, in_udp_port, sstate );
             else if (in_udpfd == i)
               coco_read_client_packet( in_udpfd, sstate );
-              /* would like to boot the player if read_client_packet fails, but
-                 then again, we don't know who it is that's failing.  */
+            /* would like to boot the player if read_client_packet fails, but
+               then again, we don't know who it is that's failing.  */
             else
               {
                 int index;

@@ -50,9 +50,7 @@ coco_run_sanity_checks( void )
                        test );
 }
 
-
-
-int 
+int
 main(int argc, char **argv)
 {
   int server;

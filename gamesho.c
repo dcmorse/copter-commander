@@ -421,7 +421,7 @@ coco_sobject_weapon_hardpoint_coords( coco_sobject *sobject,
 char *coco_game_sound_names[COCO_GAME_SOUNDS_SIZE] = {
   "marty-airburst",
   "missile-f", /* "barrage-mans-rocket-f",*/
-  "marty-copter-cannon-clip",
+  "marty-copter-cannon",
   "whang-f",
   "marty-rocket-hit",
   "marty-bomb-hit",

@@ -27,7 +27,8 @@
 #include <assert.h>
 #include "coco.h"
 
-static void *context = NULL;
+static ALCdevice *device = NULL;
+static void *context = NULL; /* ALCcontext * in doc but void * in headers!  */
 
 #define COCO_GNUM_TO_ALFLOAT( x ) ((ALfloat) (((coco_gnum) (x)) * 0.01))
 
@@ -63,6 +64,11 @@ coco_exit_sound_system( void )
     {
       alcDestroyContext( context );
       context = NULL;
+    }
+  if (device)
+    {
+      alcCloseDevice( device );
+      device = NULL;
     }
 }
 
@@ -171,7 +177,7 @@ coco_play_sound_from_source_maybe( ALuint source, coco_sound sound,
                                    coco_i32 x, coco_i32 y )
 {
   ALint enumerant;
-  alGetSourcei( source, AL_SOURCE_STATE, &enumerant );
+  alGetSourceiv( source, AL_SOURCE_STATE, &enumerant );
   if (AL_PLAYING != enumerant)
     {
       alSource3f( source, AL_POSITION, 
@@ -237,16 +243,36 @@ coco_play_sound( coco_sound sound, coco_sound_type type,
 void 
 coco_init_sound_system( void )
 {
+  ALCenum current;
   static int attrlist[] = { ALC_FREQUENCY, 22050, 0 };
   int i, j;
   for (i=0; i<COCO_SOUND_NSOURCES; i++)
     coco_sources_allocated[i] = COCO_FALSE;
   assert( NULL == context );
-  context = alcCreateContext( attrlist );
+  coco_cookie( "alcOpenDevice( NULL )" );
+  device = alcOpenDevice( NULL );
+  if (NULL == device)
+    {
+      coco_warn_printf( "Couldn't detect default OpenAL device.  "
+                        "No sound for you.\n" );
+      return;
+    }
+  coco_cookie( "...ok.\n" );
+  coco_cookie( "alcCreateContext( %p, [ ALC_FREQUENCY, 22050, 0 ] )",
+               device );
+  context = alcCreateContext( device, attrlist );
   if (NULL==context)
     {
       coco_warn_printf( "Couldn't create OpenAL context.  "
                         "No sound for you.\n" );
+      return;
+    }
+  coco_cookie( "...ok.\n" );
+  current = alcMakeContextCurrent( context );
+  if (current != ALC_NO_ERROR)
+    {
+      coco_warn_printf( "Couldn't make OpenAL context at %p current.  "
+                        "No sound for you.\n", context );
       return;
     }
   { /* init listener */
@@ -265,9 +291,11 @@ coco_init_sound_system( void )
     alListenerfv(AL_VELOCITY, zeroes );
     alListenerfv(AL_ORIENTATION, back );
   }
+  coco_cookie( "OpenAL listener initialization complete.\n" );
 
+  coco_cookie( "Allocating general purpose sources" );
   alGenSources( COCO_SOUND_NSOURCES, coco_sources );
-
+  coco_cookie( "...ok\n" );
   /* setup semi-static arrays for dedicated sources */
   for (j=0; j<COCO_GAME_SOUNDS_SIZE; j++)
     coco_allocate_dedicated_sources( j, 0 );
@@ -275,6 +303,7 @@ coco_init_sound_system( void )
   coco_allocate_dedicated_sources( COCO_SOUND_ROCKET_HIT, 4 );
   coco_allocate_dedicated_sources( COCO_SOUND_BOMB_HIT, 8 );
   coco_allocate_dedicated_sources( COCO_SOUND_RIFLE, 1 );
+  coco_cookie( "OpenAL source allocation complete.\n" );
 }
 
 void
