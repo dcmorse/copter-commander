@@ -1300,9 +1300,9 @@ coco_every_sobject_delete( coco_sobject *sobject,
 }
 
 void
-coco_copter_delete( coco_sobject *sobject,
-                    coco_sobject_cl *cl,
-                    coco_sstate *sstate )
+coco_copter_mech_delete( coco_sobject *sobject,
+                         coco_sobject_cl *cl,
+                         coco_sstate *sstate )
 {
   coco_sobject *camera;
   coco_gnum xmid, ymid;
@@ -1714,9 +1714,24 @@ coco_gnum
 coco_copter_velocity_offset( coco_sobject *camera, coco_sobject_cl *cla )
 {
   coco_gnum dx_max = COCO_SOBJECT_DX_MAX( camera );
+  /* really slow copters get less offset to help them see behind */
+  dx_max = COCO_MAX( dx_max, COCO_COPTER_DX_MAX-6 );
   return (dx_max>0)
     ? (COCO_SOBJECT_DX( camera ) * (COCO_OFFICIAL_WINDOW_W>>2) / dx_max)
     : 0;
+}
+
+
+coco_gnum 
+coco_mech_velocity_offset( coco_sobject *camera, coco_sobject_cl *cla )
+{
+  switch (COCO_SOBJECT_NATIONALITY( camera )) {
+  case COCO_GOOD_GUYS: return -COCO_OFFICIAL_WINDOW_W>>3;
+  case COCO_BAD_GUYS:  return COCO_OFFICIAL_WINDOW_W>>3;
+  case COCO_NEUTRAL:
+  default: 
+    return 0;
+  }
 }
 
 
@@ -1861,6 +1876,13 @@ coco_ignore_ground_collide( coco_sobject *sobject, coco_sobject_cl *cla,
                             coco_sstate *sstate )
 {
   ; /* do nothing */
+}
+
+void
+coco_fixup_ground_collide( coco_sobject *sobject, coco_sobject_cl *cla,
+                            coco_sstate *sstate )
+{
+  COCO_SOBJECT_Y( sobject ) = COCO_GROUND_Y;
 }
 
 
@@ -2226,6 +2248,24 @@ coco_balloon_part_hostile_collision( coco_sobject *obj1,
 
 
 void
+coco_mech_hostile_collision( coco_sobject *obj1,
+                             coco_sobject_cl *obj1cl,
+                             coco_sobject *obj2, 
+                             coco_sstate *sstate,
+                             coco_bool *stat1, coco_bool *stat2 )
+{
+  assert( !coco_sobject_subtype_p( COCO_SOBJECT_CL( obj2 ),
+                                   COCO_MUNITION_CLASS) );
+  if (COCO_NEUTRAL == COCO_SOBJECT_NATIONALITY( obj2 )
+      && coco_sobject_subtype_p( COCO_SOBJECT_CL( obj2 ),
+                                 COCO_BUILDING_CLASS ))
+    *stat1 = *stat2 = COCO_FALSE; /* eg hut or pad */
+  /* call-next-method */
+  else coco_hostile_collision( obj1, obj1cl->super, obj2, sstate,
+                               stat1, stat2 );
+}
+
+void
 coco_ground_unit_hostile_collision( coco_sobject *obj1,
                                coco_sobject_cl *obj1cl,
                                coco_sobject *obj2, 
@@ -2534,12 +2574,12 @@ coco_camera_blip_color_index( coco_sobject *sobject,
   else return coco_sobject_blip_color_index( sobject, cl->super, p_or_c_index, is_comp, sstate );
 }
 
- coco_blip_index
-coco_copter_blip_color_index( coco_sobject *sobject, 
-                              coco_sobject_cl *cl,
-                              int p_or_c_index,
-                              coco_bool is_comp,
-                              coco_sstate *sstate )
+coco_blip_index
+coco_copter_mech_blip_color_index( coco_sobject *sobject, 
+                                   coco_sobject_cl *cl,
+                                   int p_or_c_index,
+                                   coco_bool is_comp,
+                                   coco_sstate *sstate )
 {
   if (coco_jamming)
     {

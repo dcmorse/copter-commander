@@ -157,6 +157,7 @@ coco_bool coco_process_gnome_args( int start, int end, char **argv );
 #define COCO_CLAMP( a, b, c ) COCO_MIN( COCO_MAX( a, b ), c )
 /* true if middle number is between outer ones (i=inclusive) */
 #define COCO_BETWEENI( a, b, c ) (((b)>=(a))&&((b)<=(c)))
+#define COCO_BETWEENA( a, b, c ) (((b)>=(a))&&((b)<(c)))
 
 #define COCO_PRODUCT_NAME "Copter Commander"
 extern const char *coco_product_name;  /* Copter Commander */
@@ -1216,6 +1217,23 @@ struct coco_raster_y_angle_cobject {
   coco_angle angle;
 };
 
+#define COCO_COBJECT_MECH_TORSO_RASTER_INDEX( cobject ) ((cobject)->mech.lobits&31)
+#define COCO_COBJECT_MECH_LEG_RASTER_INDEX( cobject ) ((cobject)->mech.hibits&63)
+#define COCO_COBJECT_MECH_NATIONALITY( cobject ) \
+  ((((cobject)->mech.hibits>>6)&1) + COCO_GOOD_GUYS)
+#define COCO_COBJECT_MECH_SHIELD_POWER( cobject ) \
+  (((cobject)->mech.hibits>>7)&1)
+
+/* inherits from nothing, but informally coco_y_cobject */
+struct coco_mech_cobject {
+  unsigned char class_index;
+  unsigned char lobits;
+  coco_cnum x;
+  coco_cnum y;
+  unsigned char hibits;
+};
+
+
 union coco_cobject {
   struct coco_every_cobject every;
   struct coco_y_cobject y;
@@ -1228,6 +1246,7 @@ union coco_cobject {
   struct coco_raster_y_angle_cobject rya;
   struct coco_metal_shrapnel_cobject metal_shrapnel;
   struct coco_spark_cobject spark;
+  struct coco_mech_cobject mech;
 };
 
 #define COCO_COBJECT_CL_INDEX( cobject )\
@@ -1262,6 +1281,7 @@ unsigned char coco_cobject_simple_raster_index( coco_cobject *cobject );
 unsigned char coco_cobject_standard_raster_index( coco_cobject *cobject );
 
 int coco_cobject_guess_nationality_helper( coco_cobject *cobject );
+int coco_mech_guess_nationality( coco_cobject *cobject );
 int coco_cobject_whimpy_guess_nationality( coco_cobject *cobject );
 int coco_copter_guess_nationality( coco_cobject *cobject );
 int coco_neutral_guess_nationality( coco_cobject *cobject );
@@ -1331,6 +1351,30 @@ void coco_send_play_message_maybe( void );
 #define COCO_TALK_DISPLAY_SIZE 4
 
 
+struct coco_mech_part {
+  struct coco_raster *r;
+  coco_gnum dx;
+  coco_gnum dy;
+  coco_gnum dh; /* leg only: height to paste torso onto legs */
+};
+
+
+/* mech parts */
+#define COCO_MAX_TORSO_PARTS 24
+#define COCO_MAX_LEG_PARTS 38
+#define COCO_LEFTY_LEG_PART 19
+#define COCO_MIN_IDLE_PARTS 0
+#define COCO_MAX_IDLE_PARTS 6
+#define COCO_MIN_SQUAT_PARTS 6
+#define COCO_MAX_SQUAT_PARTS 10
+#define COCO_MIN_WALK_PARTS 10
+#define COCO_MAX_WALK_PARTS 18
+#define COCO_AKIMBO_PART 18
+
+struct coco_mech_part coco_torso_parts[COCO_MAX_TORSO_PARTS];
+struct coco_mech_part coco_leg_parts[COCO_MAX_LEG_PARTS];
+
+
 /* server.c */
 
 #define COCO_LOCALHOST_JOIN_TRIES 10
@@ -1345,6 +1389,12 @@ void coco_send_play_message_maybe( void );
    which is slower. */
 #define COCO_COPTER_DX_MAX 22
 #define COCO_COPTER_DY_MAX 14
+#define COCO_MECH_WALKING_DX_MAX 10
+#define COCO_MECH_JUMPING_DX_MAX 18
+#define COCO_MECH_JUMPING_DDX_MAX 2
+#define COCO_MECH_DY_MAX 20
+#define COCO_MECH_GRAVITY 3
+#define COCO_MECH_CAPACITANCE 200
 #define COCO_BULLET_SPEED 30 /* can't be higher than balloon_w */
 #define COCO_BULLET_LIFESPAN 20
 #define COCO_BULLET_RANGE \
@@ -1368,6 +1418,7 @@ void coco_send_play_message_maybe( void );
 #define COCO_MISSILE_DAMAGE 12
 #define COCO_SHRAPNEL_DAMAGE 1
 #define COCO_COPTER_DAMAGE 15
+#define COCO_MECH_DAMAGE 15
 #define COCO_GROUND_Y 8
 #define COCO_GROUND_UNIT_DX_MAX 1
 #define COCO_GUN_BARREL_LENGTH 8 /* must be power of 2 */

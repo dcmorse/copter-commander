@@ -115,11 +115,10 @@ coco_cargo_copter_rotor_points[COCO_COPTER_RASTER_COUNT] = {
 
 coco_mini_point 
 coco_cargo_copter_weapon_hardpoints[COCO_COPTER_RASTER_COUNT] = {
-  /* same as center of mass */
-  COCO_MAKE_MINI_POINT( 35, 39 ),
-  COCO_MAKE_MINI_POINT( 89, 39 ),
-  COCO_MAKE_MINI_POINT( 35, 39 ),
-  COCO_MAKE_MINI_POINT( 89, 39 ),
+  COCO_MAKE_MINI_POINT( 35, 29 ),
+  COCO_MAKE_MINI_POINT( 89, 29 ),
+  COCO_MAKE_MINI_POINT( 35, 29 ),
+  COCO_MAKE_MINI_POINT( 89, 29 ),
 };
 
 coco_mini_point 
@@ -539,3 +538,87 @@ int coco_sky_option = -1; /* as interpreted by enum coco_sky_colors */
 
 /* initialized by the background modules */
 coco_color COCO_COLOR_FONT = COCO_COLOR_LIGHT_BLUE;
+
+
+/* moved to coco.h
+   #define COCO_MAX_TORSO_PARTS 24
+   #define COCO_MAX_LEG_PARTS 38
+   #define COCO_LEFTY_LEG_PART 19
+   #define COCO_MIN_IDLE_PARTS 0
+   #define COCO_MAX_IDLE_PARTS 6
+   #define COCO_MIN_SQUAT_PARTS 6
+   #define COCO_MAX_SQUAT_PARTS 10
+   #define COCO_MIN_WALK_PARTS 10
+   #define COCO_MAX_WALK_PARTS 18
+   #define COCO_AKIMBO_PART 18
+*/
+
+struct coco_mech_part coco_torso_parts[COCO_MAX_TORSO_PARTS] = {
+  { &coco_torso00_raster,  0,  0, 0 },
+  { &coco_torso01_raster,  0,  0, 0 },
+  { &coco_torso02_raster,  0,  0, 0 },
+  { &coco_torso03_raster,  0,  0, 0 },
+  { &coco_torso04_raster,  0,  0, 0 },
+  { &coco_torso05_raster,  0,  0, 0 },
+  { &coco_torso06_raster, -1,  0, 0 },
+  { &coco_torso07_raster, -2,  0, 0 },
+  { &coco_torso08_raster, -2,  0, 0 },
+  { &coco_torso09_raster, -3,  0, 0 },
+  { &coco_torso10_raster, -3,  0, 0 },
+  { &coco_torso11_raster, -3,  0, 0 },
+  { &coco_torso12_raster, -3,  0, 0 },
+  { &coco_torso13_raster, -2, -4, 0 },
+  { &coco_torso14_raster, -1, -5, 0 },
+  { &coco_torso15_raster, -1, -5, 0 },
+  { &coco_torso16_raster, -1, -5, 0 },
+  { &coco_torso17_raster,  0, -5, 0 },
+  { &coco_torso18_raster,  0, -5, 0 },
+  { &coco_torso19_raster,  1, -5, 0 },
+  { &coco_torso20_raster,  1, -5, 0 },
+  { &coco_torso21_raster,  2, -5, 0 },
+  { &coco_torso22_raster,  2, -4, 0 },
+  { &coco_torso23_raster,  1, -2, 0 },
+};
+
+struct coco_mech_part coco_leg_parts[COCO_MAX_LEG_PARTS] = {
+  { &coco_legs_idle_0_raster,  0, -1, 16 },
+  { &coco_legs_idle_1_raster,  0, -1, 16 },
+  { &coco_legs_idle_2_raster,  0, -1, 16 },
+  { &coco_legs_idle_3_raster,  0, -1, 15 },
+  { &coco_legs_idle_4_raster,  0, -1, 15 },
+  { &coco_legs_idle_5_raster,  0, -1, 15 },
+  { &coco_legs_squat_0_raster, 0, -1, 19 },
+  { &coco_legs_squat_1_raster, 0, -1, 17 },
+  { &coco_legs_squat_2_raster, 0, -1, 14 },
+  { &coco_legs_squat_3_raster, 0, -1, 13 },
+  { &coco_legs_walk_0_raster,  0, -1, 15 },
+  { &coco_legs_walk_1_raster,  0, -1, 15 },
+  { &coco_legs_walk_2_raster,  0, -1, 15 },
+  { &coco_legs_walk_3_raster,  0, -1, 15 },
+  { &coco_legs_walk_4_raster,  0, -1, 15 },
+  { &coco_legs_walk_5_raster,  0, -1, 15 },
+  { &coco_legs_walk_6_raster,  0, -1, 15 },
+  { &coco_legs_walk_7_raster,  0, -1, 15 },
+  { &coco_legs_akimbo_raster,  0, -1, 15 },
+  /* mirror that of above */
+  { &coco_legs_left_idle_0_raster,  0, -1, 16 },
+  { &coco_legs_left_idle_1_raster,  0, -1, 16 },
+  { &coco_legs_left_idle_2_raster,  0, -1, 16 },
+  { &coco_legs_left_idle_3_raster,  0, -1, 15 },
+  { &coco_legs_left_idle_4_raster,  0, -1, 15 },
+  { &coco_legs_left_idle_5_raster,  0, -1, 15 },
+  { &coco_legs_left_squat_0_raster, 0, -1, 19 },
+  { &coco_legs_left_squat_1_raster, 0, -1, 17 },
+  { &coco_legs_left_squat_2_raster, 0, -1, 14 },
+  { &coco_legs_left_squat_3_raster, 0, -1, 13 },
+  { &coco_legs_left_walk_0_raster,  0, -1, 15 },
+  { &coco_legs_left_walk_1_raster,  0, -1, 15 },
+  { &coco_legs_left_walk_2_raster,  0, -1, 15 },
+  { &coco_legs_left_walk_3_raster,  0, -1, 15 },
+  { &coco_legs_left_walk_4_raster,  0, -1, 15 },
+  { &coco_legs_left_walk_5_raster,  0, -1, 15 },
+  { &coco_legs_left_walk_6_raster,  0, -1, 15 },
+  { &coco_legs_left_walk_7_raster,  0, -1, 15 },
+  { &coco_legs_left_akimbo_raster,  0, -1, 15 },
+};
+

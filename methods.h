@@ -28,6 +28,10 @@ coco_sndobject_update_state( coco_sobject *sobject,
                              coco_sobject_cl *cl,
                              coco_sstate *sstate );
 
+coco_bool
+coco_mech_update_state( coco_sobject *sobject,
+                        coco_sobject_cl *cl,
+                        coco_sstate *sstate );
 
 coco_bool coco_spark_update_state( coco_sobject *sobject, 
                                    coco_sobject_cl *cl, 
@@ -204,9 +208,9 @@ void coco_every_sobject_delete( coco_sobject *sobject,
                                 coco_sobject_cl *cl,
                                 coco_sstate *sstate );
 
-void coco_copter_delete( coco_sobject *sobject,
-                         coco_sobject_cl *cl,
-                         coco_sstate *sstate );
+void coco_copter_mech_delete( coco_sobject *sobject,
+                              coco_sobject_cl *cl,
+                              coco_sstate *sstate );
 
 
 void 
@@ -214,6 +218,10 @@ coco_sndobject_to_cobject( coco_sobject *sobject, coco_sobject_cl *cl,
                            coco_cobject *cobject, coco_gnum cam_left,
                            coco_bool nbo );
 
+void 
+coco_mech_to_cobject( coco_sobject *sobject, coco_sobject_cl *cl,
+                      coco_cobject *cobject, coco_gnum cam_left,
+                      coco_bool nbo );
 
 void 
 coco_spark_to_cobject( coco_sobject *sobject, coco_sobject_cl *cl,
@@ -308,6 +316,9 @@ coco_gnum coco_every_camera_velocity_offset( coco_sobject *camera,
 coco_gnum coco_copter_velocity_offset( coco_sobject *camera, 
                                        coco_sobject_cl *cla );
 
+coco_gnum coco_mech_velocity_offset( coco_sobject *camera, 
+                                     coco_sobject_cl *cla );
+
 void sobject_ignore_neutral_buiding( coco_sobject *unit, coco_sobject_cl *cla,
                                      coco_sobject *building );
 
@@ -362,6 +373,9 @@ void coco_copter_ground_collide( coco_sobject *sobject, coco_sobject_cl *cla,
 
 void coco_ignore_ground_collide( coco_sobject *sobject, coco_sobject_cl *cla,
                                  coco_sstate *sstate );
+
+void coco_fixup_ground_collide( coco_sobject *sobject, coco_sobject_cl *cla,
+                                coco_sstate *sstate );
 
 
 void coco_every_sobject_ground_collide( coco_sobject *sobject,
@@ -427,6 +441,13 @@ void coco_copter_hostile_collision( coco_sobject *obj1,
                                     coco_sstate *sstate,
                                     coco_bool *stat1,
                                     coco_bool *stat2 );
+
+void coco_mech_hostile_collision( coco_sobject *obj1,
+                                  coco_sobject_cl *obj1cl,
+                                  coco_sobject *obj2, 
+                                  coco_sstate *sstate,
+                                  coco_bool *stat1, coco_bool *stat2 );
+
 
 void coco_every_sobject_friendly_collision( coco_sobject *obj1,
                                             coco_sobject_cl *obj1cl,
@@ -525,11 +546,11 @@ coco_camera_blip_color_index( coco_sobject *sobject,
                               coco_sstate *sstate );
 
 coco_blip_index
-coco_copter_blip_color_index( coco_sobject *sobject, 
-                              coco_sobject_cl *cl,
-                              int p_or_c_index,
-                              coco_bool is_comp,
-                              coco_sstate *sstate );
+coco_copter_mech_blip_color_index( coco_sobject *sobject, 
+                                   coco_sobject_cl *cl,
+                                   int p_or_c_index,
+                                   coco_bool is_comp,
+                                   coco_sstate *sstate );
 
 
 coco_bool
@@ -574,6 +595,8 @@ void coco_cobject_inviso_draw( coco_cobject *cobject, coco_sobject_cl *cla );
 void coco_cobject_sound_draw( coco_cobject *cobject, coco_sobject_cl *cla );
 
 void coco_missile_draw( coco_cobject *cobject, coco_sobject_cl *cla );
+
+void coco_mech_draw( coco_cobject *cobject, coco_sobject_cl *cla );
 
 void coco_spark_draw( coco_cobject *cobject, coco_sobject_cl *cla );
 

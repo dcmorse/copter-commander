@@ -243,7 +243,7 @@ coco_init_sstate( coco_sstate *sstate, coco_gnum width )
   for (i=0; i < COCO_MAX_PLAYERS; i++)
     {
       sstate->respawn[i] = COCO_FALSE;
-      sstate->favorite_copter_class[i] = COCO_COBRA_CLASS;
+      sstate->favorite_copter_class[i] = COCO_MECH_CLASS;
     }
   for (i=0; i < COCO_MAX_COMPS; i++)
     {
@@ -1660,6 +1660,313 @@ coco_copter_start_coords( coco_sstate *sstate, coco_nationality nat,
     *y_return = COCO_SOBJECT_Y1( pad );
 }
 
+coco_sobject *
+coco_fire_plasma( coco_sobject *sobject, coco_sobject_cl *class,
+                  coco_sstate *sstate )
+{
+  return NULL;
+}
+
+coco_bool
+coco_power_shield( coco_sobject *sobject, coco_sobject_cl *class,
+                   coco_sstate *sstate )
+{
+  return COCO_FALSE;
+}
+
+
+
+#define COCO_LEG_RANGE( ri, lo, hi ) ((((ri)>=(lo))&&((ri)<(hi))) \
+                                      ||(((ri)>=((lo)+COCO_LEFTY_LEG_PART)) \
+                                         &&((ri)<((hi)+COCO_LEFTY_LEG_PART))))
+coco_bool 
+coco_mech_update_state( coco_sobject *sobject, 
+                        coco_sobject_cl *cl, 
+                        coco_sstate *sstate )
+{
+  signed char camera_index = COCO_SOBJECT_CAMERA_INDEX( sobject );
+  signed char comp_index = COCO_SOBJECT_COMP_INDEX( sobject );
+  struct coco_keyboard_pointer_state *input;
+  coco_facing run;
+  coco_bool jump = COCO_FALSE;
+  int legs = COCO_MECH_LEG_RASTER_INDEX( sobject );
+  enum { COCO_RUN, COCO_IDLE, COCO_FLY, COCO_LAND } leg_action;
+  if (COCO_COPTER_MISSILE_COOLDOWN( sobject )
+      && (sstate->time == COCO_COPTER_MISSILE_COOLDOWN_TIME( sobject )))
+    COCO_COPTER_MISSILE_COOLDOWN( sobject ) = COCO_FALSE;
+
+  if (camera_index>=0)
+    input = coco_remote_input_states + camera_index;
+  else if ((comp_index>=0)
+           &&(comp_index<COCO_MAX_COMPS)
+           &&coco_comps[comp_index].in_use)
+    input = &(coco_comps[comp_index].kpstate);
+  else 
+    {
+      coco_warn_printf( "Mech %d neither player nor comp\n", 
+                        COCO_SOBJECT_INDEX( sobject ) );
+      goto get_out;
+    }
+  /* Above here ripped off from copter's method */
+
+  {
+    coco_u16 e = COCO_MECH_ENERGY( sobject );
+    COCO_MECH_ENERGY( sobject ) = COCO_MIN( e + 1, COCO_MECH_CAPACITANCE );
+  }
+  
+    
+  if (coco_get_bit( input->key_state, COCO_LPOINTER ))
+    coco_fire_plasma( sobject, COCO_SOBJECT_CL( sobject ), sstate );
+  if (coco_get_bit( input->key_state, COCO_MPOINTER )
+      || coco_get_bit( input->key_state, COCO_KEY_SHIFT ))
+    {
+      coco_warn_printf( "mech missile launch not implemented" );
+      /* coco_launch_missile( sobject, COCO_SOBJECT_CL( sobject ), sstate, ? ); */
+    }
+  if (coco_get_bit( input->key_state, COCO_RPOINTER ))
+    coco_power_shield( sobject, COCO_SOBJECT_CL( sobject ), sstate );
+  if (coco_get_bit( input->key_state, COCO_CHAR_TO_KEY( 'z' ) )
+      || coco_get_bit( input->key_state, COCO_KEY_LEFT_ARROW ))
+    run = -1;
+  else run = 0;
+  if (coco_get_bit( input->key_state, COCO_CHAR_TO_KEY( 'c' ) )
+      || coco_get_bit( input->key_state, COCO_KEY_RIGHT_ARROW ))
+    run++;
+  if (coco_get_bit( input->key_state, COCO_CHAR_TO_KEY( 'x' ) )
+      || coco_get_bit( input->key_state, COCO_KEY_UP_ARROW ))
+    jump = COCO_TRUE;
+
+  {
+    coco_angle a;
+    coco_gnum xmid, ymid, sx;
+    coco_center_of_mass_obsolete( sobject, COCO_SOBJECT_CL( sobject ),
+                                  COCO_SOBJECT_RASTER_INDEX( sobject ),
+                                  &xmid, &ymid );
+    /* this x calculation is duplicated sorta in copter_kaboom, for
+       camera placement. */
+    /* also kinda in mech_update_state */
+    /* sx = screen_x of mech center_of_mass */
+    sx = xmid
+      - coco_camera_velocity_offset( sobject, COCO_SOBJECT_CL( sobject ) );
+
+    a = coco_atan2( input->pointer_y - (COCO_SOBJECT_Y( sobject ) + ymid),
+                    input->pointer_x - sx );
+    COCO_SOBJECT_ANGLE( sobject ) = a;
+    COCO_MECH_TORSO_RASTER_INDEX( sobject )
+      = (((int) a) * COCO_MAX_TORSO_PARTS) / 256;
+  }
+
+
+  /* figure out what state we're in */
+  if (COCO_LEG_RANGE( legs, COCO_MIN_IDLE_PARTS, COCO_MAX_IDLE_PARTS ))
+    leg_action = COCO_IDLE;
+  else if (COCO_LEG_RANGE( legs, COCO_MIN_WALK_PARTS, COCO_MAX_WALK_PARTS ))
+    leg_action = COCO_RUN;
+  else if (COCO_LEG_RANGE( legs, COCO_MIN_SQUAT_PARTS, COCO_MAX_SQUAT_PARTS ))
+    leg_action = COCO_LAND;
+  else if (COCO_LEG_RANGE( legs, COCO_AKIMBO_PART, COCO_AKIMBO_PART+1 ))
+    leg_action = COCO_FLY;
+  else
+    {
+      leg_action = COCO_FLY;
+#ifdef COCO_DEBUG
+      coco_warn_printf( "bogen leg raster index\n" );
+#endif
+    }
+
+  
+
+  
+  /* gravity */
+  {
+    coco_gnum y = COCO_SOBJECT_Y( sobject );
+    coco_gnum dy = COCO_SOBJECT_DY( sobject );
+    /* want to get back to ground asap */
+    coco_gnum dy_want = COCO_GROUND_Y - y;
+    if (dy_want < 0)
+      {
+        /* but not faster than accell */
+        dy_want = COCO_MAX( dy_want, dy-COCO_MECH_GRAVITY );
+        /* and not faster than terminal velocity */
+        dy_want = COCO_MAX( dy_want, -COCO_MECH_DY_MAX );
+      }
+    COCO_SOBJECT_DY( sobject ) = dy_want;
+  }
+
+  { 
+    coco_gnum dx = COCO_SOBJECT_DX( sobject );
+    coco_gnum dx_want = dx + (run*COCO_MECH_JUMPING_DDX_MAX);
+    /* handle jumping movement */
+    if (jump)
+      {
+        coco_u16 e = COCO_MECH_ENERGY( sobject );
+        coco_gnum dy = COCO_SOBJECT_DY( sobject );
+        coco_gnum dyroom = COCO_MECH_DY_MAX - dy;
+        coco_gnum dydt;
+        dydt = COCO_MIN( e, dyroom );
+        dydt = COCO_MIN( 5, dydt ); /* 5 = max y accell */
+        COCO_SOBJECT_DY( sobject ) = dy + dydt;
+        COCO_MECH_LEG_RASTER_INDEX( sobject ) 
+          = (dx_want < 0)
+          ? COCO_AKIMBO_PART + COCO_LEFTY_LEG_PART
+          : ((dx_want == 0)
+             ? ((legs>=COCO_LEFTY_LEG_PART) 
+                ? (COCO_LEFTY_LEG_PART + COCO_AKIMBO_PART)
+                : COCO_AKIMBO_PART)
+             : COCO_AKIMBO_PART);
+        e = COCO_MECH_ENERGY( sobject ) = e - dydt;
+      }
+    /* in air */
+    if ((COCO_SOBJECT_Y( sobject ) > COCO_GROUND_Y))
+      {
+        if (run)
+          {
+            coco_gnum dxroom;
+            if (run<0)
+              {
+                dxroom = COCO_MECH_JUMPING_DX_MAX + dx;
+                COCO_SOBJECT_DX( sobject )
+                  = dx - COCO_MIN( dxroom, COCO_MECH_JUMPING_DDX_MAX );
+              }
+            else
+              {
+                dxroom = COCO_MECH_JUMPING_DX_MAX - dx;
+                COCO_SOBJECT_DX( sobject )
+                  = dx + COCO_MIN( dxroom, COCO_MECH_JUMPING_DDX_MAX );
+              };
+          }
+        else
+          {
+            int squati = COCO_MIN_SQUAT_PARTS
+              + ((legs>=COCO_LEFTY_LEG_PART) ? COCO_LEFTY_LEG_PART : 0);
+            struct coco_mech_part *squat = coco_leg_parts + squati;
+            coco_gnum dh = coco_leg_parts[legs].dh - squat->dh;
+            if ((COCO_SOBJECT_DY( sobject ) <= 0)
+                && (!COCO_LEG_RANGE( legs, COCO_MIN_SQUAT_PARTS, 
+                                     COCO_MIN_SQUAT_PARTS+1 ))
+                && (COCO_SOBJECT_Y( sobject ) + dh >= COCO_GROUND_Y))
+            {
+              COCO_MECH_LEG_RASTER_INDEX( sobject ) = squati;
+              COCO_SOBJECT_Y( sobject ) += dh;
+              COCO_MECH_SQUATTING_DOWN( sobject ) = COCO_TRUE;
+            }
+  
+          }
+
+      }
+    else if (COCO_FLY==leg_action)
+      {
+        if (run)
+          {
+            COCO_MECH_LEG_RASTER_INDEX( sobject )
+              = (run<0)
+              ? COCO_MIN_WALK_PARTS + COCO_LEFTY_LEG_PART
+              : COCO_MIN_WALK_PARTS;
+          }
+        else
+          {
+            COCO_MECH_LEG_RASTER_INDEX( sobject )
+              = legs - COCO_AKIMBO_PART + COCO_MIN_SQUAT_PARTS;
+            COCO_SOBJECT_DX( sobject ) = 0;
+            COCO_MECH_SQUATTING_DOWN( sobject ) = COCO_TRUE;
+          }
+      }
+    else if (COCO_RUN==leg_action)
+      {
+        if (run)
+          {
+            coco_cookie( "running\n" );
+            if (run<0)
+              {
+                if (COCO_BETWEENA( COCO_MIN_WALK_PARTS,
+                                   legs,
+                                   COCO_MAX_WALK_PARTS ))
+                  legs += COCO_LEFTY_LEG_PART;
+                COCO_MECH_LEG_RASTER_INDEX( sobject )
+                  = ((legs >= (COCO_MAX_WALK_PARTS + COCO_LEFTY_LEG_PART - 1))
+                     ? (COCO_MIN_WALK_PARTS + COCO_LEFTY_LEG_PART)
+                     : (legs + 1));
+                COCO_SOBJECT_DX( sobject ) = - COCO_MECH_WALKING_DX_MAX;
+              }
+            else
+              {
+                if (COCO_BETWEENA( COCO_MIN_WALK_PARTS + COCO_LEFTY_LEG_PART,
+                                   legs,
+                                   COCO_MAX_WALK_PARTS + COCO_LEFTY_LEG_PART))
+                  legs -= COCO_LEFTY_LEG_PART;
+                COCO_MECH_LEG_RASTER_INDEX( sobject )
+                  = ((legs >= (COCO_MAX_WALK_PARTS - 1))
+                     ? COCO_MIN_WALK_PARTS
+                     : (legs + 1));
+                COCO_SOBJECT_DX( sobject ) = COCO_MECH_WALKING_DX_MAX;
+              }
+          }
+        else
+          {
+            coco_cookie( "->idling\n" );
+            COCO_MECH_LEG_RASTER_INDEX( sobject ) = COCO_MIN_IDLE_PARTS;
+            COCO_SOBJECT_DX( sobject ) = 0;
+          }
+        /* run-run */
+        /* run-stop */
+        /* run-reverse */
+      }
+    else if (run&&((COCO_IDLE==leg_action)||(COCO_LAND==leg_action)))
+      {
+        coco_cookie( "squatting\n" );
+        COCO_MECH_SQUATTING_DOWN( sobject ) = COCO_FALSE;
+        COCO_MECH_LEG_RASTER_INDEX( sobject )
+          = (run<0)
+          ? COCO_MIN_WALK_PARTS + COCO_LEFTY_LEG_PART
+          : COCO_MIN_WALK_PARTS;
+      }
+    else if (COCO_IDLE==leg_action)
+      {
+        if ((legs==COCO_MIN_IDLE_PARTS) 
+            || (legs==COCO_MIN_IDLE_PARTS + COCO_LEFTY_LEG_PART))
+          {
+            COCO_MECH_SQUATTING_DOWN( sobject ) = COCO_TRUE;
+            COCO_MECH_LEG_RASTER_INDEX( sobject ) = legs + 1;
+          }
+        else if ((legs==COCO_MAX_IDLE_PARTS - 1) 
+            || (legs==COCO_MAX_IDLE_PARTS + COCO_LEFTY_LEG_PART - 1))
+          {
+            COCO_MECH_SQUATTING_DOWN( sobject ) = COCO_FALSE;
+            COCO_MECH_LEG_RASTER_INDEX( sobject ) = legs - 1;
+          }
+        else if (COCO_MECH_SQUATTING_DOWN( sobject ))
+          COCO_MECH_LEG_RASTER_INDEX( sobject ) = legs + 1;
+        else
+          COCO_MECH_LEG_RASTER_INDEX( sobject ) = legs - 1;
+      }
+    else if (COCO_LAND==leg_action)
+      {
+        int ri = COCO_MECH_LEG_RASTER_INDEX( sobject );
+        coco_cookie( "landing\n" );
+        if ((ri == COCO_MAX_SQUAT_PARTS)
+            || (ri == COCO_MAX_SQUAT_PARTS + COCO_LEFTY_LEG_PART))
+          {
+            COCO_MECH_LEG_RASTER_INDEX( sobject ) = ri-1;
+            COCO_MECH_SQUATTING_DOWN( sobject ) = COCO_FALSE;
+          }
+        else if (COCO_MECH_SQUATTING_DOWN( sobject ))
+          COCO_MECH_LEG_RASTER_INDEX( sobject )++;
+        else if ((ri==COCO_MIN_SQUAT_PARTS)
+                 ||(ri==COCO_MIN_SQUAT_PARTS + COCO_LEFTY_LEG_PART))
+          COCO_MECH_LEG_RASTER_INDEX( sobject )
+            = ri - COCO_MIN_SQUAT_PARTS + COCO_MIN_IDLE_PARTS;
+        else 
+          COCO_MECH_LEG_RASTER_INDEX( sobject )--;
+
+      }
+
+  }
+ get_out:
+  return coco_sobject_update_state( sobject, cl->super, sstate );
+}
+
+#undef COCO_LEG_RANGE
+
 
 struct coco_tutorial_objectives
 coco_update_tutorial( coco_sstate *sstate )
@@ -2008,10 +2315,10 @@ coco_find_camera( coco_sstate *sstate, int p_or_c_index, coco_bool is_comp )
 }
 
 
-#define COCO_MAX_FANCY_COPTER 2
+#define COCO_MAX_FANCY_COPTER 3
 
 coco_sobject_cl *coco_fancy_copter_classes[COCO_MAX_FANCY_COPTER] = {
-  COCO_COBRA_CLASS, COCO_CARGO_COPTER_CLASS
+  COCO_COBRA_CLASS, COCO_CARGO_COPTER_CLASS, COCO_MECH_CLASS
 };
 
 
@@ -2080,6 +2387,7 @@ coco_server_key_press( int p_or_c_index, coco_bool is_comp,
           }
         break;
       default:
+        coco_cookie( "Key '%c' pressed\n", COCO_KEY_TO_CHAR( key ) );
         break;
       }
     }
@@ -2489,6 +2797,22 @@ coco_balloon_line_to_cobject( coco_sobject *sobject, coco_sobject_cl *cl,
   cobject->y.y              = nbo ? COCO_CNUM_HTON( y ) : y;
 }
 
+void
+coco_mech_to_cobject( coco_sobject *sobject, coco_sobject_cl *cl,
+                      coco_cobject *cobject, coco_gnum cam_left,
+                      coco_bool nbo )
+{
+  coco_cnum x, y;
+  COCO_COBJECT_CL_INDEX( cobject ) = COCO_SOBJECT_CL_INDEX( sobject );
+  cobject->mech.lobits = COCO_MECH_TORSO_RASTER_INDEX( sobject );
+  cobject->mech.hibits  = COCO_MECH_LEG_RASTER_INDEX( sobject )
+    | ((COCO_SOBJECT_NATIONALITY( sobject )-COCO_GOOD_GUYS)<<6)
+    | COCO_MECH_SHIELD_POWERED( sobject )<<7;
+  y = COCO_SOBJECT_Y( sobject );
+  x = COCO_SOBJECT_X( sobject ) - cam_left;
+  COCO_COBJECT_X( cobject ) = nbo ? COCO_CNUM_HTON( x ) : x;
+  cobject->mech.y           = nbo ? COCO_CNUM_HTON( y ) : y;
+}
 
 coco_sobject *
 coco_find_sobject( coco_sstate *sstate, coco_sobject_cl *cl, 
@@ -2623,7 +2947,6 @@ coco_update_boot_camp( coco_sstate *sstate,
                 break;
               else ++seen;
             }
-          coco_cookie( "Seen %d between %d and %d\n", seen, pick_up_x0, pick_up_x1 );
           if (seen + troopers + defenders > COCO_BOOT_CAMP_INFANTRY)
             minor_mission = 2;
         }
@@ -2808,6 +3131,7 @@ coco_cam_bounds( coco_sstate *sstate, coco_sobject *cam_object, /* possibly null
                                     &xmid, &ymid );
       /* this x calculation is duplicated sorta in copter_kaboom, for
          camera placement. */
+      /* also kinda in mech_update_state */
       *cam_left = cam_x 
         + xmid - (COCO_OFFICIAL_WINDOW_W>>1)
         + coco_camera_velocity_offset( cam_object, 

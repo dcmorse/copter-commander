@@ -195,6 +195,12 @@ coco_cobject_whimpy_guess_nationality( coco_cobject *cobject )
 }
 
 int
+coco_mech_guess_nationality( coco_cobject *cobject )
+{
+  return COCO_COBJECT_MECH_NATIONALITY( cobject );
+}
+
+int
 coco_copter_guess_nationality( coco_cobject *cobject )
 {
   return (COCO_COBJECT_RASTER_INDEX( cobject ) < 2)
@@ -672,48 +678,62 @@ coco_spark_draw( coco_cobject *cobject, coco_sobject_cl *cla )
 void
 coco_copter_draw( coco_cobject *cobject, coco_sobject_cl *cla )
 {
+  coco_sobject_cl *cl = COCO_COBJECT_CL( cobject );
+  coco_mini_point com = coco_cobject_com( cobject );
+  coco_gnum comx = COCO_MINI_POINT_X( com );
+  coco_gnum comy = COCO_MINI_POINT_Y( com );
+  unsigned char ri = COCO_COBJECT_RASTER_INDEX( cobject );
+  coco_angle angle_raw = COCO_COBJECT_ANGLE( cobject );
+  coco_angle angle = (ri&1) ? angle_raw : ((angle_raw - (int) 128) & 255);
+  coco_begin_rotated_view( COCO_COBJECT_X( cobject ) + comx,
+                           COCO_COBJECT_Y( cobject ) + comy,
+                           angle );
+  coco_draw_raster_rotate( -comx,
+                           -comy,
+                           cl->canonical_w,
+                           cl->canonical_h,
+                           COCO_COBJECT_RASTER( cobject ) );
   {
-    coco_sobject_cl *cl = COCO_COBJECT_CL( cobject );
-    coco_mini_point com = coco_cobject_com( cobject );
-    coco_gnum comx = COCO_MINI_POINT_X( com );
-    coco_gnum comy = COCO_MINI_POINT_Y( com );
-    unsigned char ri = COCO_COBJECT_RASTER_INDEX( cobject );
-    coco_angle angle_raw = COCO_COBJECT_ANGLE( cobject );
-    coco_angle angle = (ri&1) ? angle_raw : ((angle_raw - (int) 128) & 255);
-    coco_begin_rotated_view( COCO_COBJECT_X( cobject ) + comx,
-                             COCO_COBJECT_Y( cobject ) + comy,
-                             angle );
-    coco_draw_raster_rotate( -comx,
-                             -comy,
-                             cl->canonical_w,
-                             cl->canonical_h,
-                             COCO_COBJECT_RASTER( cobject ) );
-    {
-      static unsigned char rotor_scale[8] = { 2, 5, 7, 4, 0, 3, 6, 5 };
-      coco_mini_point rp;
-      coco_gnum x, y, rr7, rx;
-      unsigned char raster_index;
+    static unsigned char rotor_scale[8] = { 2, 5, 7, 4, 0, 3, 6, 5 };
+    coco_mini_point rp;
+    coco_gnum x, y, rr7, rx;
+    unsigned char raster_index;
 
-      /* draw rotor */
-      raster_index = COCO_COBJECT_RASTER_INDEX( cobject );
-      rp = cla->rotor_points[raster_index];
-      rr7 = (cla->rotor_radius * rotor_scale[7 & coco_get_cstate()->time]);
-      rx = ((double) rr7 / 7.0);
-      x = COCO_MINI_POINT_X( rp ) - comx;
-      y = COCO_MINI_POINT_Y( rp ) - comy;
-      coco_draw_color( COCO_COLOR_ROTOR );
-      coco_draw_line( x-rx, y, x+rx, y );
-    }
-    coco_end_rotated_view();
+    /* draw rotor */
+    raster_index = COCO_COBJECT_RASTER_INDEX( cobject );
+    rp = cla->rotor_points[raster_index];
+    rr7 = (cla->rotor_radius * rotor_scale[7 & coco_get_cstate()->time]);
+    rx = ((double) rr7 / 7.0);
+    x = COCO_MINI_POINT_X( rp ) - comx;
+    y = COCO_MINI_POINT_Y( rp ) - comy;
+    coco_draw_color( COCO_COLOR_ROTOR );
+    coco_draw_line( x-rx, y, x+rx, y );
   }
+  coco_end_rotated_view();
+}
 
-#ifdef COCO_IGNORE
-  /* calculate and call next method */
-  do scla = scla->super;
-  while (scla->cobject_draw == coco_copter_draw);
-  scla->cobject_draw( cobject, cla->super );
+
+
+
+
+void
+coco_mech_draw( coco_cobject *cobject, coco_sobject_cl *cla )
+{
+  coco_cnum x = COCO_COBJECT_X( cobject );
+  coco_cnum y = COCO_COBJECT_Y( cobject );
+  unsigned char ti = COCO_COBJECT_MECH_TORSO_RASTER_INDEX( cobject );
+  unsigned char li = COCO_COBJECT_MECH_LEG_RASTER_INDEX( cobject );
+  struct coco_mech_part *tp;
+  struct coco_mech_part *lp;
+  coco_cookie( "ti=%d li=%d\n", ti, li );
+#ifdef COCO_DEBUG
+  assert( ti < COCO_MAX_TORSO_PARTS );
+  assert( li < COCO_MAX_LEG_PARTS );
 #endif
-
+  lp = coco_leg_parts+li;
+  coco_draw_raster( x+lp->dx, y+lp->dy, lp->r );
+  tp = coco_torso_parts+ti;
+  coco_draw_raster( x+tp->dx, y+tp->dy+lp->dh, tp->r );
 }
 
 /* XXX Should only disconnect gnome-copter-commander. */

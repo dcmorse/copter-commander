@@ -16,7 +16,7 @@
 ;;;;; Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 
 ;;;;; sobject.lisp: define server objects, which are implemented as 
-;;;;; structs with pointers to class structs.
+;;;;; sntructs with pointers to class structs.
 
 (c-define-class "sobject" ()
   (;; four chars star the day off right
@@ -351,7 +351,7 @@
    ;; only valid to look at when landed_p:
    ("landed_on_pad_p" "COCO_FALSE" "coco_bool")
    ("damage"        "COCO_COPTER_DAMAGE")
-   ("angle"        "(facing>0) ? 0 : 64")
+   ("angle"        "(facing>0) ? 0 : 128")
    ("rotate_p"    "COCO_TRUE")
    ("w"           "COCO_SOBJECT_CANONICAL_W( inst )")
    ("h"           "COCO_SOBJECT_CANONICAL_H( inst )")
@@ -373,13 +373,13 @@
 (c-define-method "camera_velocity_offset" "copter"
                  "coco_copter_velocity_offset")
 
-(c-define-method "sobject_delete" "copter" "coco_copter_delete")
+(c-define-method "sobject_delete" "copter" "coco_copter_mech_delete")
 
 (c-define-method "sobject_update_state" "copter" 
                  "coco_copter_update_state")
 
 (c-define-method "sobject_blip_color_index" "copter"
-                 "coco_copter_blip_color_index")
+                 "coco_copter_mech_blip_color_index")
 
 (c-define-class "cobra" ("copter")
   (("max_bullets"      "100")
@@ -425,10 +425,10 @@
 ))
 
 (c-define-class "cargo_copter" ("copter")
-  (("max_bullets"      "0")
-   ("max_bombs"        "36")
+  (("max_bullets"      "80")
+   ("max_bombs"        "0")
    ("max_missiles"     "0")
-   ("max_rockets"      "0")
+   ("max_rockets"      "36")
    ("max_internal_infantry" "12")
    ("max_fuel"     "300*COCO_IDEAL_FRAMES_PER_SECOND")
    ("dx_max"       "15")
@@ -446,6 +446,62 @@
    ("health_max"   "4")
    ("x_force"      "2")
    ("dashboard_icon" "&coco_cargo_copter_icon_raster")))
+
+(c-define-class "mech" ("camera")
+  (("energy"       "0"                                "coco_u16")
+   ;; should missile_cooldown be ported here, or be factored up to camera?
+   ;;("missile_cooldown" "COCO_FALSE" "coco_bool")
+   ;; when to set missile_cooldown to false again
+   ;;("missile_cooldown_time" nil     "coco_u32") 
+   ;;("next_missilebeat_on_pad" "0"   "coco_u32")
+   ("squatting_down" "COCO_FALSE" "coco_bool")
+   ("shield_powered" "COCO_FALSE" "coco_bool")
+   ("dx_max"       "COCO_MECH_JUMPING_DX_MAX")
+   ("dy_max"       "COCO_MECH_DY_MAX")
+   ("x_force"      "4") ; only used when flying, otherwise accell is instant??
+   ("health_max"   "4")
+   ("torso_raster_index" "0" "unsigned char")
+   ("leg_raster_index" "COCO_MIN_IDLE_PARTS" "unsigned char")
+   ("clip_to_board" "COCO_TRUE")
+   ;;("raster_index" "0") ;; doesn't use normal raster facility
+   ("shrapnel_count" "8")
+   ;; copter is now abstract class, with individual model classes below it
+   ("canonical_w"  "17")
+   ("canonical_h"  "40") ;; JUST A GUESS XXX
+   ;;("rasters"      "coco_copter_rasters")
+   ("raster_count" "0")
+   ("cobject_guess_nationality_fn" "coco_mech_guess_nationality")
+   ;; also massy-rectangle rotor_points, and rotor_radius in sobject.
+   ("cobject_draw" "coco_mech_draw")
+   ("damage"        "COCO_MECH_DAMAGE")
+   ;;("angle"        "(facing>0) ? 0 : 128")
+   ("w"           "COCO_SOBJECT_CANONICAL_W( inst )")
+   ("h"           "COCO_SOBJECT_CANONICAL_H( inst )")
+   ("airburst_sound_type" "COCO_SOUND_BIG_AIRBURST")
+   ("cost"        "20")
+   ("dashboard_icon" "&coco_cobra_icon_raster") ;; XXX wrong
+   ))
+
+(c-define-method "hostile_collision" "mech" 
+                 "coco_mech_hostile_collision")
+
+(c-define-method "sobject_to_cobject" "mech"
+                 "coco_mech_to_cobject")
+
+(c-define-method "sobject_update_state" "mech" 
+                 "coco_mech_update_state")
+
+(c-define-method "sobject_blip_color_index" "mech"
+                 "coco_copter_mech_blip_color_index")
+
+(c-define-method "sobject_delete" "mech" "coco_copter_mech_delete")
+
+(c-define-method "camera_velocity_offset" "mech"
+                 "coco_mech_velocity_offset")
+
+(c-define-method "ground_collide" "mech" "coco_fixup_ground_collide")
+
+(c-define-method "kaboom" "mech" "coco_airbursting_kaboom")
 
 (c-define-class "smoke" ("sobject")
   (("raster_index" :arg)
