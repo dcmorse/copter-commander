@@ -1952,13 +1952,12 @@ coco_gun_effective_damage( coco_sobject *damagee,
                               COCO_BOMB_CLASS ))
     return COCO_SOBJECT_DAMAGE( damager ) << 1;
   else if (coco_sobject_subtype_p( COCO_SOBJECT_CL( damager ),
-                                   COCO_BOMB_CLASS ))
+                                   COCO_ROCKET_CLASS ))
     return (COCO_SOBJECT_DAMAGE( damager ) << 1) / 3;
-  else if ((!coco_sobject_subtype_p( COCO_SOBJECT_CL( damager ),
-                                COCO_RIFLE_BULLET_CLASS ))
-      ||(rand()%1))
-    return COCO_SOBJECT_DAMAGE( damager );
-  else return 0;
+  else if (coco_sobject_subtype_p( COCO_SOBJECT_CL( damager ),
+				   COCO_RIFLE_BULLET_CLASS ))
+    return (rand()%2) ? 0 : COCO_SOBJECT_DAMAGE( damager );
+  else return COCO_SOBJECT_DAMAGE( damager );
 }
 
 

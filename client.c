@@ -2441,9 +2441,9 @@ coco_client_loop( void )
   while (1)
     {
       struct coco_stream *serv_str = coco_get_server_message_stream();
-      char *select_fn_name;
+      char *select_fn_name = NULL;
       int servfd, xfd, udpfd, maxfd;
-      int selected;
+      int selected = 0;
 #ifdef COCO_USE_GII
       gii_event_mask gii_mask = 0;
 #endif      
@@ -2475,6 +2475,9 @@ coco_client_loop( void )
 				     &gii_mask,
 				     maxfd + 1,
 				     &readset, NULL, NULL, &heartbeat );
+#else
+          coco_fatal_printf( COCO_ERROR_COCO_IMPLEMENTAION_PROBLEM,
+			     "coco_use_gii but not COCO_USE_GII!" );
 #endif
 	}
       else
@@ -2790,12 +2793,6 @@ coco_gii_init( void )
 void
 coco_gii_shutdown( void )
 {
-  const coco_bool debug = 
-#ifdef COCO_DEBUG
-    1;
-#else
-  0;
-#endif
 
 #ifdef COCO_USE_GII
   if (coco_use_gii)
@@ -2803,12 +2800,16 @@ coco_gii_shutdown( void )
       if (NULL != coco_gii_input)
 	{
 	  int status = giiClose( coco_gii_input );
-	  if ((/* GGI_OK */ 0 != status) && debug)
+#ifdef COCO_DEBUG
+	  if (/* GGI_OK */ 0 != status)
 	    coco_warn_printf( "giiClose( ... ) returned error code %d\n",
 			      status );
+#endif /* COCO_DEBUG */
 	}
+#ifdef COCO_DEBUG
       if (0 != giiExit())
-	if (debug) coco_warn_printf( "giiExit() failed.\n" );
+	coco_warn_printf( "giiExit() failed.\n" );
+#endif /* COCO_DEBUG */
     }
 #endif /* COCO_USE_GII */
 }

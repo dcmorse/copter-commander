@@ -1,3 +1,8 @@
+2001-12-12  David Morse  <svref@yahoo.com>
+
+	* methods.c (coco_gun_effective_damage): fix bug where infantry
+	can't kill aa/at guns.  Bug #487725
+
 2001-12-11  David Morse  <svref@yahoo.com>
 
 	* client.c (coco_client_loop): fix choppyness bug.
