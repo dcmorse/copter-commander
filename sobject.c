@@ -637,7 +637,7 @@ coco_sobject_cl coco_sobject_classes[] = {
     0,                                  /* y_force */
     COCO_NIGH_INVULNERABLE,             /* health_max */
     COCO_NIGH_INVULNERABLE,             /* damage */
-    COCO_FALSE,                         /* clip_to_board */
+    COCO_TRUE,                          /* clip_to_board */
     COCO_BLIP_TRIPLET_TRANSPARENT,      /* default_blip_color_index */
     COCO_CLOUD_RASTER_W,                /* canonical_w */
     1 /* placeholder */,                /* canonical_h */
@@ -697,7 +697,7 @@ coco_sobject_cl coco_sobject_classes[] = {
     0,
     0,
     0,
-    0,
+    coco_cloud_update_state,
     0,
   },
   { /* coco_balloon_part */
@@ -3926,6 +3926,7 @@ coco_sobject *
 coco_init_cloud( coco_sobject * inst, coco_sobject_cl * cl, coco_gnum x, coco_gnum y )
 {
   coco_init_sobject( inst, cl, 0, x, y, COCO_NEUTRAL );
+  inst->cloud.cloud_time_phase = rand()&255;
   return inst;
 }
 
@@ -3941,7 +3942,7 @@ coco_init_balloon( coco_sobject * inst, coco_sobject_cl * cl, coco_gnum x, coco_
 {
   coco_init_balloon_part( inst, cl, 0, x, y, nationality );
   inst->balloon.line_index = -1;
-  inst->balloon.balloon_time_phase = rand();
+  inst->balloon.balloon_time_phase = rand()&255;
   inst->balloon.raster_index = raster_index;
   return inst;
 }

@@ -433,20 +433,26 @@
    ("default_blip_color_index" 
        "COCO_BLIP_TRIPLET_TRANSPARENT")))
 
+
+(c-define-method "sobject_update_state" "smoke" 
+                 "coco_smoke_update_state")
+
 (c-define-class "cloud" ("sobject")
-  (("z"            "1")
+  (("cloud_time_phase" "rand()&255" "coco_u32")
+   ("z"            "1")
    ("phase"        "COCO_VAPOR")
    ("facing"       "0")
    ("nationality"  "COCO_NEUTRAL")
    ("rasters"      "coco_cloud_rasters")
    ("raster_count" "COCO_CLOUD_RASTER_COUNT")
    ("canonical_w"  "COCO_CLOUD_RASTER_W")
+   ("clip_to_board" "COCO_TRUE")
    ("default_blip_color_index" 
        "COCO_BLIP_TRIPLET_TRANSPARENT"))
   :init-by-list-fn :automatic)
 
-(c-define-method "sobject_update_state" "smoke" 
-                 "coco_smoke_update_state")
+(c-define-method "sobject_update_state" "cloud" 
+                 "coco_cloud_update_state")
 
 (c-define-class "balloon_part" ("sobject")
   ())
@@ -459,7 +465,7 @@
 
 (c-define-class "balloon" ("balloon_part")
   (("line_index"   "-1"  "int")
-   ("balloon_time_phase" "rand()" "coco_u32")
+   ("balloon_time_phase" "rand()&255" "coco_u32")
    ("facing"       "0")
    ("raster_index" :arg)
    ("rasters"      "coco_balloon_rasters")

@@ -534,7 +534,7 @@ coco_balloon_line_draw( coco_cobject *cobject, coco_sobject_cl *cla )
 {
   coco_cnum x = COCO_COBJECT_X( cobject );
   coco_cnum y = COCO_COBJECT_Y( cobject );
-  coco_draw_color( COCO_COLOR_BARRAGE_BALLON_LINE );
+  coco_draw_color( COCO_COLOR_BARRAGE_BALLOON_LINE );
   coco_draw_line( x, y, x, y+COCO_COBJECT_H( cobject ) );
 }
 

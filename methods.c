@@ -914,6 +914,55 @@ coco_smoke_update_state( coco_sobject *sobject,
 }
 
 
+coco_bool 
+coco_cloud_update_state( coco_sobject *sobject, 
+                         coco_sobject_cl *cl, 
+                         coco_sstate *sstate )
+{
+  coco_u32 time = sstate->time;
+  coco_u32 phase = COCO_CLOUD_CLOUD_TIME_PHASE( sobject );
+  
+  if ((COCO_U32_ADD_N_MODULAR( time, phase ) & 127)==0)
+    {
+      int num = rand(); /* jus call rand once, reuse different bits */
+      switch (COCO_SOBJECT_DY( sobject )) {
+      case 1:
+      case -1: 
+        if (num&1) COCO_SOBJECT_DY( sobject ) = 0; break;
+      case 0: 
+        if (!(num&3))
+          COCO_SOBJECT_DY( sobject ) = (num&4) ? -1 : 1;
+        break;
+      default:
+        /* never get here */
+        COCO_SOBJECT_DY( sobject ) >>= 1;
+      }
+
+      /* check to make sure we don't drift too low.  Don't have to worry
+      about top, left, or right, because clip_to_board is on.  */
+      if ((COCO_SOBJECT_Y( sobject ) <= COCO_CLOUD_FLOOR)
+          && (COCO_SOBJECT_DY( sobject ) < 0))
+        COCO_SOBJECT_DY( sobject ) = 0;
+        
+        
+      switch (COCO_SOBJECT_DX( sobject )) {
+      case 1:
+      case -1: 
+        if (num&8) COCO_SOBJECT_DX( sobject ) = 0; break;
+      case 0: 
+        if (!(num&12))
+          COCO_SOBJECT_DX( sobject ) = (num&16) ? -1 : 1;
+        break;
+      default:
+        /* never get here */
+        COCO_SOBJECT_DX( sobject ) >>= 1;
+      }
+    }
+  /* call-next-method */
+  return coco_sobject_update_state( sobject, cl->super, sstate );
+}
+
+
 /* 
 Moved to server.c because it depends on static server data.
 

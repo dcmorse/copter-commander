@@ -512,6 +512,22 @@ coco_on_new_game1_activate( GtkMenuItem *menuitem,
 
 
 void
+coco_use_tutorial_dialog( GtkWidget *coco_root_window )
+{
+  /* do nothing -- move me! */
+}
+
+
+void
+coco_on_tutorial1_activate( GtkMenuItem     *menuitem,
+                             gpointer         user_data)
+{
+  if (coco_root_window)
+    coco_use_tutorial_dialog( coco_root_window );
+}
+
+
+void
 coco_on_join_game1_activate( GtkMenuItem     *menuitem,
                              gpointer         user_data)
 {
@@ -593,14 +609,22 @@ coco_on_about1_activate( GtkMenuItem     *menuitem,
 }
 
 
-#define COCO_NEW_GAME_WIDGET (coco_game1_menu_uiinfo[0].widget)
-#define COCO_JOIN_GAME_WIDGET (coco_game1_menu_uiinfo[1].widget)
-#define COCO_PLAY_INTRO_WIDGET (coco_game1_menu_uiinfo[2].widget)
-#define COCO_DISCONNECT_WIDGET (coco_game1_menu_uiinfo[3].widget)
+#define COCO_TUTORIAL_WIDGET (coco_game1_menu_uiinfo[0].widget)
+#define COCO_NEW_GAME_WIDGET (coco_game1_menu_uiinfo[1].widget)
+#define COCO_JOIN_GAME_WIDGET (coco_game1_menu_uiinfo[2].widget)
+#define COCO_PLAY_INTRO_WIDGET (coco_game1_menu_uiinfo[3].widget)
+#define COCO_DISCONNECT_WIDGET (coco_game1_menu_uiinfo[4].widget)
 
 /* glade output */
 static GnomeUIInfo coco_game1_menu_uiinfo[] =
 {
+  {  /* see COCO_TUTORIAL_WIDGET */
+    GNOME_APP_UI_ITEM, N_("_Tutorial"),
+    NULL,
+    (void *) coco_on_tutorial1_activate, NULL, NULL,
+    GNOME_APP_PIXMAP_NONE, NULL,
+    0, 0, NULL
+  },
   /* see COCO_NEW_GAME_WIDGET */
   GNOMEUIINFO_MENU_NEW_GAME_ITEM (coco_on_new_game1_activate, NULL),
   {  /* see COCO_JOIN_GAME_WIDGET */

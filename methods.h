@@ -131,6 +131,9 @@ coco_bool coco_smoke_update_state( coco_sobject *sobject,
                                    coco_sobject_cl *cl, 
                                    coco_sstate *sstate );
 
+coco_bool coco_cloud_update_state( coco_sobject *sobject, 
+                                   coco_sobject_cl *cl, 
+                                   coco_sstate *sstate );
 
 /* moved to server.c because its so special: */
 coco_bool coco_copter_update_state( coco_sobject *sobject, 

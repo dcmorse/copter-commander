@@ -1099,6 +1099,7 @@ struct coco_cloud {
   coco_health health;
   coco_angle angle;
   coco_blip_index scratch_blip;
+  coco_u32 cloud_time_phase;
 };
 
 struct coco_smoke {
@@ -1569,6 +1570,7 @@ coco_sobject *coco_firetruck_automatic_init_by_list( coco_sobject *inst, coco_so
 #define COCO_BALLOON_LINE_BALLOON_INDEX( clss ) ((clss)->balloon_line.balloon_index)
 #define COCO_BALLOON_LINE_INDEX( clss ) ((clss)->balloon.line_index)
 #define COCO_BALLOON_BALLOON_TIME_PHASE( clss ) ((clss)->balloon.balloon_time_phase)
+#define COCO_CLOUD_CLOUD_TIME_PHASE( clss ) ((clss)->cloud.cloud_time_phase)
 #define COCO_COPTER_BULLETS( clss ) ((clss)->copter.bullets)
 #define COCO_COPTER_BOMBS( clss ) ((clss)->copter.bombs)
 #define COCO_COPTER_MISSILES( clss ) ((clss)->copter.missiles)
