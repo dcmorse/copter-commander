@@ -380,7 +380,6 @@ ${COCO_TAR_FILE}:
 	rm -rf ${COCO_TAR_DIRECTORY} ${COCO_TAR_FILE}
 	mkdir ${COCO_TAR_DIRECTORY}
 	cp --archive -R Makefile  *.lisp *.fas *.c *.h *.txt *.sh \
-	  rstr-*/*.c rstr-*/*.h \
 	  COPYING INSTALL DEVEL GNOME-HACKS ChangeLog copter-commander.png \
          raster-dumper.lisp tiffs \
 	 ${COCO_TAR_DIRECTORY}
@@ -390,6 +389,11 @@ ${COCO_TAR_FILE}:
 	cp levels/*.ccl ${COCO_TAR_DIRECTORY}/levels
 	find ${COCO_TAR_DIRECTORY} -name \*~ -print | xargs rm -f
 	find ${COCO_TAR_DIRECTORY} -name CVS -print | xargs rm -rf
+	for f in rstr-* ; \
+	  do mkdir ${COCO_TAR_DIRECTORY}/$$f; \
+	  cp $$f/*.c $$f/*.h ${COCO_TAR_DIRECTORY}/$$f ; \
+	  ls ${COCO_TAR_DIRECTORY}/$$f ; \
+	  done
 	tar -cf ${COCO_TAR_FILE} ${COCO_TAR_DIRECTORY}
 	rm -rf ${COCO_TAR_DIRECTORY}
 
