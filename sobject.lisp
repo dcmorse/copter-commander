@@ -598,10 +598,21 @@
        "COCO_MAKE_BLIP_TRIPLET( COCO_BLIP_FRY_BALLOON, COCO_BLIP_EMY_BALLOON, COCO_BLIP_EMY_BALLOON )"))
   :init-by-list-fn :automatic)
 
+
 (c-define-method "kaboom" "balloon" "coco_airbursting_kaboom")
 
 (c-define-method "sobject_unlink" "balloon" "coco_balloon_unlink")
 (c-define-method "sobject_update_state" "balloon" "coco_balloon_update_state")
+
+;; this is a dopelganger for balloons that come out of factories, because
+;; everyone complians that they shouldn't collide with newly beamed in
+;; balloons.
+(c-define-class "fake_balloon" ("balloon")
+  (("phase" "COCO_VAPOR")
+   ("z"     "-2")))
+
+(c-define-method "sobject_update_state" "fake_balloon" 
+                 "coco_fake_balloon_update_state")
 
 (c-define-class "balloon_line" ("balloon_part")
   (("hut_index"     :arg "int")
@@ -719,7 +730,6 @@
 (c-define-class "balloon_factory" ("building")
   (("nationality"    "COCO_NEUTRAL")
    ("phase"          "COCO_VAPOR")
-   ("z"              "0")
    ("raster_index"   "0")
    ("rasters"        "coco_balloon_factory_rasters")
    ("raster_count"   "COCO_BALLOON_FACTORY_RASTER_COUNT")
@@ -1104,6 +1114,9 @@
 
 (c-define-method "hostile_collision" "plasma"
                  "coco_plasma_hostile_collision")
+
+(c-define-method "friendly_collision" "plasma"
+                 "coco_plasma_friendly_collision")
 
 (c-define-method "ground_collide" "plasma" 
                  "coco_plasma_ground_collide")

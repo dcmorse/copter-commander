@@ -23,6 +23,10 @@
 #include <stdlib.h>             /* for exit */
 #include "coco.h"
 
+/* command line nationality option, do NOT use for figuring out in-game
+   nationality.  Neutral means accept what we're given.  */
+coco_nationality coco_cl_nationality = COCO_NEUTRAL;
+
 coco_bool
 coco_level_filename_p( char *filename, coco_bool tutorial )
 {
@@ -145,6 +149,7 @@ coco_help_message()
           "\n"
           "Client Options:\n"
           "  -s HOST, --server=HOST  Search HOST for games (default %s).\n"
+          "  --team=TEAM             TEAM may be either \"left\" or \"right\".\n"
           "  --name=NICKNAME         Set nickname (default is username).\n"
           "  --sky=N                 Set background N=0,1,...%d (default by time of day)\n"
           "%s",

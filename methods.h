@@ -74,6 +74,10 @@ coco_bool
 coco_balloon_update_state( coco_sobject *sobject,
                            coco_sobject_cl *cl,
                            coco_sstate *sstate );
+coco_bool
+coco_fake_balloon_update_state( coco_sobject *sobject,
+                                coco_sobject_cl *cl,
+                                coco_sstate *sstate );
 
 coco_bool
 coco_headquarters_update_state( coco_sobject *sobject,
@@ -476,6 +480,12 @@ void coco_every_sobject_friendly_collision( coco_sobject *obj1,
                                             coco_sstate *sstate,
                                             coco_bool *stat1,
                                             coco_bool *stat2 );
+void coco_plasma_friendly_collision( coco_sobject *obj1,
+                                     coco_sobject_cl *obj1cl,
+                                     coco_sobject *obj2, 
+                                     coco_sstate *sstate,
+                                     coco_bool *stat1,
+                                     coco_bool *stat2 );
 
 void coco_copter_friendly_collision( coco_sobject *obj1,
                                      coco_sobject_cl *obj1cl,

@@ -212,7 +212,15 @@ coco_process_server_arguments( int argc, char **argv )
   return COCO_TRUE;
 }
 
-
+static coco_nationality
+coco_parse_nationality( char *str )
+{
+  if (0==strcmp( str, "left" ))
+    return COCO_BAD_GUYS;
+  else if (0==strcmp( str, "right" ))
+    return COCO_GOOD_GUYS;
+  else return COCO_NEUTRAL;
+}
 
 #define COCO_CHECK_SKY_OPTION( sky_opt ) \
           if ((sky_opt<0) || (sky_opt >= COCO_SKY_LIMIT)) \
@@ -220,6 +228,7 @@ coco_process_server_arguments( int argc, char **argv )
                                "--sky argument must be between 0 and %d, " \
                                "got %d\n", \
                                (int) COCO_SKY_LIMIT-1, sky_opt )
+
 
 
 /* Returns true if the main program should run */
@@ -263,6 +272,29 @@ coco_process_client_arguments( int argc, char **argv )
           i++;
           if (i<argc)
             coco_set_nickname( argv[i] );
+          else coco_fatal_printf( COCO_ERROR_BAD_COMMAND_LINE,
+                                  "Missing argument to \"%s\" option.\n",
+                                  argv[i-1] );
+        }
+      else if (0==strncmp( "--team=", argv[i], 7 ))
+        {
+          coco_cl_nationality = coco_parse_nationality( argv[i] + 7 );
+          if (coco_cl_nationality == COCO_NEUTRAL)
+            coco_fatal_printf( COCO_ERROR_BAD_COMMAND_LINE,
+                               "%s option must be either \"left\" or"
+                               " \"right\".\n", "--team" );
+        }
+      else if ((0==strcmp( "--team", argv[i] )))
+        {
+          i++;
+          if (i<argc)
+            {
+              coco_cl_nationality = coco_parse_nationality( argv[i] );
+              if (coco_cl_nationality == COCO_NEUTRAL)
+                coco_fatal_printf( COCO_ERROR_BAD_COMMAND_LINE,
+                                   "%s option must be either \"left\" or"
+                                   " \"right\".\n", argv[i-1] );
+            }
           else coco_fatal_printf( COCO_ERROR_BAD_COMMAND_LINE,
                                   "Missing argument to \"%s\" option.\n",
                                   argv[i-1] );

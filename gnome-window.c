@@ -1013,11 +1013,11 @@ coco_team_radio_update( void *radio_raw, union coco_message *message )
   assert( (nationality == COCO_GOOD_GUYS) || (nationality == COCO_BAD_GUYS) );
   /* remove ourselves from the notification list.  */
   gtk_object_remove_data( radio_obj, "coco game_msg_id" );
-  if (nationality == coco_get_player_nationality( COCO_NEUTRAL ))
+  if (nationality == coco_get_player_nationality( coco_cl_nationality ))
     gtk_toggle_button_set_active( GTK_TOGGLE_BUTTON( radio_obj ),
                                   TRUE );
-  coco_cookie( "Toggle: My nat is %d, but/and players is %d\n",
-               nationality, coco_get_player_nationality( COCO_NEUTRAL ));
+  coco_cookie( "Toggle: My nat is %d, and players is %d\n",
+               nationality, coco_get_player_nationality( coco_cl_nationality ));
 }
 
 void
@@ -1039,7 +1039,7 @@ coco_player_table_new( void )
   GtkWidget *clistw,  *team_vbox, *team_hbox,
     *badguy_radio, *goodguy_radio;
   GtkCList *clist;
-  static gchar *titles[] = { "Name", "Team" };
+  static gchar *titles[] = { "Name     ", "Team" };
 
   clistw = gtk_clist_new_with_titles( COCO_PLAYER_TABLE_COLUMNS, titles );
   clist = GTK_CLIST( clistw );
@@ -1073,10 +1073,10 @@ coco_player_table_new( void )
   {
     int i;
     GtkWidget *radio;
-    coco_nationality nat = coco_get_player_nationality( COCO_NEUTRAL );
+    coco_nationality nat = coco_get_player_nationality( coco_cl_nationality );
     if ((COCO_NEUTRAL == nat))
       for (i=0, radio = goodguy_radio; i<2; i++, radio = badguy_radio)
-        { /* the hard way (probably unused) */
+        { /* the hard way, probably have game message, but sometimes not */
           int id = 
             coco_add_message_notification( COCO_MESSAGE_GAME,
                                            coco_team_radio_update, 
@@ -1086,9 +1086,11 @@ coco_player_table_new( void )
               coco_widget_delete_game_message_notification );
           gtk_object_set_data( GTK_OBJECT( radio ), "coco nationality", 
                                (void *) ((int) i+COCO_GOOD_GUYS) );
+        coco_cookie( "\n\nTHE HARD WAY gg=%d\n\n", (COCO_GOOD_GUYS == nat) );
         }
     else 
       { /* the easy way. */
+        coco_cookie( "\n\nTHE EASY WAY gg=%d\n\n", (COCO_GOOD_GUYS == nat) );
         gtk_toggle_button_set_active( GTK_TOGGLE_BUTTON( (COCO_GOOD_GUYS == nat)
                                                          ? goodguy_radio
                                                          : badguy_radio ),

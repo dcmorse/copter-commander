@@ -1,10 +1,26 @@
+2001-05-31  David Morse  <dm@bomberlan.net>
+
+	* methods.c (coco_mech_hostile_collision): walking mechs don't
+	explode when they hit wires.
+
+	* client.c (coco_handle_client_message): Only try to grab mouse
+	once per window's joined game, not once every time jerky 3rd person
+	joins.
+
+	* sobject.lisp (fake_balloon): Added to alleviate
+	warp-in-balloon-factory-kills.
+
 2001-05-30  David Morse  <dm@bomberlan.net>
+
+	* simple-command-line.c (coco_process_client_arguments): add
+	"--team" command line option, mostly for glx-copter-commander.
 
 	* methods.c (coco_plasma_update_state): plasma that goes slower
 	lives longer.
 	(coco_mech_hostile_collision): mechs can land.
 	(coco_gun_update_state): at- and aa- guns target mechs.
-	(coco_gun_fire_bullet_coords): guns never shoot into ground.
+	(coco_gun_fire_bullet_coords): guns never shoot into
+	ground. (buggy?)
 	(coco_firetruck_update_state): target mechs.
 	(coco_headquarters_update_state): target mechs.
 

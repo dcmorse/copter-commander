@@ -319,6 +319,18 @@ coco_balloon_update_state( coco_sobject *balloon,
 }
 
 coco_bool
+coco_fake_balloon_update_state( coco_sobject *balloon,
+                           coco_sobject_cl *cl,
+                           coco_sstate *sstate )
+{
+  if (COCO_SOBJECT_Y( balloon ) > COCO_BALLOON_FLOOR)
+    /* DANGER WILL ROBINSON: CHANGING CLASS! */
+    COCO_SOBJECT_CL( balloon ) = COCO_BALLOON_CLASS;
+  /* call-next-method */
+  return coco_sobject_update_state( balloon, cl->super, sstate );
+}
+
+coco_bool
 coco_tank_update_state( coco_sobject *sobject,
                         coco_sobject_cl *cl,
                         coco_sstate *sstate )
@@ -1986,6 +1998,26 @@ coco_plasma_hostile_collision( coco_sobject *plasma,
 }
 
 void
+coco_plasma_friendly_collision( coco_sobject *plasma,
+                                coco_sobject_cl *plasma_cl,
+                                coco_sobject *obj2, 
+                                coco_sstate *sstate,
+                                coco_bool *stat1, coco_bool *stat2 )
+{
+  if (COCO_PLASMA_COHERENT( plasma )
+      || !coco_sobject_subtype_p( COCO_SOBJECT_CL( obj2 ),
+                                 COCO_INFANTRY_CLASS ))
+    /* call-next-method */
+    coco_friendly_collision( plasma, plasma_cl->super, obj2, 
+                             sstate, stat1, stat2 );
+  else
+    /* call-EVIL-method! */
+    coco_hostile_collision( plasma, COCO_SOBJECT_CL( plasma ), obj2, sstate,
+                            stat1, stat2 );
+}
+
+
+void
 coco_plasma_ground_collide( coco_sobject *sobject, coco_sobject_cl *cla,
                             coco_sstate *sstate )
 {
@@ -2171,12 +2203,13 @@ coco_balloon_factory_update_state( coco_sobject *sobject,
           coco_sobject *b = coco_sstate_allocate_sobject( sstate );
           if (b)
             {
-              coco_sobject_cl *bc = COCO_BALLOON_CLASS;
+              coco_sobject_cl *bc = COCO_FAKE_BALLOON_CLASS;
               coco_gnum x = COCO_SOBJECT_X( sobject )
                 + COCO_BALLOON_FACTORY_BALLOON_TAB;
               coco_gnum y = 1 + COCO_SOBJECT_H( sobject )
                 + COCO_SOBJECT_Y( sobject ) - bc->canonical_h;
-              coco_init_balloon( b, bc, x, y, (rand()&1) + 1, COCO_NEUTRAL );
+              coco_init_fake_balloon( b, bc, x, y, 
+                                      (rand()&1) + 1, COCO_NEUTRAL );
               COCO_SOBJECT_DY( b ) = 1;
               COCO_BALLOON_FACTORY_FRESH( b ) = COCO_TRUE;
             }
@@ -2446,6 +2479,11 @@ coco_mech_hostile_collision( coco_sobject *obj1,
   else if (coco_sobject_subtype_p( COCO_SOBJECT_CL( obj2 ),
                                    COCO_BUILDING_CLASS ))
     *stat1 = *stat2 = COCO_FALSE; /* eg hut, pad, hq */
+  else if (coco_sobject_subtype_p( COCO_SOBJECT_CL( obj2 ),
+                                   COCO_BALLOON_LINE_CLASS )
+           && (COCO_SOBJECT_Y( obj1 ) <= (COCO_GROUND_Y+1))
+           && (COCO_BALLOON_LINE_HUT_INDEX( obj2 ) >= 0))
+    *stat1 = *stat2 = COCO_FALSE; /* walking mechs don't explode when they hit wires. */
   /* call-next-method */
   else coco_hostile_collision( obj1, obj1cl->super, obj2, sstate,
                                stat1, stat2 );

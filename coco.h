@@ -67,7 +67,7 @@ typedef int coco_gnum;           /* pixels from lower left of board, etc. */
 #define COCO_GNUM_MIN INT_MIN
 typedef long coco_lnum;          /* level design metric, >= coco_gnum. */
 typedef signed char coco_znum;   /* depth number [-1 2].  */
-#define COCO_ZNUM_MIN -1
+#define COCO_ZNUM_MIN -2
 #define COCO_ZNUM_MAX 2
 typedef coco_i16 coco_cnum;         /* client screen-origin relative */
 #define COCO_CNUM_HTON( cnum ) (COCO_I16_HTON( cnum ))
@@ -289,29 +289,6 @@ char *coco_sound_name_to_file_name( char *sound_name );
 int coco_check_hton( void );
 
 int coco_dice( int number, unsigned char sides );
-
-/* clsho.c */
-
-char *coco_nickname( void );
-
-void coco_set_nickname( char *value );
-
-
-
-/* command-line-sho.c */
-
-void coco_set_log_file( char *log_file_name );
-
-coco_bool coco_level_filename_p( char *filename, coco_bool tutorial );
-
-coco_bool coco_massage_level_file_name( char **level_file_name_in_out, 
-                                        coco_bool *
-                                        level_file_name_malloced_p_in_out );
-
-void coco_usage_message( coco_bool exit_p );
-void coco_help_message();
-void coco_version_message( void );
-void coco_list_levels_message( void );
 
 /* graphics.c */
 
@@ -1786,6 +1763,31 @@ extern struct coco_tutorial_info coco_tutorial_infos[COCO_TUTORIAL_INFO_SIZE];
 /* late server.c */
 
 extern struct coco_tutorial_info *coco_tutorial;
+
+
+/* clsho.c */
+
+char *coco_nickname( void );
+
+void coco_set_nickname( char *value );
+
+/* command line nationality option, do NOT use for figuring out in-game
+   nationality. */
+extern coco_nationality coco_cl_nationality; 
+
+
+void coco_set_log_file( char *log_file_name );
+
+coco_bool coco_level_filename_p( char *filename, coco_bool tutorial );
+
+coco_bool coco_massage_level_file_name( char **level_file_name_in_out, 
+                                        coco_bool *
+                                        level_file_name_malloced_p_in_out );
+
+void coco_usage_message( coco_bool exit_p );
+void coco_help_message();
+void coco_version_message( void );
+void coco_list_levels_message( void );
 
 
 /* main.c */

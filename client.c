@@ -2109,7 +2109,7 @@ coco_handle_client_message( struct coco_stream *str,
       switch (message.every.type) {
       case COCO_MESSAGE_QUIT:
         coco_fatal_printf( COCO_ERROR_NOT_IMPLEMENTED,
-                            "Server quit (why?).\n" );
+                           "Server quit (why?).\n" );
         break;
       case COCO_MESSAGE_VERSION:
         if (!coco_version_compatible_p( message.version.major,
@@ -2131,41 +2131,47 @@ coco_handle_client_message( struct coco_stream *str,
         coco_call_message_notifications( COCO_MESSAGE_VOTESTATE, &message );
         break;
       case COCO_MESSAGE_GAME:
-        coco_cookie( "Got game.  You are id %d\n", 
-                     (int) message.game.your_player_id );
-        if (!coco_have_game_message)
-          coco_initialize_cstate( coco_get_cstate() );
-        coco_have_game_message = COCO_TRUE;
-        coco_my_player_id = message.game.your_player_id;
-        coco_cookie( "Game status is \"%s\"\n", 
-                     message.game.game_status_string );
-        sprintf( coco_game_status_string, "%s",
-                 message.game.game_status_string );
-
         {
-          int i;
-          for (i=0; i<COCO_MAX_PLAYERS; i++)
-            {
-              struct coco_player *player = coco_players + i;
-              coco_nationality nationality = message.game.nationalities[i];
-              int in_use = ! (COCO_NEUTRAL == nationality);
-              player->in_use = in_use;
-              if (in_use)
-                {
-                  assert( COCO_PLAYER_NAME_MAX
-                          > strlen( message.game.names[i] ) );
-                  memcpy( player->name, message.game.names[i],
-                          COCO_PLAYER_NAME_MAX );
-                  player->nationality = nationality;
-                }
-            }
-          coco_refresh_window_eventually();
-        }
+          coco_bool had_game_message = coco_have_game_message;
+          coco_cookie( "Got game.  You are id %d\n", 
+                       (int) message.game.your_player_id );
+          if (!coco_have_game_message)
+            coco_initialize_cstate( coco_get_cstate() );
+          coco_have_game_message = COCO_TRUE;
+          coco_my_player_id = message.game.your_player_id;
+          coco_cookie( "Game status is \"%s\"\n", 
+                       message.game.game_status_string );
+          sprintf( coco_game_status_string, "%s",
+                   message.game.game_status_string );
 
-        coco_call_message_notifications( COCO_MESSAGE_GAME, &message );
-        if (coco_start_game_asap)
-          coco_send_play_message_maybe();
-        break;
+          {
+            int i;
+            for (i=0; i<COCO_MAX_PLAYERS; i++)
+              {
+                struct coco_player *player = coco_players + i;
+                coco_nationality nationality = message.game.nationalities[i];
+                int in_use = ! (COCO_NEUTRAL == nationality);
+                player->in_use = in_use;
+                if (in_use)
+                  {
+                    assert( COCO_PLAYER_NAME_MAX
+                            > strlen( message.game.names[i] ) );
+                    memcpy( player->name, message.game.names[i],
+                            COCO_PLAYER_NAME_MAX );
+                    player->nationality = nationality;
+                  }
+              }
+            coco_refresh_window_eventually();
+          }
+
+          coco_call_message_notifications( COCO_MESSAGE_GAME, &message );
+        
+          if ((!had_game_message) && (coco_cl_nationality != COCO_NEUTRAL))
+            coco_send_join_message( coco_cl_nationality );
+          if (coco_start_game_asap)
+            coco_send_play_message_maybe();
+          break;
+        }
       case COCO_MESSAGE_PLAY:
         coco_cookie( "GOT PLAY MSG\n" );
         /* the code for reading cstates already marks it true, and this
@@ -2179,8 +2185,11 @@ coco_handle_client_message( struct coco_stream *str,
         if (coco_in_game_vote_notify < 0)
           coco_in_game_vote_notify
             = coco_add_message_notification( COCO_MESSAGE_VOTESTATE, coco_note_votestate, NULL );
-        coco_have_play_message = COCO_TRUE;
-        coco_grab_pointer();
+        if (!coco_have_play_message) 
+          {
+            coco_grab_pointer();
+            coco_have_play_message = COCO_TRUE;
+          }
         assert( coco_have_port_message );
         coco_call_message_notifications( COCO_MESSAGE_PLAY, &message );
         break;
