@@ -9,6 +9,9 @@ z, mouse-right       drop bomb
 x                    launch missle
 c                    launch rocket
 space                parachute men (when on board)
+x                    construct hut (grounded cargo copter)
+c                    construct gun (grounded cargo copter)
+mouse-move           fly to mouse cursor
 __________________________________________________
 UNIT PURCHASE
 
@@ -17,8 +20,17 @@ m                    order man
 e                    order engineer
 a                    order anti-aircraft truck
 v                    order demolition van
-h                    order fancy helicopter
-n                    new fancy copter type
+h                    order fancy copter
+n                    next copter type (gunship, cargo, mech)
+__________________________________________________
+MECH CONTROL
+
+mouse-left           fire plasma gun
+mouse-move           aim gun at mouse cursor
+z, left-arrow        run left
+x, up-arrow          jump jets
+c, right-arrow       run right
+
 ___________________________________________________
 COMPUTER PLAYER MANAGEMENT
 

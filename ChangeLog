@@ -1,5 +1,7 @@
 2001-06-25  David Morse  <dm@bomberlan.net>
 
+	* keybindings.txt: updated for mech and cargo copters.
+
 	* gamesho.c: new scream, etc.
 
 	* server.c (coco_fire_plasma): plasma noise.
