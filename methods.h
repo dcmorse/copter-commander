@@ -623,6 +623,15 @@ void coco_mech_draw( coco_cobject *cobject, coco_sobject_cl *cla );
 
 void coco_spark_draw( coco_cobject *cobject, coco_sobject_cl *cla );
 
+coco_sobject *coco_copter_emit_smoke( coco_sobject *sobject, 
+                                      coco_sobject_cl *cla,
+                                      coco_sstate *sstate );
+
+coco_sobject *coco_every_sobject_emit_smoke( coco_sobject *sobject,
+                                             coco_sobject_cl *cla,
+                                             coco_sstate *sstate );
+
+
 /* things that might be promoted to generic functions eventually */
 
 coco_sobject *coco_drop_bomb( coco_sobject *copter, coco_sobject_cl *cl,

@@ -129,6 +129,8 @@ coco_every_sobject_update_state( coco_sobject *sobject,
                                  coco_sobject_cl *cl, 
                                  coco_sstate *sstate )
 {
+  if (COCO_SOBJECT_EMITS_SMOKE_WHEN_DAMAGED( sobject ))
+    coco_emit_smoke( sobject, COCO_SOBJECT_CL( sobject ), sstate );
   return COCO_TRUE;
 }
 
@@ -2726,6 +2728,39 @@ coco_sobject_weapon_hardpoint_by_raster_index( coco_sobject_cl *cla,
       struct coco_raster *r = cla->rasters[ri];
       return COCO_MAKE_MINI_POINT( r->w>>1, r->h>>1 );
     }
+}
+
+
+
+coco_sobject *
+coco_every_sobject_emit_smoke( coco_sobject *sobject, coco_sobject_cl *cla,
+                               coco_sstate *sstate )
+{
+  coco_mini_point mp = coco_sobject_com( sobject );
+  return coco_emit_smoke_helper( sobject, sstate, 
+                                 COCO_MINI_POINT_X( mp ) 
+                                 + COCO_SOBJECT_X( sobject ),
+                                 COCO_MINI_POINT_Y( mp ) 
+                                 + COCO_SOBJECT_Y( sobject ));
+}
+
+
+coco_sobject *
+coco_copter_emit_smoke( coco_sobject *copter, coco_sobject_cl *cla,
+                        coco_sstate *sstate )
+{
+  coco_gnum x, y;
+  coco_mini_rectangle hp, rp;
+  unsigned char ri;
+  ri = COCO_SOBJECT_RASTER_INDEX( copter );
+  hp = COCO_SOBJECT_WEAPON_HARDPOINTS( copter )[ri];
+  rp = COCO_SOBJECT_ROTOR_POINTS( copter )[ri];
+  /* emit smoke between hardpoint and rotorpoint. */
+  x = COCO_SOBJECT_X( copter )
+    + ((COCO_MINI_POINT_X( hp ) + COCO_MINI_POINT_X( rp ))>>1) ;
+  y = COCO_SOBJECT_Y( copter ) 
+    + ((COCO_MINI_POINT_Y( hp ) + COCO_MINI_POINT_Y( rp ))>>1) ;
+  return coco_emit_smoke_helper( copter, sstate, x, y );
 }
 
 

@@ -19,7 +19,7 @@
 ;;;;; sntructs with pointers to class structs.
 
 (c-define-class "sobject" ()
-  (;; four chars star the day off right
+  (             ;; four chars star the day off right
    ("in_use"       nil         "coco_bool") ; written only by the allocator
    ("camera_index" "-1"        "signed char")
    ("comp_index"   "-1"        "signed char")
@@ -56,7 +56,8 @@
 
    ;; now the per-class
    ("phase"        "COCO_SOLID" "coco_phase" :allocation :every-class)
-
+   ("emits_smoke_when_damaged" "COCO_FALSE" "coco_bool"
+                               :allocation :every-class)
    ;; controls whether the whole object is transformed by its angle about
    ;; its center of mass 
    ("rotate_p"    "COCO_FALSE" "coco_bool" :allocation :every-class)
@@ -69,9 +70,9 @@
    ("damage"       "COCO_NIGH_INVULNERABLE" "coco_health" :allocation :every-class)
    ("clip_to_board" "COCO_FALSE" "coco_bool" :allocation :every-class)
    ("default_blip_color_index" 
-       "COCO_MAKE_BLIP_TRIPLET( COCO_BLIP_FRY, COCO_BLIP_EMY, COCO_BLIP_EMY )"
-       "coco_blip_triplet"
-     :allocation :every-class)
+    "COCO_MAKE_BLIP_TRIPLET( COCO_BLIP_FRY, COCO_BLIP_EMY, COCO_BLIP_EMY )"
+    "coco_blip_triplet"
+    :allocation :every-class)
    ;; width+height available before the object is created.
    ;; canonical_w is used by all units to place them at the right x 
    ;; (usually centered).  canonical_h is not always defined.
@@ -156,13 +157,13 @@
    ;; only used by fancy vehicle classes (mech, cobra, cargo-copter, etc)
    ("dashboard_icon"           "NULL" "struct coco_raster *"
                                :allocation :every-class)
-   ("dashboard_list"           "0"   "unsigned int"  :allocation :every-class) ;; opengl display list
+   ("dashboard_list"           "0"   "unsigned int"  :allocation :every-class);; opengl display list
    ("dashboard_items"          "NULL" "struct coco_dashboard_item **"
-   :allocation :every-class)
+                               :allocation :every-class)
    ("dashboard_nitems"         "-1"   "int" :allocation :every-class)
    ("gen_dashboard_items"      "NULL"
-    ("int (*" ")(coco_sobject_cl *, struct coco_dashboard_item **)")
-    :allocation :every-class))
+                               ("int (*" ")(coco_sobject_cl *, struct coco_dashboard_item **)")
+                               :allocation :every-class))
   :class-layout :index
   :named-classes-p t
   :init-by-list-fn :virtual)
@@ -174,6 +175,12 @@
 
 (c-define-method "sobject_unlink" "sobject" 
                  "coco_every_sobject_unlink")
+
+(c-define-generic-function "emit_smoke" "sobject" "coco_sobject *" 
+                           (("sstate" "coco_sstate *")))
+
+(c-define-method "emit_smoke" "sobject"
+                 "coco_every_sobject_emit_smoke")
 
 (c-define-generic-function "sobject_update_state" "sobject" "coco_bool"
                            (("sstate" "coco_sstate *")))
@@ -364,7 +371,10 @@
    ("w"           "COCO_SOBJECT_CANONICAL_W( inst )")
    ("h"           "COCO_SOBJECT_CANONICAL_H( inst )")
    ("airburst_sound_type" "COCO_SOUND_BIG_AIRBURST")
-   ("gen_dashboard_items" "coco_copter_dashboard_items")))
+   ("gen_dashboard_items" "coco_copter_dashboard_items")
+   ("emits_smoke_when_damaged" "COCO_TRUE")))
+
+(c-define-method "emit_smoke" "copter" "coco_copter_emit_smoke")
 
 (c-define-method "effective_damage" "copter" 
                  "coco_flesh_damageable_effective_damage")
@@ -452,7 +462,7 @@
    ("rotor_radius" "65")
    ("refund"       "2")
    ("cost"         "10")
-   ("health_max"   "4")
+   ("health_max"   "5")
    ("x_force"      "2")
    ("dashboard_icon" "&coco_cargo_copter_icon_raster")))
 
@@ -492,7 +502,7 @@
    ("h"           "COCO_SOBJECT_CANONICAL_H( inst )")
    ("airburst_sound_type" "COCO_SOUND_BIG_AIRBURST")
    ("cost"        "20")
-   ("dashboard_icon" "&coco_cobra_icon_raster") ;; XXX wrong
+   ("dashboard_icon" "&coco_mech_icon_raster") ;; XXX wrong
    ("input_buffers" nil
     ;; intentially left uninitialized.  Don't have aggregate initializers
     ;; in oo-compiler, I think.
@@ -500,7 +510,7 @@
     ("COCO_BIT_VEC_VAR( "
      ", COCO_MECH_BUFFERED_BUTTONS_HACK*COCO_MECH_BUFFERED_TURNS_HACK )"))
    ("gen_dashboard_items" "coco_mech_dashboard_items")
-   ))
+   ("emits_smoke_when_damaged" "COCO_TRUE")))
 
 (c-define-method "hostile_collision" "mech" 
                  "coco_mech_hostile_collision")

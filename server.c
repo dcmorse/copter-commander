@@ -1227,40 +1227,48 @@ coco_hut_init_by_list( coco_sobject *sobject, coco_sobject_cl *cla,
 }
 
 
-void
-coco_copter_smoke_maybe( coco_sobject *copter, coco_sstate *sstate )
+coco_sobject *
+coco_emit_smoke_helper( coco_sobject *sobject, coco_sstate *sstate, 
+                        coco_gnum x, coco_gnum y )
 {
-  coco_mini_rectangle hp, rp;
-  unsigned char ri;
   coco_sobject *smoke;
   struct coco_raster *smoke_raster;
   int turn_mod_6;
-  int smokelevel = COCO_SOBJECT_HEALTH_MAX( copter ) 
-    - COCO_SOBJECT_HEALTH( copter );
-  if (smokelevel <= 0) return;
+  int health = COCO_SOBJECT_HEALTH( sobject );
+  int health_max = COCO_SOBJECT_HEALTH_MAX( sobject );
+  int smokelevel =  health_max - health;
+  if (health==health_max) return NULL;
   turn_mod_6 = sstate->time % 6;
-  if (turn_mod_6 != 0) return;
   if (smokelevel > COCO_SMOKE_RASTER_COUNT)
     {
-      coco_warn_printf( "too much damage not enough smoke rasters\n" );
-      smokelevel = COCO_SMOKE_RASTER_COUNT;
+      if (turn_mod_6 == 3)
+        {
+          smokelevel -= COCO_SMOKE_RASTER_COUNT;
+          if (smokelevel > COCO_SMOKE_RASTER_COUNT)
+            {
+              coco_warn_printf( "too much damage not enough smoke rasters\n" );
+              smokelevel = COCO_SMOKE_RASTER_COUNT;
+            }
+        }
+      else if (turn_mod_6 == 0)
+        smokelevel = COCO_SMOKE_RASTER_COUNT;
+      else smokelevel = 0;
     }
+  else if (turn_mod_6 != 0)
+    smokelevel = 0;
+  if (smokelevel==0) return NULL;
   smoke = coco_sstate_allocate_sobject( sstate );
-  if (!smoke) return;
+  if (!smoke) return NULL;
+  assert( smokelevel - 1 >=0 );
+  assert( smokelevel - 1 < COCO_SMOKE_CLASS->raster_count );
   smoke_raster = COCO_SMOKE_CLASS->rasters[smokelevel - 1];
-  ri = COCO_SOBJECT_RASTER_INDEX( copter );
-  hp = COCO_SOBJECT_WEAPON_HARDPOINTS( copter )[ri];
-  rp = COCO_SOBJECT_ROTOR_POINTS( copter )[ri];
-  /* emit smoke between hardpoint and rotorpoint. */
-  coco_init_smoke( smoke, COCO_SMOKE_CLASS, 
-                   COCO_SOBJECT_X( copter ) + ((COCO_MINI_POINT_X( hp )
-                                                + COCO_MINI_POINT_X( rp ))>>1)
-                   - (smoke_raster->w>>1),
-                   COCO_SOBJECT_Y( copter ) + ((COCO_MINI_POINT_Y( hp )
-                                                + COCO_MINI_POINT_Y( rp ))>>1)
-                   - (smoke_raster->h>>1),
-                   smokelevel - 1 );
+  coco_init_smoke( smoke, COCO_SMOKE_CLASS, x, y, smokelevel - 1 );
+  COCO_SOBJECT_X( smoke ) -= smoke_raster->w>>1;
+  COCO_SOBJECT_Y( smoke ) -= smoke_raster->h>>1;
+  return smoke;
 }
+
+
 
 
 /* return true if something was summoned */
@@ -1545,7 +1553,6 @@ coco_copter_update_state( coco_sobject *sobject,
       if (coco_get_bit( input->key_state, COCO_CHAR_TO_KEY( 'x' ) ))
         coco_button_maybe_launch_missile( sobject, sstate );
     }
-  coco_copter_smoke_maybe( sobject, sstate );
   {
     coco_bool landed_p = COCO_COPTER_LANDED_P( sobject );
     int ri = COCO_SOBJECT_RASTER_INDEX( sobject );

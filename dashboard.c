@@ -26,7 +26,7 @@
 
 
 /* Dashboards with < than this many items will be padded in the middle. */
-#define COCO_DASHBOARD_ITEM_MIN 9
+#define COCO_DASHBOARD_ITEM_MIN 8
 
 
 
@@ -43,8 +43,10 @@ DEFINE_AMMO_MAX_READER( coco_max_bombs,    max_bombs    )
 DEFINE_AMMO_MAX_READER( coco_max_missiles, max_missiles )
 DEFINE_AMMO_MAX_READER( coco_max_rockets,  max_rockets  )
 DEFINE_AMMO_MAX_READER( coco_max_plasma,   max_plasma   )
-/* DEFINE_AMMO_MAX_READER( coco_max_fuel,     max_fuel     ) not used */
-DEFINE_AMMO_MAX_READER( coco_max_energy,   max_energy   )
+DEFINE_AMMO_MAX_READER( coco_max_fuel,     max_fuel     )
+/* DEFINE_AMMO_MAX_READER( coco_max_energy,   max_energy   ) not used */
+DEFINE_AMMO_MAX_READER( coco_max_internal_infantry,     
+                        max_internal_infantry           )
 
 DEFINE_AMMO_READER( coco_bullets,    bullets  )
 DEFINE_AMMO_READER( coco_bombs,      bombs    )
@@ -52,12 +54,12 @@ DEFINE_AMMO_READER( coco_missiles,   missiles )
 DEFINE_AMMO_READER( coco_rockets,    rockets  )
 /* DEFINE_AMMO_READER( coco_fuel,       fuel     ) not used */
 DEFINE_AMMO_READER( coco_plasma,     plasma   )
-DEFINE_AMMO_READER( coco_energy,     fuel     )
+/* DEFINE_AMMO_READER( coco_energy,     fuel     ) not used */
 DEFINE_AMMO_READER( coco_funds,      funds    )
 DEFINE_AMMO_READER( coco_copters,    copters  )
 
 
-#define COCO_DASHBOARD_ICON_TAB 40
+#define COCO_DASHBOARD_ICON_TAB 44
 #define COCO_DASHBOARD_ICON_INNER_TAB 36
 
 void 
@@ -164,6 +166,45 @@ coco_draw_dashboard_fuel( int x, struct coco_cstate *cstate,
   coco_draw_dashboard_string( x, buf );
 }
 
+void
+coco_draw_dashboard_energy( int x, struct coco_cstate *cstate,
+                            void *ignore1, void *ignore2 )
+{
+  /* we've got this raster of a battery, and are going to fill it up with
+     power, relative to total charge.  The battery is a raster.  It has
+     some wierd geometry about it.  I could encapsulate that with a bunch
+     of deines, but that doesn't seem worth the time. */
+  coco_i32 cla_idx = cstate->dashinfo.camera_class_index;
+  coco_sobject_cl *cla = (coco_sobject_classes + cla_idx);
+  coco_u16 energy = cstate->dashinfo.fuel;
+  coco_u16 emax = cla->max_energy;
+  int x0, x1;
+  int fract = energy * 255 / emax;
+  int dif = 255-fract;
+  coco_color color 
+    = COCO_MAKE_COLOR( (int)(sqrt( dif )*16), (int)(sqrt( fract )*16),
+                       0, 255 );
+  char buf[16];
+  sprintf( buf, "%d", energy*100/emax );
+  coco_draw_color( color );
+  coco_draw_dashboard_string( x, buf );
+  x0 = x + COCO_DASHBOARD_ICON_INNER_TAB - COCO_ENERGY_ICON_RASTER_W + 1;
+  x1 = x0+((COCO_ENERGY_ICON_RASTER_W-4)*energy/emax);
+  if (x1>x0)
+    {
+      coco_draw_rectangle( x0, COCO_DASHBOARD_BASELINE+1, x1,
+                           COCO_DASHBOARD_BASELINE
+                           +COCO_ENERGY_ICON_RASTER_H-1 );
+      if (emax==energy) /* fill the nipple */
+        coco_draw_rectangle( x0+COCO_ENERGY_ICON_RASTER_W-4, 
+                             COCO_DASHBOARD_BASELINE+4,
+                             x0+COCO_ENERGY_ICON_RASTER_W-1,
+                             COCO_DASHBOARD_BASELINE+8 );
+    }
+  coco_draw_dashboard_raster( x, &coco_energy_icon_raster );
+}
+
+
 void 
 coco_draw_dashboard_men( int x, struct coco_cstate *cstate,
                           void *ignore1, void *ignore2 )
@@ -200,10 +241,17 @@ coco_copters_dashboard_item = {
     coco_draw_dashboard_copters, NULL, NULL
 };
 
-/* empty item, used to consume space -- not used
+/* (left side) empty item, used to consume space */
 static struct coco_dashboard_item 
-coco_spacer_dashboard_item = { 
-  "spacer", COCO_DASHBOARD_RIGHT,
+coco_left_spacer_dashboard_item = { 
+  "left-spacer", COCO_DASHBOARD_LEFT,
+  NULL, NULL, NULL, NULL, NULL
+};
+
+/* (right side) empty item, used to consume space  -- not used
+static struct coco_dashboard_item 
+coco_right_spacer_dashboard_item = { 
+  "right-spacer", COCO_DASHBOARD_RIGHT,
   NULL, NULL, NULL, NULL, NULL
 };
 */
@@ -281,11 +329,11 @@ coco_copter_dashboard_items( coco_sobject_cl *cl,
   static struct coco_dashboard_item items[COCO_DASHBOARD_COPTER_COUNT] = {
     { "men", COCO_DASHBOARD_RIGHT,
       coco_draw_dashboard_raster, (void *) &coco_man_icon_raster,
-      coco_draw_dashboard_men, NULL, NULL
+      coco_draw_dashboard_men, NULL, (void *) coco_max_internal_infantry
     },
     { "fuel", COCO_DASHBOARD_RIGHT,
       coco_draw_dashboard_raster, (void *) &coco_fuel_icon_raster,
-      coco_draw_dashboard_fuel, NULL, NULL
+      coco_draw_dashboard_fuel, NULL, (void *) coco_max_fuel
     },
     { "rockets", COCO_DASHBOARD_LEFT,
       coco_draw_dashboard_raster, (void *) &coco_rocket_icon_raster,
@@ -315,7 +363,13 @@ coco_copter_dashboard_items( coco_sobject_cl *cl,
   int i;
   if (di_return)
     for (i=0; i<COCO_DASHBOARD_COPTER_COUNT; i++)
-      di_return[i] = items + i;
+      {
+        int (* maxfn)( coco_sobject_cl * ) 
+          = (int (*)( coco_sobject_cl * )) items[i].dynamic_handy2;
+        assert( maxfn );
+        di_return[i] = (maxfn( cl ) != 0)
+          ? (items + i) : &coco_left_spacer_dashboard_item;
+      }
   return COCO_DASHBOARD_COPTER_COUNT;
 }
 
@@ -327,13 +381,11 @@ coco_mech_dashboard_items( coco_sobject_cl *cl,
 {
   static struct coco_dashboard_item items[COCO_DASHBOARD_COPTER_COUNT] = {
     { "energy", COCO_DASHBOARD_RIGHT,
-      coco_draw_dashboard_raster, (void *) &coco_fuel_icon_raster,
-      coco_draw_dashboard_numeric, 
-      (void *) coco_energy, 
-      (void *) coco_max_energy
+      NULL, NULL,
+      coco_draw_dashboard_energy, NULL, NULL
     },
     { "plasma", COCO_DASHBOARD_LEFT,
-      coco_draw_dashboard_raster, (void *) &coco_gun_icon_raster,
+      coco_draw_dashboard_raster, (void *) &coco_plasma_icon_raster,
       coco_draw_dashboard_numeric, 
       (void *) coco_plasma,
       (void *) coco_max_plasma
@@ -402,12 +454,8 @@ coco_draw_dashboard( struct coco_cstate *cstate )
             ? l++ : (mitems - ++r);
           assert( notch >= 0 );
           assert( notch < mitems );
-          coco_cookie( "drawing static for \"%s\" at notch %d\n",
-                       items[i]->name, notch );
           if (NULL != draw_static)
             draw_static( xinc*notch, items[i]->static_handy );
-          coco_cookie( "%s is using %s\n",
-                       items[i]->name, (draw_static == coco_draw_dashboard_raster)? "raster" : "not raster" );
         }
       if (list)
         glEndList();
@@ -417,10 +465,15 @@ coco_draw_dashboard( struct coco_cstate *cstate )
   l = 0;
   r = 0;
   for (i=0; i<nitems; i++)
-    items[i]->draw_dynamic( xinc*((items[i]->pack == COCO_DASHBOARD_LEFT)
-                                  ? l++ : (mitems - ++r)), 
-                            cstate,
-                            items[i]->dynamic_handy1, 
-                            items[i]->dynamic_handy2 );
+    {
+      int notch = (items[i]->pack == COCO_DASHBOARD_LEFT)
+        ? l++ : (mitems - ++r);
+      assert( notch >= 0 );
+      assert( notch < mitems );
+      if (items[i]->draw_dynamic)
+        items[i]->draw_dynamic( xinc*notch, cstate,
+                                items[i]->dynamic_handy1, 
+                                items[i]->dynamic_handy2 );
+    }
 }
 

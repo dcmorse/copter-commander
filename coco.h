@@ -1446,9 +1446,9 @@ coco_u32 coco_draw_frame_number;
 #define COCO_MECH_JUMPING_DDX_MAX 2
 #define COCO_MECH_DY_MAX 20
 #define COCO_MECH_GRAVITY 3
-#define COCO_MECH_CAPACITANCE 120
+#define COCO_MECH_CAPACITANCE 100
 #define COCO_MECH_POWER 2
-#define COCO_PLASMA_ENERGY 20
+#define COCO_PLASMA_ENERGY 14
 #define COCO_MUNITION_COLLISION_PRIORITY 25
 #define COCO_BULLET_SPEED 30 /* can't be higher than balloon_w */
 #define COCO_PLASMA_SPEED 25
@@ -1686,6 +1686,12 @@ void coco_comp_key_press( struct coco_keyboard_pointer_state *kstate,
 coco_sobject *
 coco_fire_plasma( coco_sobject *sobject, coco_sobject_cl *class,
                   coco_sstate *sstate );
+
+
+coco_sobject *
+coco_emit_smoke_helper( coco_sobject *sobject, coco_sstate *sstate, 
+                        coco_gnum x, coco_gnum y );
+
 
 
 /* dashboard.c */
