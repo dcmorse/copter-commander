@@ -298,7 +298,41 @@ X.    History and Scale
          including incredibly anti-compressed
          rasters-as-c-source-code.
 	 1. 1.7 is a preview release for the hopefully stable 2.0.
-XI.   Web Presence
+
+Appendix A: Release Procedure
+      To release a new version of copter commander requires many steps, 
+      most of them manual.
+      A. Change the COCO_MAJOR_VERSION and COCO_MINOR_VERSION
+         variables in the Makefile.
+      B. Change the four variables in globals.c
+	 1. COCO_NETWORK_COMPATIBLE_VERSIONS_SIZE
+	 2. coco_version_number coco_network_compatible_versions
+	 3. COCO_LEVEL_FILE_FORMAT_COMPATIBLE_VERSIONS_SIZE
+	 4. coco_level_file_format_compatible_versions
+         5. Versions are not network-compatible if sobject slots changed.  
+            When in doubt, break compatibility.
+	 6. Versions are level-file-format-compatible if the constructor
+	    arguments didn't change, and no used units are removed.
+      C. Change the coco version in each file of "levels/*.cc*".
+      D. OpenAL
+	 1. Download the CVS.
+	 2. Tarball it, and include this in the release.
+	 3. Install it.
+      E. In the coco cvs directory, do a "make clean ; make tarball".
+	 1. In theorey the "make clean" is unneeded.
+      F. Unpack the tarball in  a temp directory, make sure it works.  
+         1. Make sure it doesn't ask for clisp.
+	 2. Test the OpenAL sound against new libs.
+      G. cvs commit
+      H. cvs rtag -R coco-1-8 .
+         1. use  your version instead of 1-8, dummy
+      I. Create a new release on sourceforge.net
+      J. Create a news item at the coco webpage
+      K. Create a news item at sourceforge
+      L. Tell freshmeat.net
+      M. Go get a coke.
+
+Appendix B: Web Presence
       A. copter-commander.org reserved, but waiting to get DNS set up.
       B. Primary user page is www.speakeasy.org/~morse/copter-commander
       C. Primary devo page is sourceforge.net/projects/coco

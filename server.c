@@ -256,7 +256,7 @@ coco_init_sstate( coco_sstate *sstate, coco_gnum width )
   for (i=0; i < COCO_MAX_PLAYERS; i++)
     {
       sstate->respawn[i] = COCO_FALSE;
-      sstate->favorite_copter_class[i] = COCO_COBRA_CLASS;
+      sstate->favorite_copter_class[i] = COCO_CARGO_COPTER_CLASS; /* COCO_COBRA_CLASS; */
     }
   for (i=0; i < COCO_MAX_COMPS; i++)
     {
@@ -966,6 +966,7 @@ coco_sstate_execute_collision( coco_sstate *sstate,
   nata = COCO_SOBJECT_NATIONALITY( obja );
   natb = COCO_SOBJECT_NATIONALITY( objb );
 
+  coco_cookie( "Collision %s-%s\n", COCO_SOBJECT_NAME( obja ), COCO_SOBJECT_NAME( objb ) );
   if ((nata != natb) || (nata == COCO_NEUTRAL))
     coco_hostile_collision( obja, COCO_SOBJECT_CL( obja ), objb,
                             sstate, stata, statb );

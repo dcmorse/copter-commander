@@ -26,7 +26,6 @@
 #include <stdlib.h>    /* for exit */
 #include <ctype.h>
 #include <assert.h>
-#include <malloc.h>
 #include <string.h>
 #include <sys/types.h> /* for directory */
 #include <dirent.h>    /* for directory */

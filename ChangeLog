@@ -1,4 +1,10 @@
+2002-02-24  David Morse  <svref@yahoo.com>
+
+	* tiff-compile.c: remove malloc.h dependancy.
+
 2002-02-11  David Morse  <svref@yahoo.com>
+
+	* DEVEL: "Appendix A: Release Procedure" added
 
 	* tiff-compile.c (coco_tiff_compile_system): typeo
 
