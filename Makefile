@@ -399,14 +399,14 @@ tarball: ${COCO_TAR_FILE}.gz ${COCO_TAR_FILE}.bz2
 # the source distribution.  This is just to fool make into not remaking
 # them (or trying to remake them, then finding there's no clisp
 # installed).
-${COCO_TAR_FILE}: 
+${COCO_TAR_FILE}:  forward-sobject.h  sobject.h  sobject.c
 	set -e ;\
 	rm -rf ${COCO_TAR_DIRECTORY} ${COCO_TAR_FILE} ;\
 	mkdir ${COCO_TAR_DIRECTORY} ;\
 	cp --archive -R Makefile  *.lisp *.fas *.c *.h *.txt *.sh \
 	  copyright COPYING INSTALL DEVEL GNOME-HACKS \
 	  ChangeLog copter-commander-template.spec copter-commander.png \
-         raster-dumper.lisp tiffs  \
+          tiffs  \
 	 ${COCO_TAR_DIRECTORY} ;\
 	rm -f ${COCO_TAR_DIRECTORY}/configure-time.h ;\
 	mkdir ${COCO_TAR_DIRECTORY}/levels ${COCO_TAR_DIRECTORY}/sounds ;\
