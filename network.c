@@ -187,6 +187,7 @@ coco_message_structrures_correct_size()
 }
 
 
+/* returns success.  On fail, may set end_of_file_p to true. */
 coco_bool 
 coco_read_message( struct coco_stream *str, union coco_message *return_buff,
                    coco_bool *end_of_file_p )

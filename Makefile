@@ -263,6 +263,8 @@ configure-time.h: Makefile endian sizeof configure-*.sh
 	  >> configure-time.h ;\
 	echo \#define COCO_MINOR_VERSION ${COCO_MINOR_VERSION} \
 	  >> configure-time.h ;\
+	echo \#define COCO_VERSION_STRING \"${COCO_MAJOR_VERSION}.${COCO_MINOR_VERSION}\" \
+	  >> configure-time.h ;\
 	echo >> configure-time.h ;\
 	echo \#define COCO_LEVEL_DIRECTORY \"${COCO_LEVEL_DIRECTORY}\" \
 	  >> configure-time.h ;\

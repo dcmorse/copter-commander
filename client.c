@@ -849,7 +849,7 @@ coco_draw_game_over_message( coco_nationality nationality )
   char *game_over = "GAME OVER";
   char *who_wins = (COCO_GOOD_GUYS==nationality)
     ? "GREEN WINS" : "GREY WINS";
-  char *bye = "window will close by itself";
+  char *bye = "The server will close your connection soon.";
   int go_w, go_h, ww_w, ww_h, bye_w, bye_h, dummy, total_h, cursor_y;
   coco_font_string_dimensions( game_over, -1, &coco_huge_font,
                                &go_w, &go_h, &dummy );
@@ -1093,18 +1093,23 @@ coco_client_disconnect( void )
     struct coco_stream *str = coco_get_server_message_stream();
     if (str)
       {
-        if (coco_server_stream.fd != -1)
+        if (str->fd != -1)
           {
-            coco_close_fd( coco_server_stream.fd, COCO_TRUE );
-            coco_server_stream.fd = -1;
+            coco_close_fd( str->fd, COCO_TRUE );
+            str->fd = -1;
           }
-        coco_server_stream.buffer_in_use = 0;
+        str->buffer_in_use = 0;
       }
   }
+  /* this is needed after game-over */
+  if (coco_get_pointer_grabbed_flag())
+    coco_ungrab_pointer();
   coco_set_client_state( COCO_CLIENT_DEMO );
   coco_initialize_cstate( coco_get_cstate() );
   coco_cookie( "Setting pending disconnect\n" );
   coco_gnome_disconnect_pending_p = COCO_TRUE;
+  /* added this for disconnecting after game-over */
+  coco_refresh_window_eventually();
 }
 
 coco_bool
@@ -1178,6 +1183,8 @@ coco_key_press( coco_key key, char *string_or_null,
       coco_free( fname );
       return;
     }
+  else if (key == COCO_KEY_ESCAPE)
+    coco_cookie( "client_state=%d\n", (int) coco_get_client_state() );
   /* mode-local bindings */
   switch (coco_get_client_state()) {
 #ifdef COCO_CONSOLE
@@ -2088,15 +2095,13 @@ coco_handle_client_message( struct coco_stream *str,
                             int udpfd, 
                             coco_u32 server_addr )
 {
-  coco_bool end_of_file_p;
+  coco_bool end_of_file_p, read;
   union coco_message message;
   assert( str );
   /* coco_cookie( "Handling client message\n" );*/
-  if (coco_read_message( str, &message, &end_of_file_p ))
+  read = coco_read_message( str, &message, &end_of_file_p );
+  if (read)
     {
-      if (end_of_file_p)
-        coco_fatal_printf( COCO_ERROR_NOT_IMPLEMENTED,
-                           "EOF on server stream.\n" );
       switch (message.every.type) {
       case COCO_MESSAGE_QUIT:
         coco_fatal_printf( COCO_ERROR_NOT_IMPLEMENTED,
@@ -2223,6 +2228,10 @@ coco_handle_client_message( struct coco_stream *str,
         break;
       }
     }
+  else if (end_of_file_p)
+    coco_client_disconnect();
+    /* coco_fatal_printf( COCO_ERROR_NOT_IMPLEMENTED,
+       "EOF on server stream.\n" ); */
   /* coco_cookie( "         client message handled.\n" ); */
 }
 

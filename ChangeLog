@@ -1,3 +1,13 @@
+2001-12-23  David Morse  <dm@bomberlan.net>
+
+	* globals.c: coco_version_string easier to maintian, fixes about
+	box version out of sync.
+
+	* client.c (coco_client_disconnect): don't use global variable
+	(coco_client_disconnect): support for disconnect after game over
+	(coco_handle_client_message): disconnect after game over, don't
+	close.  Fixes [ #490088 ] game over kills process even with gnome.
+
 2001-12-13  David Morse  <svref@yahoo.com>
 
 	* DEVEL: fix [ #492278 ] DEVEL is out of date
