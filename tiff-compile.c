@@ -197,7 +197,7 @@ coco_write_raster_source( FILE *s, uint32 *p, uint32 w, uint32 h,
           }
         fprintf( s, "\n" );
       }
-  else
+  else /* not bitmap */
     for (y=0; y < h; y++)
       {
         fprintf( s, " " );

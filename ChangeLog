@@ -1,5 +1,12 @@
 2001-05-30  David Morse  <dm@bomberlan.net>
 
+	* client.c: start game right after [p] in glx-copter-commander
+
+	* graphics.c (coco_draw_raster_texmap): workaround to
+	copter-color-multiply bug.
+
+	* copyright: update manifest for mech images.
+
 	* dashboard.c: various improvements.
 
 2001-05-29  David Morse  <dm@bomberlan.net>

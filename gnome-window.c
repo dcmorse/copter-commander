@@ -129,6 +129,10 @@ running the app - you might try something like:
 #define COCO_UI_PAD_HORIZONTAL 5
 #define COCO_UI_PAD_VERTICAL 5
 
+/* Set by tutorial gui */
+coco_bool coco_start_game_asap = COCO_FALSE;
+
+
 /* Fwd defs________________________________________________ */
 
 void coco_make_server_process( coco_bool tutorial, int left_comps, 

@@ -52,7 +52,6 @@ static struct coco_message_votestate coco_old_votestate;
 
 /* ________________________________________________________________ */
 
-coco_bool coco_start_game_asap = COCO_FALSE;
 
 /* only referenceable if coco_have_game_message. */
 char coco_game_status_string[COCO_GAME_STATUS_SIZE];

@@ -25,6 +25,10 @@
 #include <stdlib.h> /* for exit */
 #include "coco.h"
 
+/* glx-copter-commander and tutorials should start immediately */
+coco_bool coco_start_game_asap = COCO_TRUE;
+
+
 char *coco_gnu_info_string = "For\n"
 "more information about these matters\n"
 "press [L] to print the licence to the\n"

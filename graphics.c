@@ -225,6 +225,7 @@ coco_draw_raster_texmap( coco_gnum x0, coco_gnum y0,
                          coco_gnum w, coco_gnum h,
                          struct coco_raster *raster )
 {
+  GLubyte white[4] = {255, 255, 255, 255};
   enum coco_raster_format format = raster->format;
   coco_bool do_blending 
     = (format==COCO_RGBA_8_BLEND) && coco_blend_alpha;
@@ -233,6 +234,8 @@ coco_draw_raster_texmap( coco_gnum x0, coco_gnum y0,
     coco_begin_alpha_blending();
   glPolygonMode( GL_FRONT_AND_BACK, GL_FILL );
   id = COCO_RASTER_TEXTURE_ID( raster );
+  /* Prevent mysterious bug with plasma/COCO_MULTIPLY copter/COCO_REPLACE */
+  if (raster->texmode == COCO_REPLACE) glColor4ubv( white );
   glEnable( GL_TEXTURE_2D );
   glBindTexture( GL_TEXTURE_2D, id ); 
   glBegin( GL_QUADS );
@@ -444,7 +447,8 @@ coco_begin_alpha_blending( void )
   glPushAttrib( GL_COLOR_BUFFER_BIT );
   glDisable( GL_ALPHA_TEST );
   glEnable( GL_BLEND );
-  glBlendFunc( GL_SRC_ALPHA,  GL_ONE_MINUS_SRC_ALPHA );
+  /* TIFFReadRGBAImage premultiplies alpha! */
+  glBlendFunc( GL_ONE /* GL_SRC_ALPHA */,  GL_ONE_MINUS_SRC_ALPHA );
 }
 
 static void
