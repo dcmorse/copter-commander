@@ -33,7 +33,7 @@ char *coco_server = "localhost";
 coco_bool coco_server_specified_p = COCO_FALSE;
 coco_bool coco_server_malloced_p = COCO_FALSE;
 
-int coco_blend_alpha;/* not coco_bool to appease popt */
+int coco_blend_alpha = -1;/* not coco_bool to appease popt, and -1 means "maybe, depending on glXIsDirect" */
 
 int coco_jamming = 1;
 

@@ -163,7 +163,9 @@ coco_bool coco_process_client_arguments( int argc, char **argv )
       else if (0==strcmp( "--single-buffer", argv[i] ))
         coco_command_line_inhibit_double_buffer = COCO_TRUE;
       else if (0==strcmp( "--blend-alpha", argv[i] ))
-        coco_blend_alpha = COCO_TRUE;
+        coco_blend_alpha = 1;
+      else if (0==strcmp( "--no-blend-alpha", argv[i] ))
+        coco_blend_alpha = 0;
       else if (0==strcmp( "--gnome-options", argv[i] ))
         {
           int k;

@@ -19,6 +19,7 @@
 
 
 #include <GL/gl.h>
+#include <string.h>
 #include <assert.h>
 #include "coco.h"
 
@@ -315,13 +316,22 @@ coco_setup_matricies( coco_gnum w, coco_gnum h )
 void
 coco_setup_misc_graphics( void )
 {
+  const GLubyte *renderer;
   glDrawBuffer( coco_double_buffer ? GL_BACK : GL_FRONT );
   glDisable( GL_DITHER ); /* as recomended by mesa user faq */
   glEnable( GL_ALPHA_TEST );
   glAlphaFunc( GL_GREATER, 0.33 );
 
+  renderer = glGetString( GL_RENDERER );
+
+  if (-1==coco_blend_alpha)
+    coco_blend_alpha =
+      !(strstr( (const char *) renderer, "Mesa" ) 
+        && strstr( (const char *) renderer, "Indirect" ));
+  
+
   printf( "GL_VENDOR     %s\n", glGetString( GL_VENDOR ) );
-  printf( "GL_RENDERER   %s\n", glGetString( GL_RENDERER ) );
+  printf( "GL_RENDERER   %s\n", renderer );
   printf( "GL_VERSION    %s\n", glGetString( GL_VERSION ) );
 #ifdef COCO_DEBUG
   printf( "GL_EXTENSIONS %s\n", glGetString( GL_EXTENSIONS) );
