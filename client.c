@@ -45,6 +45,7 @@
 coco_gnum coco_real_window_w = COCO_OFFICIAL_WINDOW_W;
 coco_gnum coco_real_window_h = COCO_OFFICIAL_WINDOW_H;
 
+
 /* ________________________________________________________________ */
 static coco_bool coco_old_votestate_initialized = COCO_FALSE;
 static struct coco_message_votestate coco_old_votestate;
@@ -268,6 +269,10 @@ struct coco_cstate {
   coco_nationality game_over_nationality;
   coco_gnum camera_x;
   coco_gnum board_w;
+  unsigned char major_mission; /* 255 = none */
+  unsigned char minor_mission;  /* 255 = none */
+  coco_bool angle_on;
+  coco_angle angle; /* only use if angle_on */
   struct coco_dashboard_info dashinfo;
 };
 
@@ -394,6 +399,11 @@ coco_read_cstate( udpfd )
       cstate->cblips
         = (struct coco_cblip *)(cstate->cobjects + cobject_count);
       cstate->cblips_length = cblip_count;
+      cstate->major_mission = header.major_mission;
+      cstate->minor_mission = header.minor_mission;
+      cstate->angle_on = header.angle_on;
+      if (header.angle_on)
+        cstate->angle = header.angle;
       cstate->dashinfo = header.dashinfo;
 
 
@@ -544,7 +554,7 @@ void
 coco_missile_draw_by_coords( coco_gnum x, coco_gnum y, coco_angle angle, 
                              coco_sobject_cl *cl, coco_bool burn_engine )
 {
-  glMatrixMode(  GL_MODELVIEW );
+  /* glMatrixMode(  GL_MODELVIEW ); the default -dm 05-11-2001 */
   glPushMatrix();
   glTranslatef( x, y, 0.0 );
   glRotatef( angle*(360.0/256.0), 0.0, 0.0, 1.0 );
@@ -936,10 +946,74 @@ void coco_draw_chat( long tv_sec )
 }
 
 
+void
+coco_draw_mission_objective( struct coco_cstate *cstate )
+{
+  struct coco_font *font = &coco_default_font;
+  int mj = cstate->major_mission;
+  int mn = cstate->minor_mission;
+  int hh = COCO_FONT_INTERLINE_SPACING( font );
+
+  coco_draw_color( COCO_COLOR_MISSION_OBJECTIVE );
+  if (mj != 255)
+    {
+      static int last_mj = -1;
+      static int last_mj_w = -1;
+      int x;
+      if (last_mj != mj)
+        {
+          last_mj = mj;
+          coco_font_string_dimensions( coco_major_missions[mj], -1, font, 
+                                       &last_mj_w, NULL, NULL );
+        }
+      x = (COCO_OFFICIAL_WINDOW_W>>1) - (last_mj_w>>1);
+      coco_draw_string( COCO_MAX( x, 0 ),
+                        COCO_VIEWABLE_H - (COCO_TALK_DISPLAY_SIZE+1)*hh,
+                        coco_major_missions[mj],
+                        -1, font, COCO_BOTTOM );
+    }
+  /* coco_cookie( "mj=%3d mn=%3d angle=%3d\n", mj, mn, cstate->angle_on ? cstate->angle : -1 ); */
+  if (mn != 255)
+    {
+      int x;
+      static int last_mn = -1;
+      static int last_mn_w = -1;
+      if (last_mn != mn)
+        {
+          last_mn = mn;
+          coco_font_string_dimensions( coco_minor_missions[mn], -1, font, 
+                                       &last_mn_w, NULL, NULL );
+        }
+      x = (COCO_OFFICIAL_WINDOW_W>>1) - (last_mn_w>>1);
+      coco_draw_string( COCO_MAX( x, 0 ),
+                        COCO_VIEWABLE_H - (COCO_TALK_DISPLAY_SIZE+2)*hh,
+                        coco_minor_missions[mn],
+                        -1, font, COCO_BOTTOM );
+    }
+  if (cstate->angle_on)
+    {
+      glPushMatrix(); /* model-view */
+      glTranslatef( COCO_TUTORIAL_ARROW_X, COCO_TUTORIAL_ARROW_Y, 0.0 );
+      glRotatef( COCO_ANGLE_TO_FLOAT_DEGREES( cstate->angle ),
+                 0.0, 0.0, 1.0 );
+      coco_begin_line_strip_drawing();
+      coco_line_strip_drawing_vertex( 10, 10 );
+      coco_line_strip_drawing_vertex( 10, 20 );
+      coco_line_strip_drawing_vertex( 30, 0 );
+      coco_line_strip_drawing_vertex( 10, -20 );
+      coco_line_strip_drawing_vertex( 10, -10 );
+      coco_line_strip_drawing_vertex( -30, -10 );
+      coco_line_strip_drawing_vertex( -30, 10 );
+      coco_line_strip_drawing_vertex( 10, 10 );
+      coco_end_line_strip_drawing();
+      glPopMatrix();
+    }
+}
+
+
 void 
 coco_cstate_draw( struct coco_cstate *cstate )
 {
-  coco_bool grabbed;
   static struct timeval now, delta, last = { 0, 0 };
   /*  struct timezone tz;*/
   int i;
@@ -949,25 +1023,14 @@ coco_cstate_draw( struct coco_cstate *cstate )
   coco_subtract_timevals( &delta, &now, &last );
   last = now;
 
-  coco_clear_window_color( COCO_COLOR_BACKGROUND );
-  coco_clear_window();
+  /* coco_clear_window_color( COCO_COLOR_BACKGROUND );
+   * coco_clear_window(); */
   if (coco_draw_background_before_everything_else)
     coco_draw_background( 0, 0, COCO_FALSE );
   coco_draw_ground( COCO_GROUND_Y );
+  
+  coco_draw_mission_objective( cstate );
 
-  /* coco_draw_votestate( now.tv_sec ); */
-
-  coco_draw_color( COCO_COLOR_FONT );
-  grabbed = coco_get_pointer_grabbed_flag();
-  /*
-  sprintf( buf, "Fps = %2d    Time = %5d    Objects = %2d    Blips = %3d    "
-           "[%s] to %sgrab the mouse",
-           (int)(1000000 / delta.tv_usec), cstate->time, 
-           cstate->cobjects_length, cstate->cblips_length,
-           grabbed ? "ESC" : "TAB", grabbed ? "un" : "");
-  coco_draw_string( 100, coco_real_window_h, buf, -1,
-                    &coco_default_font, COCO_TOP );
-  */
   for (z=COCO_ZNUM_MIN; z<=COCO_ZNUM_MAX; z++)
     for (i=cstate->cobjects_length-1; i>=0; i--)
       {
@@ -2464,86 +2527,6 @@ coco_client_exec( void )
 }
 
 
-
-
-/*
-
-void
-coco_draw_votestate( long tv_sec_now )
-{
-  coco_draw_color( COCO_COLOR_VOTESTATE );
-  
-  if (!coco_current_votestate_valid)
-    return;
-  else if (tv_sec_now > coco_current_votestate_expire)
-    {
-      coco_current_votestate_valid = COCO_FALSE;
-      return;
-    }
-  else
-    {
-      struct coco_font *font = &coco_fixed_font;
-      int i, y, h;
-      coco_bool interesting = COCO_FALSE;
-
-      for (i=0; i<COCO_MAX_NOMINATIONS; i++)
-        if (coco_current_votestate.nominations[i].action_code
-            != COCO_NOMINATE_NOT_IN_USE)
-          {
-            interesting = COCO_TRUE;
-            break;
-          }
-
-      if (!interesting) return;
-
-      coco_draw_color( COCO_COLOR_VOTESTATE );
-
-      y = COCO_VIEWABLE_H - 200;
-      h = COCO_FONT_INTERLINE_SPACING( font );
-
-      {
-        int plr;
-        char str[400];
-        sprintf( str, "VOTE ACTION           " );
-
-        for (plr=0; plr<COCO_MAX_PLAYERS; plr++)
-          sprintf( str + strlen( str ), " %3s", 
-                   coco_players[i].in_use ? coco_players[i].name : "" );
-        coco_draw_string( 200, y, str, -1, font, COCO_BASELINE );
-        y -= h;
-      }
-
-
-      for (i=0; i<COCO_MAX_NOMINATIONS; i++)
-        {
-          int code;
-            
-          code = coco_current_votestate.nominations[i].action_code;
-          if (code != COCO_NOMINATE_NOT_IN_USE)
-            {
-              int plr;
-              char str[400];
-              sprintf( str, "%3d  %14s  %s ", i, 
-                       coco_nominate_action_descriptions[code], "" );
-              for (plr=0; plr<COCO_MAX_PLAYERS; plr++)
-                sprintf( str + strlen( str ), " %3s", 
-                         ((coco_players[i].in_use
-                           ? ((1 & (coco_current_votestate
-                                    .nominations[i].votes >> plr))
-                              ? "yea" : "no")
-                           : "")));
-              coco_cookie( "string = %s\n" );
-              coco_draw_string( 200, y, str, -1, font, COCO_BASELINE );
-              y -= h;
-            }
-        }
-    }
-
-}
-
-*/
-
-#define COCO_TALK_DISPLAY_SIZE 4
 char coco_talk_display_talk_buffer[COCO_TALK_DISPLAY_SIZE][COCO_CHAT_MAX];
 char coco_talk_display_players_buffer[COCO_TALK_DISPLAY_SIZE][COCO_PLAYER_NAME_MAX];
 time_t coco_talk_display_times[COCO_TALK_DISPLAY_SIZE];

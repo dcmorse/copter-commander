@@ -347,10 +347,16 @@ typedef unsigned int coco_color;
 #define COCO_COLOR_GREY_E 0xDFDFDFFF
 #define COCO_COLOR_GREY_F 0xEFEFEFFF
 
+extern coco_color COCO_COLOR_FONT;
+
 #if (COCO_APPEARANCE == COCO_APPEARANCE_RESCUE_RAIDERS)
-#define COCO_COLOR_BACKGROUND COCO_COLOR_BLACK
+#define COCO_COLOR_SKY    0x009dFFFF
+#define COCO_COLOR_SUN    0xBBCCFFFF
+#define COCO_COLOR_NIGHT  COCO_COLOR_BLACK
+#define COCO_COLOR_TWIGHLIGHT_SKY 0x0A2282FF
+
+#define COCO_COLOR_BACKGROUND COCO_COLOR_NIGHT
 #define COCO_COLOR_GROUND COCO_COLOR_BROWN
-#define COCO_COLOR_FONT COCO_COLOR_LIGHT_BLUE
 #define COCO_COLOR_CURSOR COCO_COLOR_RED
 #define COCO_COLOR_CHAT COCO_COLOR_FONT
 #define COCO_COLOR_CURSOR COCO_COLOR_RED
@@ -361,11 +367,10 @@ typedef unsigned int coco_color;
 #define COCO_COLOR_BARREL COCO_COLOR_GREY
 #define COCO_COLOR_DASHBOARD_FG COCO_COLOR_GREY
 #define COCO_COLOR_DASHBOARD_FULL COCO_COLOR_GREEN_GREY
-#define COCO_COLOR_VOTESTATE COCO_COLOR_GREEN
+#define COCO_COLOR_MISSION_OBJECTIVE COCO_COLOR_FONT
 #elif (COCO_APPEARANCE == COCO_APPEARANCE_DOODLE)
 #define COCO_COLOR_BACKGROUND COCO_COLOR_GREY_E
 #define COCO_COLOR_GROUND COCO_COLOR_GREY_4
-#define COCO_COLOR_FONT COCO_COLOR_GREY_1
 #define COCO_COLOR_CURSOR COCO_COLOR_RED
 #define COCO_COLOR_CHAT COCO_COLOR_GREY_4
 #define COCO_COLOR_CURSOR COCO_COLOR_RED
@@ -376,7 +381,7 @@ typedef unsigned int coco_color;
 #define COCO_COLOR_BARREL COCO_COLOR_GREY_4
 #define COCO_COLOR_DASHBOARD_FG COCO_COLOR_GREY_3
 #define COCO_COLOR_DASHBOARD_FULL COCO_COLOR_BLACK
-#define COCO_COLOR_VOTESTATE COCO_COLOR_GREY_3
+#define COCO_COLOR_MISSION_OBJECTIVE COCO_COLOR_BLACK
 #else
 #error COCO_APPEARANCE is not a value known to coco.h
 #endif
@@ -442,6 +447,9 @@ void coco_begin_line_drawing( void );
 void coco_end_line_drawing( void );
 void coco_line_drawing_vertex( coco_gnum x0, coco_gnum y0, 
                                 coco_gnum x1, coco_gnum y1 );
+void coco_begin_line_strip_drawing( void );
+void coco_end_line_strip_drawing( void );
+void coco_line_strip_drawing_vertex( coco_gnum x0, coco_gnum y0 );
 
 void coco_setup_matricies( coco_gnum w, coco_gnum h );
 void coco_setup_misc_graphics( void );
@@ -485,7 +493,7 @@ void coco_draw_string( coco_gnum x, coco_gnum y,
                        struct coco_font *font, enum coco_font_origin origin );
 
 int coco_font_height( struct coco_font *font );
-void coco_font_string_dimensions( char *string, int nchars_or_minus_one,
+void coco_font_string_dimensions( const char *string, int nchars_or_minus_one,
                                   struct coco_font *font,
                                   int *w, int *h, int *ascent );
 
@@ -889,6 +897,12 @@ struct coco_client_to_server_packet {
 #define COCO_RADAR_H 32
 
 
+#define COCO_TUTORIAL_ARROW_X (COCO_OFFICIAL_WINDOW_W>>1)
+/* 18 ~= font interline spacing.
+   40 is arrow length.
+   20 is fudge factor. */
+#define COCO_TUTORIAL_ARROW_Y (COCO_VIEWABLE_H - ((COCO_TALK_DISPLAY_SIZE+2)*18 + 40 + 20))
+
 #define COCO_COPTER_RASTER_COUNT 4 /* no associated rasters */
 struct coco_raster *coco_cobra_rasters[COCO_COPTER_RASTER_COUNT];
 struct coco_raster *coco_bubble_copter_rasters[COCO_COPTER_RASTER_COUNT];
@@ -972,6 +986,16 @@ coco_bubble_copter_weapon_hardpoints[COCO_COPTER_RASTER_COUNT];
 coco_mini_point 
 coco_bubble_copter_center_of_mass[COCO_COPTER_RASTER_COUNT];
 
+enum coco_sky_colors {
+  COCO_NIGHT,
+  COCO_NOON,
+  COCO_DAY,
+  COCO_TWILIGHT,
+  COCO_SKY_LIMIT
+};
+
+extern int coco_sky_option; /* as interpreted by enum coco_sky_colors */
+
 /* also change coco_ideal_frame_rate in gamesho.c */
 extern struct timeval coco_ideal_frame_rate;
 #define COCO_IDEAL_FRAMES_PER_SECOND 14
@@ -1044,16 +1068,9 @@ extern coco_gnum coco_game_fx_radius[COCO_GAME_SOUNDS_SIZE];
 extern const char *coco_comp_names[];
 extern const int coco_ncomp_names;
 
-struct coco_tutorial_info {
-  char *name;
-  void (* setup)(coco_sstate *);
-  int left_comps;
-  int right_comps;
-};
 
-#define COCO_TUTORIAL_INFO_SIZE 3
-
-extern struct coco_tutorial_info coco_tutorial_infos[COCO_TUTORIAL_INFO_SIZE];
+extern const char *coco_major_missions[];
+extern const char *coco_minor_missions[];
 
 /* sound.c -- a virtual source file supported by (at least) mute-sound.c
    and openal-sound.c */
@@ -1300,9 +1317,10 @@ void coco_client_disconnect( void );
 void coco_send_play_message_maybe( void );
 
 
-/* server.c */
+#define COCO_TALK_DISPLAY_SIZE 4
 
-extern struct coco_tutorial_info *coco_tutorial;
+
+/* server.c */
 
 #define COCO_LOCALHOST_JOIN_TRIES 10
 #define COCO_COMP_FAVORITE_COPTER_CLASS COCO_COBRA_CLASS
@@ -1453,6 +1471,12 @@ void coco_setup_boot_camp( coco_sstate *sstate );
 void coco_setup_first_blood( coco_sstate *sstate );
 void coco_setup_hammer_blow( coco_sstate *sstate );
 
+void coco_write_boot_camp( struct coco_cstate_serial_header *str,
+                                     coco_sstate *sstate, 
+                                     coco_sobject *cam_object_or_null,
+                                     int player_index );
+
+
 coco_sobject *coco_sstate_allocate_sobject( coco_sstate *sstate );
 
 void coco_sobject_set_raster_index( coco_sobject *sobject, unsigned char index );
@@ -1578,6 +1602,28 @@ coco_bool coco_process_client_arguments( int argc, char **argv );
 
 extern unsigned long coco_command_line_left_comps;
 extern unsigned long coco_command_line_right_comps;
+
+
+/* late gamesho.c */
+
+struct coco_tutorial_info {
+  char *name;
+  void (* setup)(coco_sstate *); /* not used -- delete */
+  int left_comps;
+  int right_comps;
+  void (* write_mission_objectives)( struct coco_cstate_serial_header *str,
+                                     coco_sstate *sstate, 
+                                     coco_sobject *cam_object_or_null,
+                                     int player_index );
+};
+
+#define COCO_TUTORIAL_INFO_SIZE 3
+
+extern struct coco_tutorial_info coco_tutorial_infos[COCO_TUTORIAL_INFO_SIZE];
+
+/* late server.c */
+
+extern struct coco_tutorial_info *coco_tutorial;
 
 
 

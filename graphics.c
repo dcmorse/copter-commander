@@ -168,7 +168,7 @@ void
 coco_begin_rotated_view( coco_gnum x, coco_gnum y,
                          coco_angle angle )
 {
-  glMatrixMode(  GL_MODELVIEW );
+  /* glMatrixMode(  GL_MODELVIEW ); the default -dm 05-11-2001 */
   glPushMatrix();
   if (x||y)
     glTranslatef( x, y, 0.0 );
@@ -179,7 +179,7 @@ coco_begin_rotated_view( coco_gnum x, coco_gnum y,
 void
 coco_end_rotated_view( void )
 {
-  glMatrixMode(  GL_MODELVIEW );
+  /* glMatrixMode(  GL_MODELVIEW ); the default -dm 05-11-2001 */
   glPopMatrix();
 }
 
@@ -301,6 +301,27 @@ coco_line_drawing_vertex( coco_gnum x0, coco_gnum y0,
   glVertex2i( x1, y1 );
 }
 
+void 
+coco_begin_line_strip_drawing( void )
+{
+  glPolygonMode( GL_FRONT_AND_BACK, GL_LINE );
+  glBegin( GL_LINE_STRIP );
+}
+
+
+void 
+coco_end_line_strip_drawing( void )
+{
+  glEnd();
+}
+
+void 
+coco_line_strip_drawing_vertex( coco_gnum x0, coco_gnum y0 )
+{
+  glVertex2i( x0, y0 );
+}
+
+
 /* Set up matrices for lower-left orthographic drawing.  Called by the
  * windowing routines, which hopefully don't know too much about core
  * gl. */
@@ -311,7 +332,7 @@ coco_setup_matricies( coco_gnum w, coco_gnum h )
   glMatrixMode( GL_PROJECTION );
   glLoadIdentity();
   glOrtho( 0.0, w, 0.0, h, 10.0, -10.0 );
-  glMatrixMode( GL_MODELVIEW );
+  glMatrixMode( GL_MODELVIEW ); /* restore default */
   glLoadIdentity();
 
   /* This translation avoids the "shimmering string" effect when rasters

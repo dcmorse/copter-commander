@@ -441,7 +441,7 @@ coco_font_height( struct coco_font *font )
    would that mean?), it simply is set to the ascent of the font as a
    whole.  */
 void 
-coco_font_string_dimensions( char *string, int nchars_or_minus_one,
+coco_font_string_dimensions( const char *string, int nchars_or_minus_one,
                              struct coco_font *font,
                              int *w, int *h, int *ascent )
 {

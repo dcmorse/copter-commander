@@ -146,15 +146,17 @@ coco_help_message()
           "Client Options:\n"
           "  -s HOST, --server=HOST  Search HOST for games (default %s).\n"
           "  --name=NICKNAME         Set nickname (default is username).\n"
+          "  --sky=N                 Set background N=0,1,...%d (default by time of day)\n"
           "%s",
           /* split here otherwise
              string length is greater than the minimum length `509' ISO
              C89 is required to support */
           coco_product_description, coco_port, coco_server,
+          COCO_SKY_LIMIT-1,
           "  --single-buffer         Use single buffered visuals only.\n"
           "  --blend-alpha           Use pretty but expensive graphics.\n"
           "  --no-blend-alpha        Opposite of above.\n"
-          "  --gnome-options         send further options to gnome (--coco-options terminated)\n"
+          "  --gnome-options         send further options to gnome (--coco-options term'd)\n"
           "\n"
           "Server Options:\n"
           "  --left-comps=NUM        Number of computer players on left.\n"

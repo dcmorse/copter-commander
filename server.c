@@ -35,6 +35,14 @@
  * to the right entry of coco_tutorial_infos. */
 struct coco_tutorial_info *coco_tutorial = NULL;
 
+void
+coco_cam_bounds( coco_sstate *sstate, coco_sobject *cam_object, /* possibly null */ 
+                 int p_or_c_index,
+                 coco_bool is_comp,
+                 coco_gnum *cam_left,
+                 coco_gnum *cam_right );
+
+
 coco_sobject *
 coco_find_camera( coco_sstate *sstate, int p_or_c_index, coco_bool is_comp );
 
@@ -2398,13 +2406,218 @@ coco_balloon_line_to_cobject( coco_sobject *sobject, coco_sobject_cl *cl,
 }
 
 
+coco_sobject *
+coco_find_sobject( coco_sstate *sstate, coco_sobject_cl *cl, 
+                   coco_bool subclass_ok, int nth, int nationality_or_minus_one )
+{
+  int count = 0;
+  COCO_DO_SSTATE_OBJECTS( sobject, sstate, {
+    coco_sobject_cl *cl1 = COCO_SOBJECT_CL( sobject );
+    if ((subclass_ok ? coco_sobject_subtype_p( cl1, cl ) : (cl1 == cl))
+        && ((-1 == nationality_or_minus_one)
+            || (COCO_SOBJECT_NATIONALITY( sobject ) == nationality_or_minus_one))
+        && (++count == nth))
+      return sobject;
+  });
+  return NULL;
+}
+
+
+coco_sobject *
+coco_find_sobject_in_range( coco_sstate *sstate, coco_sobject_cl *cl, 
+                            coco_bool subclass_ok, int nth, int nationality_or_minus_one,
+                            coco_gnum xmin, coco_gnum xmax )
+{
+  int count = 0;
+  int x;
+  COCO_DO_SSTATE_OBJECTS( sobject, sstate, {
+    coco_sobject_cl *cl1 = COCO_SOBJECT_CL( sobject );
+    if ((subclass_ok ? coco_sobject_subtype_p( cl1, cl ) : (cl1 == cl))
+        && ((-1 == nationality_or_minus_one)
+            || (COCO_SOBJECT_NATIONALITY( sobject ) == nationality_or_minus_one))
+        && ((x=(COCO_SOBJECT_X( sobject )))>=xmin)
+        && (x<xmax)
+        && (++count == nth))
+      return sobject;
+  });
+  return NULL;
+}
+
+
+coco_angle
+coco_point_arrow_at( coco_gnum x, coco_gnum y, coco_sstate *sstate,
+                              coco_sobject *cam_object_or_null,
+                              int player_index )
+{
+  coco_gnum cam_left, cam_right, dx, dy, arrow_x;
+  coco_cam_bounds( sstate, cam_object_or_null, player_index, COCO_FALSE,
+                   &cam_left, &cam_right );
+  arrow_x = cam_left + COCO_TUTORIAL_ARROW_X;
+  dx = x - arrow_x;
+  dy = y - COCO_TUTORIAL_ARROW_Y;
+  return coco_atan2( dy, dx );
+}
+
+coco_angle
+coco_point_arrow_at_sobject( coco_sobject *at, coco_sstate *sstate,
+                             coco_sobject *cam_object_or_null, int player_index )
+{
+  coco_mini_point mp;
+  mp = coco_sobject_com_by_raster_index( COCO_SOBJECT_CL( at ), 
+                                         COCO_SOBJECT_RASTER_INDEX( at ) );
+  return coco_point_arrow_at( COCO_SOBJECT_X( at ) + COCO_MINI_POINT_X( mp ),
+                              COCO_SOBJECT_Y( at ) + COCO_MINI_POINT_Y( mp ),
+                              sstate, cam_object_or_null, player_index );
+}
+
+
+
+#define COCO_BOOT_CAMP_INFANTRY 3
+
+void 
+coco_write_boot_camp( struct coco_cstate_serial_header *str,
+                      coco_sstate *sstate, 
+                      coco_sobject *cam_object_or_null,
+                      int player_index )
+{
+  static int major_mission = 0;
+  static int minor_mission = 0;
+  coco_bool angle_on = COCO_FALSE;
+  coco_angle angle;
+  coco_nationality nat = coco_players[player_index].nationality;
+
+  switch (major_mission) {
+  case 0:
+    if (sstate->time >= COCO_IDEAL_FRAMES_PER_SECOND * 6)
+      {
+        major_mission = 1;
+        minor_mission = 1;
+      }
+    else if (sstate->time >= COCO_IDEAL_FRAMES_PER_SECOND * 3)
+      {
+        coco_sobject *pill;
+        minor_mission = 7; /* fly to your pillbox */
+        pill = coco_find_sobject( sstate, COCO_PILLBOX_CLASS, COCO_TRUE, 1, nat );
+        if (pill)
+          {
+            angle_on = COCO_TRUE;
+            angle = coco_point_arrow_at_sobject( pill, sstate,
+                                                 cam_object_or_null, player_index );
+          }
+        /* else something is WRONG */
+      }
+    break;
+  case 1:
+    {
+      int defenders, troopers;
+      coco_sobject *bunker;
+      coco_gnum board_w = sstate->board_w;
+      coco_gnum pick_up_x0 = board_w - COCO_OFFICIAL_WINDOW_W;
+      coco_gnum pick_up_x1 = board_w + COCO_OFFICIAL_WINDOW_W;
+
+      bunker = coco_find_sobject( sstate, COCO_BUNKER_CLASS, 
+                                  COCO_FALSE, /* subclass not ok -skip pillbox */
+                                  1 /* count */, -1 );
+      if (!bunker)
+        {
+          coco_warn_printf( "Could not find checkpoint charlie!\n" );
+          break;
+        }
+      troopers = cam_object_or_null ? COCO_COPTER_PARATROOPERS( cam_object_or_null ) : 0;
+      defenders = (nat == COCO_SOBJECT_NATIONALITY( bunker ))
+        ? COCO_BUNKER_DEFENDERS( bunker ) : -COCO_BUNKER_DEFENDERS( bunker );
+      switch (minor_mission) {
+      case 1: /* order men with 'm' */
+        { 
+          int seen = 0;
+          while (seen + troopers + defenders <= COCO_BOOT_CAMP_INFANTRY)
+            {
+              coco_sobject *man;
+              man = coco_find_sobject_in_range( sstate, COCO_INFANTRY_CLASS,
+                                                COCO_FALSE, seen+1, nat,
+                                                pick_up_x0, pick_up_x1 );
+              if (NULL == man) 
+                break;
+              else ++seen;
+            }
+          coco_cookie( "Seen %d between %d and %d\n", seen, pick_up_x0, pick_up_x1 );
+          if (seen + troopers + defenders > COCO_BOOT_CAMP_INFANTRY)
+            minor_mission = 2;
+        }
+        break;
+      case 2: /* climb in */
+        if (troopers + defenders > COCO_BOOT_CAMP_INFANTRY)
+          minor_mission = 3;
+        else
+          { 
+            coco_sobject *man;
+            man = coco_find_sobject_in_range( sstate, COCO_INFANTRY_CLASS,
+                                              COCO_FALSE, 1, nat,
+                                              pick_up_x0, pick_up_x1 );
+            if (man)
+              {
+                angle_on = COCO_TRUE;
+                angle = coco_point_arrow_at_sobject( man, sstate,
+                                                     cam_object_or_null, player_index );
+              }
+            else minor_mission = 1;
+          }
+        break;
+      case 3: /* fly to CC */
+        angle_on = COCO_TRUE;
+        angle = coco_point_arrow_at( COCO_SOBJECT_X( bunker ) + 200, COCO_GROUND_Y,
+                                     sstate, cam_object_or_null, player_index );
+        if (cam_object_or_null)
+          {
+            coco_gnum delta
+              = COCO_SOBJECT_X( cam_object_or_null ) - COCO_SOBJECT_X( bunker ) - 200;
+            if (abs( delta ) < 150)
+              minor_mission = 4;
+          }
+        break;
+      case 4: /* drop them off */
+        if (cam_object_or_null)
+          {
+            coco_gnum delta
+              = COCO_SOBJECT_X( cam_object_or_null ) - COCO_SOBJECT_X( bunker ) - 200;
+            if (!(abs( delta ) < 150))
+              minor_mission = 3;
+          }
+        break;
+      case 5: /* let them walk in */
+        break;
+      case 6: /* good job */
+        break;
+      };
+    }
+    break;
+  default:
+    break;
+  }
+
+  str->major_mission = major_mission;
+  str->minor_mission = minor_mission;
+  str->angle_on = angle_on;
+  str->angle = angle;
+}
+
+
+
 void
 coco_tutorial_write_mission_objectives( struct coco_cstate_serial_header *str,
                                         coco_sstate *sstate, 
                                         coco_sobject *cam_object_or_null,
                                         int player_index )
 {
-  /* .... TTT */
+  if ((coco_tutorial==NULL)
+      || (coco_tutorial->write_mission_objectives==NULL))
+    {
+      str->angle_on = COCO_FALSE;
+      str->major_mission = str->minor_mission = 255;
+    }
+  else
+    coco_tutorial->write_mission_objectives( str, sstate, cam_object_or_null,
+                                             player_index );
 }
 
 
@@ -2454,6 +2667,52 @@ coco_write_cstate_serial_header( struct coco_cstate_serial_header *str,
 }
 
 
+void
+coco_cam_bounds( coco_sstate *sstate, coco_sobject *cam_object, /* possibly null */ 
+                 int p_or_c_index,
+                 coco_bool is_comp,
+                 coco_gnum *cam_left,
+                 coco_gnum *cam_right )
+{
+  int cam_x;
+  if (cam_object == NULL)
+    {
+      if (is_comp)
+        { /* they don't need to see anything */
+          *cam_right = 0;
+          *cam_left = sstate->board_w; 
+        }
+      else
+        {
+          coco_gnum dummy;
+          coco_copter_start_coords( sstate,
+                                    coco_players[p_or_c_index].nationality,
+                                    p_or_c_index, 
+                                    &cam_x, &dummy );
+          /* cam_left is still a little wrong. */
+          *cam_left = cam_x - (COCO_OFFICIAL_WINDOW_W>>1);
+          *cam_right = *cam_left + COCO_OFFICIAL_WINDOW_W;
+        }
+    }
+  else
+    {
+      coco_gnum xmid, ymid;
+      cam_x = COCO_SOBJECT_X( cam_object );
+      coco_center_of_mass_obsolete( cam_object, COCO_SOBJECT_CL( cam_object ),
+                                    COCO_SOBJECT_RASTER_INDEX( cam_object ),
+                                    &xmid, &ymid );
+      /* this x calculation is duplicated sorta in copter_kaboom, for
+         camera placement. */
+      *cam_left = cam_x 
+        + xmid - (COCO_OFFICIAL_WINDOW_W>>1)
+        + coco_camera_velocity_offset( cam_object, 
+                                       COCO_SOBJECT_CL( cam_object ) );
+      *cam_right = *cam_left + COCO_OFFICIAL_WINDOW_W;
+
+    }
+}
+
+
 /* return a pointer to an internal buffer of client state to send */
 /* p_or_c_index is either player index or comp index, depending on is_comp */
 void *
@@ -2473,46 +2732,13 @@ coco_format_sstate_to_buffer( coco_sstate *sstate, int p_or_c_index,
   coco_sobject *cam_object;
   coco_u32 cobject_count = 0;
   coco_u32 cblip_count = 0;
-  coco_gnum cam_x, cam_left, cam_right;
+  coco_gnum cam_left, cam_right;
 
   cam_object = coco_find_camera( sstate, p_or_c_index, is_comp );
   cam_idx = cam_object ? COCO_SOBJECT_INDEX( cam_object ) : -1;
 
-  if (cam_object == NULL)
-    {
-      if (is_comp)
-        { /* they don't need to see anything */
-          cam_x = cam_right = 0;
-          cam_left = board_w; 
-        }
-      else
-        {
-          coco_gnum dummy;
-          coco_copter_start_coords( sstate,
-                                    coco_players[p_or_c_index].nationality,
-                                    p_or_c_index, 
-                                    &cam_x, &dummy );
-          /* cam_left is still a little wrong. */
-          cam_left = cam_x - (COCO_OFFICIAL_WINDOW_W>>1);
-          cam_right = cam_left + COCO_OFFICIAL_WINDOW_W;
-        }
-    }
-  else
-    {
-      coco_gnum xmid, ymid;
-      cam_x = COCO_SOBJECT_X( cam_object );
-      coco_center_of_mass_obsolete( cam_object, COCO_SOBJECT_CL( cam_object ),
-                           COCO_SOBJECT_RASTER_INDEX( cam_object ),
-                           &xmid, &ymid );
-      /* this x calculation is duplicated sorta in copter_kaboom, for
-         camera placement. */
-      cam_left = cam_x 
-        + xmid - (COCO_OFFICIAL_WINDOW_W>>1)
-        + coco_camera_velocity_offset( cam_object, 
-                                       COCO_SOBJECT_CL( cam_object ) );
-      cam_right = cam_left + COCO_OFFICIAL_WINDOW_W;
+  coco_cam_bounds( sstate, cam_object, p_or_c_index, is_comp, &cam_left, &cam_right );
 
-    }
   /* calculate how much room is needed */
   COCO_DO_SSTATE_OBJECTS( sobject, sstate,
   {

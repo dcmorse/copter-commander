@@ -214,6 +214,14 @@ coco_process_server_arguments( int argc, char **argv )
 
 
 
+#define COCO_CHECK_SKY_OPTION( sky_opt ) \
+          if ((sky_opt<0) || (sky_opt >= COCO_SKY_LIMIT)) \
+            coco_fatal_printf( COCO_ERROR_BAD_COMMAND_LINE, \
+                               "--sky argument must be between 0 and %d, " \
+                               "got %d\n", \
+                               (int) COCO_SKY_LIMIT-1, sky_opt )
+
+
 /* Returns true if the main program should run */
 coco_bool 
 coco_process_client_arguments( int argc, char **argv )
@@ -273,6 +281,21 @@ coco_process_client_arguments( int argc, char **argv )
           gnome_arg_start = i+1;
           gnome_arg_end = k;
           i = k;
+        }
+      else if (0==strcmp( "--sky", argv[i] ))
+        {
+          i++;
+          if (i<argc)
+            coco_sky_option = strtoul( argv[i], NULL, 10 );
+          else coco_fatal_printf( COCO_ERROR_BAD_COMMAND_LINE,
+                                  "Missing argument to \"%s\" option.\n",
+                                  argv[i-1] );
+          COCO_CHECK_SKY_OPTION( coco_sky_option );
+        }
+      else if (0==strncmp( "--sky=", argv[i], 6 ))
+        {
+          coco_sky_option = strtoul( argv[i] + 6, NULL, 10 );
+          COCO_CHECK_SKY_OPTION( coco_sky_option );
         }
       else coco_fatal_printf( COCO_ERROR_BAD_COMMAND_LINE,
                                "Unknown option \"%s\".\n",

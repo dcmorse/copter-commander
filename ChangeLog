@@ -1,3 +1,8 @@
+2001-05-13  David Morse  <dm@bomberlan.net>
+
+	* background-rescue-raiders.c (coco_draw_background): Make
+	background color a function of time of day.
+
 2001-05-10  David Morse  <dm@bomberlan.net>
 
 	* clsho.c (coco_level_filename_p): support both .ccl and .cct:
