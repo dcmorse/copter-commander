@@ -1,6 +1,9 @@
 2001-05-17  David Morse  <dm@bomberlan.net>
 
 	* Makefile (art): added target.
+	(${COCO_TAR_FILE}): remove distribution of rstr-* files, since
+	they're so easy to regenerate.
+	(clean): clean up rstr-* files too.
 
 	* DEVEL: Updated with some 1.1 news.
 

@@ -332,7 +332,7 @@ ${COCO_BASIC_LIBS} \
 
 copter-commander: ${GAME_OBJ_FILES} ${GNOME_OBJ_FILES} ${USED_SOUND_OBJ_FILES} ${COCO_RASTER_DIRECTORY}/built 
 	${GNOME_LINK_LINE} ${COCO_SOUND_LINK_LINE}
-
+	@echo all done
 
 GLX_LINK_LINE=\
 ${CC} ${CFLAGS} -o $@ ${GAME_OBJ_FILES} ${GLX_OBJ_FILES} ${USED_SOUND_OBJ_FILES} ${COCO_RASTER_DIRECTORY}/*.o \
@@ -377,15 +377,14 @@ endian: endian.c
 	${CC} ${CFLAGS} -o endian endian.c
 
 clean:
-	rm -f rstr-*/built *-rstr/*.o *.o \
+	rm -f rstr-*/built *rstr/*.o rstr-*/*.c rstr-*/*.h *.o \
 	  copter-commander glx-copter-commander \
-	  config-time.h *.strlit endian sizeof tiff-compile 
+	  config-time.h *.strlit endian sizeof tiff-compile
 
 distclean: clean
 	rm -f object-time.h object-time.lisp \
 	  sobject.c sobject.h forward-sobject.h \
-	  oo-compiler.lib oo-compiler.fas \
-	  rstr-*/*.c rstr-*/*.h
+	  oo-compiler.lib oo-compiler.fas 
 
 COCO_TAR_DIRECTORY=copter-commander-${COCO_MAJOR_VERSION}.${COCO_MINOR_VERSION}
 COCO_TAR_FILE=copter-commander-${COCO_MAJOR_VERSION}.${COCO_MINOR_VERSION}.tar
@@ -397,7 +396,7 @@ tarball: ${COCO_TAR_FILE}.gz ${COCO_TAR_FILE}.bz2
 # the source distribution.  This is just to fool make into not remaking
 # them (or trying to remake them, then finding there's no clisp
 # installed).
-${COCO_TAR_FILE}:
+${COCO_TAR_FILE}: 
 	set -e ;\
 	rm -rf ${COCO_TAR_DIRECTORY} ${COCO_TAR_FILE} ;\
 	mkdir ${COCO_TAR_DIRECTORY} ;\
@@ -410,17 +409,15 @@ ${COCO_TAR_FILE}:
 	mkdir ${COCO_TAR_DIRECTORY}/levels ${COCO_TAR_DIRECTORY}/sounds ;\
 	cp sounds/*.wav ${COCO_TAR_DIRECTORY}/sounds ;\
 	cp levels/*.ccl levels/*.cct ${COCO_TAR_DIRECTORY}/levels ;\
+	for f in rstr-* ; \
+	  do mkdir ${COCO_TAR_DIRECTORY}/$$f; \
+	  done ;\
 	set +e ;\
 	find ${COCO_TAR_DIRECTORY} -name \*~ -print | xargs rm -f ;\
 	find ${COCO_TAR_DIRECTORY} -name CVS -print | xargs rm -rf ;\
 	set -e ;\
-	for f in rstr-* ; \
-	  do mkdir ${COCO_TAR_DIRECTORY}/$$f; \
-	  cp $$f/*.c $$f/*.h ${COCO_TAR_DIRECTORY}/$$f ; \
-	  done ;\
 	tar -cf ${COCO_TAR_FILE} ${COCO_TAR_DIRECTORY} ;\
 	rm -rf ${COCO_TAR_DIRECTORY}
-
 
 ${COCO_TAR_FILE}.bz2: ${COCO_TAR_FILE}
 	set -e ;\

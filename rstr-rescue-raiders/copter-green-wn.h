@@ -1,4 +1,0 @@
-#define COCO_COPTER_GREEN_WN_RASTER_W 102
-#define COCO_COPTER_GREEN_WN_RASTER_H 31
-
-extern struct coco_raster coco_copter_green_wn_raster;

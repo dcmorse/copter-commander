@@ -29,8 +29,6 @@
 #include <string.h>
 #include <sys/types.h> /* for directory */
 #include <dirent.h>    /* for directory */
-#include <sys/stat.h>  /* for stat */
-#include <unistd.h>    /* for stat */
 #include "raster.h"
 
 FILE *log_file = NULL;
@@ -427,88 +425,35 @@ coco_tiff_compile_dir( char *indir, char *outdir,
   return 1;
 }
 
-/* returns 0 on fail */
-static int
-coco_file_write_date( const char *path, time_t *ti )
-{
-  struct stat s;
-  if (0!=stat( path, &s ))
-    return 0;
-  *ti = s.st_mtime;
-  return 1;
-}
-
 
 int 
 coco_tiff_compile_system( char *indir, char *outdir )
 {
-  int recompile;
   char *subdirs[3]
     = { "rgba-8", "rgba-8-blend", "bitmap" };
   enum coco_raster_format formats[3]
     = { COCO_RGBA_8, COCO_RGBA_8_BLEND, COCO_BITMAP };
   int i;
   char *rasters_h = coco_directory_plus_file( outdir, "rasters.h", 0 );
-  time_t rasters_h_time;
+  FILE *rasters_h_fd;
 
   if (!rasters_h) return 0;
-  if (!coco_file_write_date( rasters_h, &rasters_h_time ))
-    rasters_h_time = 0;
 
-  recompile = 1; 
-  /* above line was:
-  recompile = 0;
+  rasters_h_fd = fopen( rasters_h, "w" );
+  if (NULL==rasters_h) return 0;
+  if (log_file) fprintf( log_file, "Compiling \".tiffs\" to \".c\"s" );
   for (i=0; i<3; i++)
     {
       char *subindir = coco_directory_plus_file( indir, subdirs[i], 0 );
-      DIR *dir;
-      struct dirent *entry;
-      dir = opendir( subindir );
-      if (NULL == dir)
-        break;
-      while (1)
-        {
-          char *fname;
-          entry = readdir( dir );
-          if (NULL == entry)
-            break;
-          fname = entry->d_name;
-          if (coco_is_tiff_extension( fname ))
-            {
-              time_t tiff_time;
-              if (!coco_file_write_date( fname, &tiff_time ))
-                tiff_time = 0;
-              if (tiff_time <= rasters_h_time)
-                {
-                  if (log_file) fprintf( log_file, "\"%s\" has changed.\n", fname );
-                  recompile = 1;
-                  break;
-                }
-            }
-        }
-      closedir( dir );
+      if (!subindir) return 0;
+      if (!coco_tiff_compile_dir( subindir, outdir, formats[i], 
+                                  rasters_h_fd ))
+        fprintf( stderr, "problems with directory \"%s\"\n", subindir );
       free( subindir );
-      if (recompile) break;
     }
-  */
-  if (recompile)
-    {
-      FILE *rasters_h_fd = fopen( rasters_h, "w" );
-      if (NULL==rasters_h) return 0;
-      if (log_file) fprintf( log_file, "Compiling \".tiffs\" to \".c\"s" );
-      for (i=0; i<3; i++)
-        {
-          char *subindir = coco_directory_plus_file( indir, subdirs[i], 0 );
-          if (!subindir) return 0;
-          if (!coco_tiff_compile_dir( subindir, outdir, formats[i], 
-                                      rasters_h_fd ))
-            fprintf( stderr, "problems with directory \"%s\"\n", subindir );
-          free( subindir );
-        }
-      if (log_file) fprintf( log_file, "done.\n" );
-      fclose( rasters_h_fd );
-    }
-  else if (log_file) fprintf( log_file, "No rasters require rebuilding.\n" );
+  if (log_file) fprintf( log_file, "done.\n" );
+  fclose( rasters_h_fd );
+
   free( rasters_h );
   return 1;
 }
