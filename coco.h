@@ -1409,6 +1409,10 @@ struct coco_comp {
 
 struct coco_comp coco_comps[COCO_MAX_COMPS];
 
+#define COCO_SCREEN_TO_RADAR_X( x ) ((COCO_OFFICIAL_WINDOW_W * (x)) / board_w)
+#define COCO_SCREEN_TO_RADAR_Y( y ) ((COCO_RADAR_H * (y)) / COCO_VIEWABLE_H)
+
+
 /* comp.c */
 
 void

@@ -1468,8 +1468,6 @@ coco_copter_update_state( coco_sobject *sobject,
       COCO_COPTER_FUEL( sobject ) 
         = COCO_MAX( 1, COCO_COPTER_FUEL( sobject ) ) - 1;
   }
-  if (comp_index>=0) coco_cookie( "(%d,%d)\n", 
-                                  input->pointer_x, input->pointer_y );
  get_out:
   return coco_sobject_update_state( sobject, cl->super, sstate );
 }
@@ -1623,12 +1621,6 @@ coco_sstate_update( coco_sstate *sstate )
         sstate->respawn_times[i] 
           = COCO_U32_ADD_MODULAR( sstate->respawn_times[i] );
 
-    for (i=0; i<COCO_MAX_COMPS; i++)
-      if (coco_comps[i].in_use)
-        coco_cookie( "comp %d: %d %d %d==%d\n",
-                     i, coco_comps[i].in_use,
-                     sstate->comp_respawn[i],
-                     sstate->time, sstate->comp_respawn_times[i] );
     /* warp in new copters for comps */
     for (i=0; i<COCO_MAX_COMPS; i++)
       if (coco_comps[i].in_use
@@ -2371,8 +2363,8 @@ coco_format_sstate_to_buffer( coco_sstate *sstate, int p_or_c_index,
           coco_rxnum x;
           coco_rynum y;
           cblip_ptr->color_index = ci;
-          x = (COCO_OFFICIAL_WINDOW_W * COCO_SOBJECT_X( sobject )) / board_w;
-          y = (COCO_RADAR_H * COCO_SOBJECT_Y( sobject )) / COCO_VIEWABLE_H;
+          x = COCO_SCREEN_TO_RADAR_X( COCO_SOBJECT_X( sobject ) );
+          y = COCO_SCREEN_TO_RADAR_Y( COCO_SOBJECT_Y( sobject ) );
           cblip_ptr->x = network_byte_order ? COCO_RXNUM_HTON( x ) : x;
           cblip_ptr->y = network_byte_order ? COCO_RYNUM_HTON( y ) : y;
           cblip_ptr++;

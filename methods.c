@@ -2393,9 +2393,9 @@ coco_camera_blip_color_index( coco_sobject *sobject,
                               coco_bool is_comp,
                               coco_sstate *sstate )
 {
-  if ((!is_comp)
-      && (!(sstate->time & 12))
-      && (COCO_SOBJECT_CAMERA_INDEX( sobject ) == p_or_c_index))
+  if (is_comp
+      || ((!(sstate->time & 12))
+          && (COCO_SOBJECT_CAMERA_INDEX( sobject ) == p_or_c_index)))
     {
       return COCO_BLIP_CAMERA_BLINK;
     }
