@@ -682,7 +682,7 @@ struct coco_stream {
 
 #define COCO_MAX_TEAM_PLAYERS 2
 #define COCO_MAX_PLAYERS 4
-#define COCO_MAX_COMPS 16
+#define COCO_MAX_COMPS 16 /* if changing, also add names to coco_add_comp */
 #define COCO_PLAYER_NAME_MAX 25 /* limit on player names, incl. null */
 
 
@@ -706,6 +706,7 @@ struct coco_stream {
 #define COCO_MESSAGE_FULL 'F' /* Server is full.  Prepare to be dissed. */
 #define COCO_MESSAGE_PORT 'O' /* # of udp port on sending machine */
 #define COCO_MESSAGE_VOTESTATE 'S' /* Status of going nominations */
+#define COCO_MESSAGE_COMPFLUX 'X' /* Computer player entered or left */
 
 #define COCO_CHAT_MAX (COCO_MESSAGE_SIZE - 8) /* incl. null */
 
@@ -741,10 +742,11 @@ struct coco_message_chat {
 #define COCO_NOMINATE_NOT_IN_USE        0 /* only in sstate */
 #define COCO_NOMINATE_ADD_GOOD_GUY_COMP 1 /* act_object unused */
 #define COCO_NOMINATE_ADD_BAD_GUY_COMP  2 /* act_object unused */
-#define COCO_NOMINATE_BOOT_COMP         3 /* act_object == player_id */
+#define COCO_NOMINATE_BOOT_BAD_GUY_COMP 3 /* act_object unused */
+#define COCO_NOMINATE_BOOT_GOOD_GUY_COMP 4 /* act_object unused */
 /* Also add to char *coco_nominate_action_descriptions[] in gamesho */
 extern char *coco_nominate_action_descriptions[];
-
+extern char *coco_nominate_action_descriptions_other_tense[];
 
 #define COCO_MAX_NOMINATIONS 10 /* because there are 10 digit keys on kbd */
 
@@ -754,7 +756,7 @@ struct coco_message_nominate {
      assigned. */
   signed char serial; 
   unsigned char action_code; /* COCO_NOMINATE_* above */
-  unsigned char act_object;  /* interpretation varies by action_code */
+  unsigned char act_object;  /* interpretation varies by action_code, currently unused by all known codes -dm 04-20-2001 */
   coco_bool vote;
 };
 
@@ -773,6 +775,14 @@ struct coco_message_votestate {
   struct coco_votestate_nominations nominations[COCO_MAX_NOMINATIONS];
 };
 
+struct coco_message_compflux {
+  unsigned char type;
+  struct {
+    coco_bool in_use;
+    unsigned char name_index;
+    coco_nationality nationality;
+  } comps[COCO_MAX_COMPS];
+};
 
 struct coco_message_talk {
   unsigned char type;        /* takes a word with pad */
@@ -817,6 +827,7 @@ union coco_message {
   struct coco_message_chat chat;
   struct coco_message_nominate nominate;
   struct coco_message_votestate votestate;
+  struct coco_message_compflux compflux;
   struct coco_message_talk talk;
   struct coco_message_game game;
   struct coco_message_quit quit;
@@ -1023,6 +1034,9 @@ extern char *coco_game_sound_names[COCO_GAME_SOUNDS_SIZE];
 extern float coco_game_sound_durations[COCO_GAME_SOUNDS_SIZE];
 
 extern coco_gnum coco_game_fx_radius[COCO_GAME_SOUNDS_SIZE];
+
+extern const char *coco_comp_names[];
+extern const int coco_ncomp_names;
 
 /* sound.c -- a virtual source file supported by (at least) mute-sound.c
    and openal-sound.c */
@@ -1470,7 +1484,8 @@ struct coco_comp {
   float funds;
   coco_u32 copters;
   struct coco_keyboard_pointer_state kpstate;
-  char name[COCO_PLAYER_NAME_MAX];
+  unsigned char name_index;
+  coco_bool queue_remove;
   coco_gnum cruise_altitude; /* altitude to seek when idle */
   coco_gnum overgun;         /* small y offset gunning emy copter */
   coco_bool refuelling;

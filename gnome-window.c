@@ -1194,6 +1194,9 @@ coco_chatroom_dialog_new( GtkWindow *window_parent )
   gtk_box_pack_start( GTK_BOX( outter_vbox ), 
                       paned,
                       TRUE, TRUE, 0 );
+  /* set chatroom dialog minimum size to be pretty big -dm 05-07-2001 */
+  gtk_widget_set_usize( dialog, COCO_OFFICIAL_WINDOW_W,
+                        COCO_OFFICIAL_WINDOW_H );
   /* enable user resizing */
   gtk_window_set_policy( GTK_WINDOW( dialog ), FALSE, TRUE, FALSE );
 
@@ -1611,10 +1614,10 @@ coco_gtk_set_wait_cursor( GtkWidget *window, coco_bool wait )
 
 
 
-#define COCO_NEW_GAME_FRAME_COUNT 2
+#define COCO_NEW_GAME_FRAME_COUNT 3
 #define COCO_NEW_GAME_NETWORK_FRAME_IDX 0
 #define COCO_NEW_GAME_LEVEL_FRAME_IDX 1
-
+#define COCO_NEW_GAME_COMP_FRAME_IDX 2
 coco_bool
 coco_use_new_game_dialog( GtkWidget *parent_window )
 {
@@ -1624,11 +1627,16 @@ coco_use_new_game_dialog( GtkWidget *parent_window )
   GtkWidget *frames[COCO_NEW_GAME_FRAME_COUNT];
   GtkWidget *port_ed;
   GtkWidget *radio_bi, *radio_fi, *level_bi_options, *level_fi_entry;
+  GtkObject *left_comps_adj, *right_comps_adj;
   struct coco_built_in_level_menu_closure closure;
   static char *frame_names[COCO_NEW_GAME_FRAME_COUNT]
-    = { "Network", "Level" };
+    = { "Network", "Level", "Computer Players" };
 
   coco_GtkKennel *kennel 
+    = coco_gtk_kennel_new( COCO_GTK_KENNEL_TO_MAXIMUM, 
+                           COCO_GTK_KENNEL_TO_MAXIMUM ); 
+
+  coco_GtkKennel *label_kennel 
     = coco_gtk_kennel_new( COCO_GTK_KENNEL_TO_MAXIMUM, 
                            COCO_GTK_KENNEL_TO_MAXIMUM ); 
 
@@ -1644,6 +1652,12 @@ coco_use_new_game_dialog( GtkWidget *parent_window )
                             "coco kennel", kennel,
                             (GtkDestroyNotify) coco_gtk_kennel_unref );
   coco_gtk_kennel_ref( kennel );
+
+  gtk_object_set_data_full( GTK_OBJECT( dialog ), 
+                            "coco label kennel", label_kennel,
+                            (GtkDestroyNotify) coco_gtk_kennel_unref );
+  coco_gtk_kennel_ref( label_kennel );
+
 
   for (i=0; i<COCO_NEW_GAME_FRAME_COUNT; i++)
     {
@@ -1664,6 +1678,7 @@ coco_use_new_game_dialog( GtkWidget *parent_window )
     gtk_container_set_border_width( GTK_CONTAINER( hbox ), 
                                     COCO_UI_PAD_VERTICAL );
     coco_gtk_kennel_add( kennel, port_ed );
+    coco_gtk_kennel_add( label_kennel, label );
     gtk_widget_show_all( hbox );
     gtk_container_add( GTK_CONTAINER( frames
                                       [COCO_NEW_GAME_NETWORK_FRAME_IDX] ),
@@ -1680,6 +1695,9 @@ coco_use_new_game_dialog( GtkWidget *parent_window )
     radio_fi
       = gtk_radio_button_new_with_label_from_widget
       ( GTK_RADIO_BUTTON( radio_bi ), "File:" );
+
+    coco_gtk_kennel_add( label_kennel, radio_bi );
+    coco_gtk_kennel_add( label_kennel, radio_fi );
 
     level_bi_options = gtk_option_menu_new();
     menu = gtk_menu_new();
@@ -1725,6 +1743,7 @@ coco_use_new_game_dialog( GtkWidget *parent_window )
                                     COCO_UI_PAD_VERTICAL );
     coco_gtk_kennel_add( kennel, level_bi_options );
     coco_gtk_kennel_add( kennel, level_fi_entry );
+
     gtk_widget_show_all( table );
 
     gtk_signal_connect( GTK_OBJECT( radio_bi ), "toggled",
@@ -1748,6 +1767,53 @@ coco_use_new_game_dialog( GtkWidget *parent_window )
     gtk_container_add( GTK_CONTAINER( frames
                                       [COCO_NEW_GAME_LEVEL_FRAME_IDX] ),
                        table );
+  }
+
+  { /* build computer player frame */
+    GtkWidget *table, *label_left, *label_right, *comps_left, *comps_right;
+    int half_comps = COCO_MAX_COMPS>>1;
+    left_comps_adj = gtk_adjustment_new( 0, 0, half_comps, 1, 1, 0 );
+    right_comps_adj = gtk_adjustment_new( 0, 0, half_comps, 1, 1, 0 );
+
+    table = gtk_table_new( 2, 2, FALSE );
+
+    label_left = gtk_label_new( "Left:" );
+    label_right = gtk_label_new( "Right:" );
+
+    gtk_label_set_justify( GTK_LABEL( label_left ), GTK_JUSTIFY_LEFT );
+    gtk_misc_set_alignment( GTK_MISC( label_left ), 0.0, 0.5 );
+    gtk_label_set_justify( GTK_LABEL( label_right ), GTK_JUSTIFY_LEFT );
+    gtk_misc_set_alignment( GTK_MISC( label_right ), 0.0, 0.5 );
+
+    comps_left = gtk_spin_button_new( GTK_ADJUSTMENT( left_comps_adj ),
+                                      1.0, 0 );
+
+    comps_right = gtk_spin_button_new( GTK_ADJUSTMENT( right_comps_adj ), 
+                                       1.0, 0 );
+
+    gtk_table_attach( GTK_TABLE( table ), label_left,
+                      0, 1, 0, 1, GTK_EXPAND|GTK_FILL, GTK_EXPAND, 0, 0 );
+    gtk_table_attach( GTK_TABLE( table ), label_right,
+                      0, 1, 1, 2, GTK_EXPAND|GTK_FILL, GTK_EXPAND, 0, 0 );
+    gtk_table_attach( GTK_TABLE( table ), comps_left,
+                      1, 2, 0, 1, GTK_EXPAND|GTK_FILL, GTK_EXPAND, 0, 0 );
+    gtk_table_attach( GTK_TABLE( table ), comps_right,
+                      1, 2, 1, 2, GTK_EXPAND|GTK_FILL, GTK_EXPAND, 0, 0 );
+    gtk_container_set_border_width( GTK_CONTAINER( table ), 
+                                    COCO_UI_PAD_VERTICAL );
+
+    coco_gtk_kennel_add( label_kennel, label_left );
+    coco_gtk_kennel_add( label_kennel, label_right );
+
+    coco_gtk_kennel_add( kennel, comps_left );
+    coco_gtk_kennel_add( kennel, comps_right );
+    gtk_widget_show_all( table );
+
+    gtk_container_add( GTK_CONTAINER( frames
+                                      [COCO_NEW_GAME_COMP_FRAME_IDX] ),
+                       table );
+
+
   }
 
   /* coco_gtk_kennel_resize( kennel, 5, 5 ); */
@@ -1819,10 +1885,17 @@ coco_use_new_game_dialog( GtkWidget *parent_window )
           pid = fork();
           if (0==pid)
             {
-              char port[10];
+              char port[10], lcomps[10], rcomps[10];
               sprintf( port, "%d", coco_port );
+              sprintf( lcomps, "%d", 
+                       (int) (GTK_ADJUSTMENT( left_comps_adj )->value) );
+              sprintf( rcomps, "%d",
+                       (int) (GTK_ADJUSTMENT( right_comps_adj )->value) );
+              coco_cookie( "lcomps=%s rcomps=%s\n", lcomps, rcomps );
               execlp( coco_run_name, coco_run_name, "server", "--quiet",
-                      "--level", level_file, "--port", port, NULL );
+                      "--level", level_file, "--port", port,
+                      "--left-comps", lcomps, 
+                      "--right-comps", rcomps , NULL );
             }
           else if (-1==pid)
             coco_fatal_printf( COCO_ERROR_OUT_OF_MEMORY,

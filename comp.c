@@ -243,12 +243,7 @@ coco_comp_think( struct coco_comp *self,
       return;
     }
 #endif /* COCO_NONLETHAL_AI */
-  coco_cookie( "refueling if %d | %d | %d\n",
-               (cstate->dashinfo.bullets < 12),
-               (cstate->board_w * 1.5 >=      
-                (COCO_COBJECT_CL( cself )->dx_max * cstate->dashinfo.fuel)),
 
-               self->refuelling );
   if ((cstate->dashinfo.bullets < 12) /* low ammo */
       || (cstate->board_w * 1.5 >=          /* low fuel */
           (COCO_COBJECT_CL( cself )->dx_max * cstate->dashinfo.fuel))
@@ -326,8 +321,10 @@ coco_comp_think( struct coco_comp *self,
       self->cruise_altitude = COCO_CLAMP( COCO_INFANTRY_GUN_RANGE, 
                                           self->cruise_altitude,
                                           (COCO_VIEWABLE_H*3/4) );
+    /*
     if (target)
       coco_cookie( "have target %s\n", COCO_COBJECT_CL( target )->name );
+    */
 
     if (target && (cstate->dashinfo.bombs>0) && 
         (coco_comp_compute_needed_bombs( target, cself, cobjs, 

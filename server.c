@@ -51,8 +51,9 @@ coco_make_hut_and_friends( coco_sstate *sstate, coco_gnum x,
 
 
 static coco_bool coco_send_everyone_game_message( void );
-
+static coco_bool coco_send_everyone_compflux_message( void );
 static coco_bool coco_send_everyone_votestate_message( coco_sstate *sstate );
+static coco_bool coco_send_player_compflux_messages( int plr_idx );
 
 static coco_sstate the_coco_sstate = { COCO_FALSE, NULL, 0, 0, 0 };
 
@@ -159,14 +160,23 @@ coco_sstate_allocate_sobject( coco_sstate *sstate )
 }
 
 void
-coco_schedule_comp_respawn( int comp_index, coco_sstate *sstate )
+coco_schedule_comp_respawn_maybe( int comp_index, coco_sstate *sstate )
 {
-  sstate->comp_respawn[comp_index] = COCO_TRUE;
-  sstate->comp_respawn_times[comp_index]
-    = COCO_U32_ADD_N_MODULAR( sstate->time, 
-                              COCO_IDEAL_FRAMES_PER_SECOND
-                              * COCO_RESPAWN_SECONDS );
-  coco_cookie( "scheduling comp %d respawn\n", comp_index );
+  if (coco_comps[comp_index].queue_remove)
+    {
+      coco_comps[comp_index].in_use = COCO_FALSE;
+      coco_send_everyone_compflux_message();
+      coco_cookie( "Removed comp %d", comp_index );
+    }
+  else
+    {
+      sstate->comp_respawn[comp_index] = COCO_TRUE;
+      sstate->comp_respawn_times[comp_index]
+        = COCO_U32_ADD_N_MODULAR( sstate->time, 
+                                  COCO_IDEAL_FRAMES_PER_SECOND
+                                  * COCO_RESPAWN_SECONDS );
+      coco_cookie( "scheduling comp %d respawn\n", comp_index );
+    }
 }
 
 
@@ -197,7 +207,7 @@ coco_sstate_delete_sobject( coco_sstate *sstate,
                                   * COCO_RESPAWN_SECONDS );
     }
   if (-1 != comp_index)
-    coco_schedule_comp_respawn( comp_index, sstate );
+    coco_schedule_comp_respawn_maybe( comp_index, sstate );
 }
 
 coco_sstate *
@@ -436,7 +446,8 @@ coco_handle_connection_request( int listenfd,
         }
       if ((!coco_write_message( str, (union coco_message *) &coco_my_version ))
           ||(!coco_write_message( str, coco_get_port_message( in_udp_port ) ))
-          ||(!coco_write_message( str, (union coco_message *) coco_message_game( i ))))
+          ||(!coco_write_message( str, (union coco_message *) coco_message_game( i )))
+          ||(!coco_send_player_compflux_messages( i )))
         /* intentionally ignore return value: */
         coco_handle_player_quit( i );
 
@@ -509,40 +520,58 @@ struct coco_comp coco_comps[COCO_MAX_COMPS];
 
 
 
-void
+/* returns idx or -1 */
+int
 coco_add_comp( coco_nationality nat, coco_sstate *sstate )
 {
-  static char *comp_names[] = {
-    "Cyber Chicken",
-    "Damage Jackal",
-    "Armor Fiend",
-    "HotPoker",
-    "Mr Funky",
-    "Beastly Thing",
-    "Punky Monkey",
-  };
+  static int name_offset = -1;
   coco_bool found = COCO_FALSE;
   int i; 
+
+  if (name_offset < 0)
+    name_offset = time( NULL ) % coco_ncomp_names;
   for (i=0; i<COCO_MAX_COMPS; i++)
     if (!coco_comps[i].in_use)
       {
-        char *name = comp_names[rand()
-                               % (sizeof( comp_names )/sizeof( char * ))];
+        unsigned char name_index = (name_offset + i) % coco_ncomp_names;
         coco_comps[i].nationality = nat;
         coco_comps[i].funds = 0;
         coco_comps[i].copters = 0;
-        strncpy( coco_comps[i].name, name, COCO_PLAYER_NAME_MAX-1 );
-        coco_comps[i].name[COCO_PLAYER_NAME_MAX-1] = '\0';
+        coco_comps[i].queue_remove = COCO_FALSE;
+        coco_comps[i].name_index = name_index;
         coco_comps[i].in_use = COCO_TRUE;
         coco_comps[i].goto_area = sstate->board_w>>1;
-        coco_cookie( "GO = %d\n", coco_comps[i].goto_area );
-        coco_schedule_comp_respawn( i, sstate );
+        coco_schedule_comp_respawn_maybe( i, sstate );
+        coco_send_everyone_compflux_message();
         found = COCO_TRUE;
         break;
       }
   if (!found)
-    coco_warn_printf( "Could not add comp because there are already %d\n",
-                      COCO_MAX_COMPS );
+    {
+      coco_warn_printf( "Could not add comp because there are already %d\n",
+                        COCO_MAX_COMPS );
+      return -1;
+    }
+  return i;
+}
+
+
+
+int
+coco_queue_comp_removal( coco_nationality nat, coco_sstate *sstate )
+{
+  int i;
+  for (i=0; i<COCO_MAX_COMPS; i++)
+    if (coco_comps[i].in_use
+        && (coco_comps[i].nationality == nat)
+        && !coco_comps[i].queue_remove)
+      {
+        coco_comps[i].queue_remove = COCO_TRUE;
+        return i;
+      }
+  /* this is done when the comp is really removed:
+     coco_send_everyone_compflux_message(); */
+  return -1;
 }
 
 void
@@ -556,6 +585,7 @@ coco_init_comps( coco_sstate *sstate )
       coco_comps[i].cruise_altitude = COCO_VIEWABLE_H;
       coco_comps[i].overgun = 5;
       coco_comps[i].refuelling = COCO_FALSE;
+      coco_comps[i].queue_remove = COCO_FALSE;
     }
   for (i=0; i<coco_command_line_left_comps; i++)
     coco_add_comp( COCO_BAD_GUYS, sstate );
@@ -652,11 +682,17 @@ coco_handle_nominate_message( struct coco_message_nominate *msg,
           { 
             coco_nationality nat = (code==COCO_NOMINATE_ADD_GOOD_GUY_COMP)
               ? COCO_GOOD_GUYS : COCO_BAD_GUYS;
-            coco_add_comp( nat, sstate );
+            int comp;
+            comp = coco_add_comp( nat, sstate );
           }
           break;
-        case COCO_NOMINATE_BOOT_COMP:
-          coco_warn_printf( "Comp booting is not implemented.\n" );
+        case COCO_NOMINATE_BOOT_GOOD_GUY_COMP:
+        case COCO_NOMINATE_BOOT_BAD_GUY_COMP:
+          {
+            coco_nationality nat = (code==COCO_NOMINATE_BOOT_GOOD_GUY_COMP)
+              ? COCO_GOOD_GUYS : COCO_BAD_GUYS;
+            coco_queue_comp_removal( nat, sstate );
+          }
           break;
         default:
           coco_warn_printf( "Unrecognised code in "
@@ -782,6 +818,20 @@ coco_handle_server_message( int player_index )
 
 
 /* returns true iff server should be kept up. */
+coco_bool
+coco_send_everyone_message( coco_msg_ptr msg )
+{
+  coco_bool up = COCO_TRUE;
+  int i;
+  for (i=0;i<COCO_MAX_PLAYERS;i++)
+    if (coco_players[i].in_use)
+      if (!coco_write_message( coco_streams + i, msg ))
+        up = up && coco_handle_player_quit( i );
+  return up;
+}
+
+
+/* returns true iff server should be kept up. */
 static coco_bool
 coco_send_everyone_game_message( void )
 {
@@ -799,7 +849,6 @@ coco_send_everyone_game_message( void )
 coco_bool
 coco_send_everyone_votestate_message( coco_sstate *sstate )
 {
-  coco_bool up = COCO_TRUE;
   int i;
   union coco_message msg;
   msg.every.type = COCO_MESSAGE_VOTESTATE;
@@ -817,47 +866,44 @@ coco_send_everyone_votestate_message( coco_sstate *sstate )
           vec += 1<<j;
       msg.votestate.nominations[i].votes = COCO_U32_HTON( vec );
     }
-  for (i=0;i<COCO_MAX_PLAYERS;i++)
-    if (coco_players[i].in_use)
-      if (!coco_write_message( coco_streams + i, &msg ))
-        up = up && coco_handle_player_quit( i );
-  return up;
+  return coco_send_everyone_message( &msg );
 }
 
-
-/* COLLISION OVERHAUL
+/* returns true iff server should be kept up */
 coco_bool
-coco_execute_building_collision_maybe( coco_sstate *sstate,
-                                       coco_sobject *building_or_whatever,
-                                       coco_sobject *obj2, 
-                                       coco_bool *building_died_p )
+coco_send_everyone_compflux_message( void )
 {
-  coco_sobject_cl *bcl = COCO_SOBJECT_CL( building_or_whatever );
-  coco_sobject_cl *o2cl = COCO_SOBJECT_CL( obj2 );
-
-  *building_died_p = COCO_FALSE;
-  if (coco_sobject_subtype_p( bcl, COCO_BUILDING_CLASS )
-      && coco_sobject_subtype_p( o2cl, COCO_GROUND_UNIT_CLASS ))
-    if (coco_sobject_subtype_p( bcl, COCO_HEADQUARTERS_CLASS )
-        && coco_sobject_subtype_p( o2cl, COCO_DEMO_VAN_CLASS )
-        && (COCO_NEUTRAL == sstate->game_over_nationality))
+  union coco_message msg;
+  int i;
+  msg.every.type = COCO_MESSAGE_COMPFLUX;
+  for (i=0; i<COCO_MAX_COMPS; i++)
+    if (coco_comps[i].in_use)
       {
-        sstate->game_over_nationality = COCO_SOBJECT_NATIONALITY( obj2 );
-        sstate->game_over_time
-          = COCO_U32_ADD_N_MODULAR( sstate->time, 
-                                    IDEAL_FRAMES_PER_SECOND<<4 );
-        COCO_SOBJECT_HEALTH( obj2 ) = COCO_NIGH_INVULNERABLE;
-        coco_kaboom( building_or_whatever, 
-                     COCO_SOBJECT_CL( building_or_whatever ),
-                     sstate );
-        *building_died_p = COCO_TRUE;
-        return COCO_TRUE;
+        msg.compflux.comps[i].in_use = COCO_TRUE;
+        msg.compflux.comps[i].name_index = coco_comps[i].name_index;
+        msg.compflux.comps[i].nationality = coco_comps[i].nationality;
       }
-    else return COCO_TRUE;
-  else return COCO_FALSE;
-} */
+    else msg.compflux.comps[i].in_use = COCO_FALSE;
+  return coco_send_everyone_message( &msg );
+}
 
-
+/* returns true iff player should be kept connected */
+coco_bool
+coco_send_player_compflux_messages( int plr_idx )
+{
+  int i;
+  union coco_message msg;
+  msg.every.type = COCO_MESSAGE_COMPFLUX;
+  for (i=0; i<COCO_MAX_COMPS; i++)
+    if (coco_comps[i].in_use)
+      {
+        msg.compflux.comps[i].in_use = COCO_TRUE;
+        msg.compflux.comps[i].name_index = coco_comps[i].name_index;
+        msg.compflux.comps[i].nationality = coco_comps[i].nationality;
+      }
+    else msg.compflux.comps[i].in_use = COCO_FALSE;
+  return coco_write_message( coco_streams + plr_idx, &msg );
+}
 
 /* returns true if obj1 died */
 coco_bool

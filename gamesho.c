@@ -416,7 +416,40 @@ const coco_color coco_blip_to_color[/* <= 256 */] = {
 
 char *coco_nominate_action_descriptions[] = {
   "not in use",
-  "adding computer player to Right team",
-  "adding computer player to Left team",
-  "removing computer player"
+  "adding a computer player to the Right team",
+  "adding a computer player to the Left team",
+  "removing a computer player from the Right team",
+  "removing a computer player from the Left team",
 };
+
+char *coco_nominate_action_descriptions_other_tense[] = {
+  "not in use",
+  "add a computer player to the Right team",
+  "add a computer player to the Left team",
+  "remove a computer player the from Right team",
+  "remove a computer player the from Left team",
+};
+
+const char *coco_comp_names[] = {
+  "Cyber Chicken",
+  "Damage Jackal",
+  "Blaster Babe",
+  "Armor Fiend",
+  "Zippy",
+  "Combat Wombat",
+  "HotPoker",
+  "Mr Funky",
+  "Beastly Thing",
+  "Foxy",
+  "Colonel Flanders",
+  "Spatula Squirrel",
+  "BioBear",
+  "ToastBoaster",
+  "Punky Monkey",
+  "Purple People Beater",
+  "The Bamboozler",
+  "Kopter Kat",
+  "Admiral Smackbar",
+  "Death Nugget"
+};
+const int coco_ncomp_names = ((sizeof( coco_comp_names ))/(sizeof( char * )));

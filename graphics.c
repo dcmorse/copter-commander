@@ -143,6 +143,7 @@ coco_raster_texture_id_cache_miss( struct coco_raster *raster )
   return id;
 }
 
+#ifdef COCO_IGNORE
 void
 coco_reload_texture( struct coco_raster *raster, coco_gnum w, coco_gnum h )
 {
@@ -161,7 +162,7 @@ coco_reload_texture( struct coco_raster *raster, coco_gnum w, coco_gnum h )
   coco_warn_gl_errors( "coco_reload_texture" );
 #endif /* COCO_DEBUG */
 }
-
+#endif /* COCO_IGNORE */
 
 void
 coco_begin_rotated_view( coco_gnum x, coco_gnum y,

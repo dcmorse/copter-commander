@@ -1078,6 +1078,7 @@ coco_query_disconnected( void )
 }
 
 
+#ifdef COCO_IGNORE
 /* HACK for NVIDIA 0.95 driver, that corrupts textures.  Apperantly fixed
    in 0.96 */
 void
@@ -1095,7 +1096,7 @@ coco_reload_textures( void )
         coco_reload_texture( cl->rasters[j], w, h );
     }
 }
-
+#endif /* COCO_IGNORE */
 
 /* splice middle into center of body (modifying body), returning new cursor position. */
 int 
@@ -1237,6 +1238,7 @@ coco_key_press( coco_key key, char *string_or_null,
             coco_in_game_chat_cursor = 0;
             coco_censor_keys = COCO_TRUE;
             return;
+#ifdef COCO_IGNORE
         case 'n': /* nvidia texture corruption bug */
             if ((coco_get_bit( keystate, COCO_KEY_CONTROL )))
               {
@@ -1244,6 +1246,7 @@ coco_key_press( coco_key key, char *string_or_null,
               coco_display_notice( "Textures Reloaded" );
               }
             return;
+#endif /* COCO_IGNORE */
         case 's': /* sound toggle */
           if (coco_get_bit( keystate, COCO_KEY_CONTROL ))
             {
@@ -1298,22 +1301,36 @@ coco_key_press( coco_key key, char *string_or_null,
               }
           }
           return;
-        case '[': /* add grey comp */
-        case ']': /* add green comp */
+        case 'l': /* grey comp */
+        case 'r': /* green comp */
           if (coco_get_bit( keystate, COCO_KEY_CONTROL ))
             {
               struct coco_stream *str = coco_get_server_message_stream();
+              union coco_message msg;
+
+              msg.every.type = COCO_MESSAGE_NOMINATE;
+              msg.nominate.serial = -1; /* unknown yet */
+              msg.nominate.vote = COCO_TRUE;
+
               if (str != NULL)
                 {
-                  union coco_message msg;
-                  msg.every.type = COCO_MESSAGE_NOMINATE;
-                  msg.nominate.serial = -1; /* unknown yet */
-                  msg.nominate.action_code
-                    = ((key == '[')
-                       ? COCO_NOMINATE_ADD_BAD_GUY_COMP
-                       : COCO_NOMINATE_ADD_GOOD_GUY_COMP);
-                  msg.nominate.act_object = 0; /* unused, but init anyway */
-                  msg.nominate.vote = COCO_TRUE;
+                  if (coco_get_bit( keystate, COCO_KEY_SHIFT ))
+                    { /* remove compute player */
+                      msg.nominate.action_code 
+                        = ((key == 'l')
+                           ? COCO_NOMINATE_BOOT_BAD_GUY_COMP
+                           : COCO_NOMINATE_BOOT_GOOD_GUY_COMP);
+                      msg.nominate.act_object = 0;
+                    }
+                  else 
+                    { /* add computer player */
+                      msg.nominate.action_code
+                        = ((key == 'l')
+                           ? COCO_NOMINATE_ADD_BAD_GUY_COMP
+                           : COCO_NOMINATE_ADD_GOOD_GUY_COMP);
+                      msg.nominate.act_object = 0; /* unused, but init anyway */
+                    }
+                  
                   coco_write_message( str, &msg );
                 }
             }
@@ -1826,6 +1843,124 @@ coco_cobject_y_ntoh( coco_cobject *cobject )
 static coco_notification_id coco_in_game_talk_notify = -1;
 static coco_notification_id coco_in_game_vote_notify = -1;
 
+
+
+static coco_bool coco_old_compflux_initialized = COCO_FALSE;
+static coco_bool coco_old_compflux_interesting = COCO_FALSE;
+static struct coco_message_compflux coco_old_compflux;
+
+void
+coco_post_client_connection_init( void )
+{
+  coco_old_votestate_initialized = COCO_FALSE;
+  coco_old_compflux_initialized = COCO_FALSE;
+  coco_old_compflux_interesting = COCO_FALSE;
+}
+
+#define COCO_HCFM_NAME( index ) \
+  coco_comp_names[msg->compflux.comps[index].name_index]
+
+/* return true if interesting */
+coco_bool
+coco_handle_compflux_message_helper( coco_msg_ptr msg, coco_nationality nat, 
+                                     char *rolestr )
+{
+  int i, last_i = -1, next_last_i = -1;
+  int count = 0;
+  char buf[COCO_PLAYER_NAME_MAX*COCO_MAX_COMPS + 200];
+  for (i=0; i<COCO_MAX_COMPS; i++)
+    if (msg->compflux.comps[i].in_use)
+      {
+        if (msg->compflux.comps[i].nationality == nat) 
+          {
+            count++;
+            next_last_i = last_i;
+            last_i = i;
+          }
+      }
+  switch (count) {
+  case 0:
+    return COCO_FALSE;
+  case 1: 
+    sprintf( buf, "Computer %s is %s",
+             COCO_HCFM_NAME( last_i ), rolestr);
+    break;
+  case 2:
+    sprintf( buf, "Computers %s and %s are %s",
+             COCO_HCFM_NAME( last_i ), COCO_HCFM_NAME( next_last_i ),
+             rolestr );
+    break;
+  default: /* 3 or more */
+    {
+      int j;
+      sprintf( buf, "Computers " );
+      for (j=0;j<last_i;j++)
+        if ((msg->compflux.comps[j].in_use)
+            && (msg->compflux.comps[j].nationality == nat))
+          sprintf( buf + strlen( buf ), "%s, ", COCO_HCFM_NAME( j ) );
+      sprintf( buf + strlen( buf ), "and %s are %s",
+               COCO_HCFM_NAME( last_i ), rolestr );
+            
+    }
+  }
+  coco_display_notice( buf );
+  return COCO_TRUE;
+}
+
+#undef COCO_HCFM_NAME
+
+
+void
+coco_handle_compflux_message( coco_msg_ptr msg )
+{
+  coco_nationality mynat = coco_get_player_nationality( COCO_NEUTRAL );
+  if (coco_old_compflux_initialized && coco_old_compflux_interesting)
+    {
+      int i;
+      for (i=0; i<COCO_MAX_COMPS; i++)
+        {
+          coco_bool oiu, niu;
+          niu = msg->compflux.comps[i].in_use;
+          oiu = coco_old_compflux.comps[i].in_use;
+          if (niu != oiu)
+            {
+              char buf[200];
+              if (niu)
+                sprintf( buf, "Computer %s has joined %s.", 
+                         coco_comp_names[msg->compflux.comps[i].name_index],
+                         (msg->compflux.comps[i].nationality == mynat)
+                         ? "your side" : "the enemy" );
+              else
+                sprintf( buf, "Computer %s has left the game.", 
+                         coco_comp_names[coco_old_compflux.comps[i]
+                                        .name_index] );
+              coco_display_notice( buf );
+            }
+
+        }
+
+    }
+  else
+    {
+      coco_nationality onat
+        = (mynat==COCO_GOOD_GUYS)?COCO_BAD_GUYS:COCO_GOOD_GUYS;
+
+      coco_old_compflux_interesting 
+        |= coco_handle_compflux_message_helper( msg, mynat, "on your side." );
+      coco_old_compflux_interesting 
+        |= coco_handle_compflux_message_helper( msg, onat, "work for the enemy." );
+
+      coco_old_compflux_initialized = COCO_TRUE;
+    }
+  coco_old_compflux = msg->compflux;
+}
+
+
+
+
+
+
+
 void 
 coco_handle_client_message( struct coco_stream *str, 
                             int udpfd, 
@@ -1870,7 +2005,6 @@ coco_handle_client_message( struct coco_stream *str,
         if (!coco_have_game_message)
           coco_initialize_cstate( coco_get_cstate() );
         coco_have_game_message = COCO_TRUE;
-        coco_old_votestate_initialized = COCO_FALSE;
         coco_my_player_id = message.game.your_player_id;
         coco_cookie( "Game status is \"%s\"\n", 
                      message.game.game_status_string );
@@ -1943,12 +2077,16 @@ coco_handle_client_message( struct coco_stream *str,
                 coco_fatal_printf( COCO_ERROR_NETWORK_BROKEN,
                                    "Udp connect() failed with errno=%d: %s\n",
                                    errno, coco_errno_string( errno ) );
+              coco_post_client_connection_init();
             }
         }
+      case COCO_MESSAGE_COMPFLUX:
+        coco_handle_compflux_message( &message );
         break;
       default: 
         coco_warn_printf( "fell through switch form in "
-                          "coco_handle_client_message.\n" );
+                          "coco_handle_client_message, msg type = %d\n",
+                          message.every.type );
         break;
       }
     }
@@ -2450,13 +2588,10 @@ coco_note_votestate( void *null, union coco_message *message )
           int code = message->votestate.nominations[nom].action_code;
           char str[400];
           char obj[40] = "";
-          if (COCO_NOMINATE_BOOT_COMP==code)
-            sprintf( obj, " %d", 
-                     message->votestate.nominations[nom].act_object );
           if (voted_for)
             sprintf( str, "You are voting to %s%s.  "
                      "Press %d to change your mind.", 
-                     coco_nominate_action_descriptions[code],
+                     coco_nominate_action_descriptions_other_tense[code],
                      obj, nom );
           else
             sprintf( str, "To vote for %s%s, press %d.", 
@@ -2480,6 +2615,8 @@ coco_display_notice( char *short_string )
   message.talk.from_player = COCO_U32_HTON( COCO_U32_MAX );
   strncpy( message.talk.message, short_string, 
            sizeof( message.talk.message ) );
+  /* make *sure* to null term it. */
+  message.talk.message[sizeof( message.talk.message )-1] = '\0';
   coco_call_message_notifications( COCO_MESSAGE_TALK, &message );
 }
 

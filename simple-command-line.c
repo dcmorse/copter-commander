@@ -113,6 +113,20 @@ coco_bool coco_process_server_arguments( int argc, char **argv )
           coco_command_line_left_comps = strtoul( argv[i] + 13, NULL, 10 );
           
         }
+      else if ((0==strcmp( "--right-comps", argv[i] )))
+        {
+          i++;
+          if (i<argc)
+            coco_command_line_right_comps = strtoul( argv[i], NULL, 10 );
+          else coco_fatal_printf( COCO_ERROR_BAD_COMMAND_LINE,
+                                   "Missing argument to \"%s\" option.\n",
+                                   argv[i-1] );
+        }
+      else if (0==strncmp( "--right-comps=", argv[i], 14 ))
+        {
+          coco_command_line_right_comps = strtoul( argv[i] + 14, NULL, 10 );
+          
+        }
       else if ((0==strcmp( "-q", argv[i] )) || 
                (0==strcmp( "--quiet", argv[i] )))
         log_file_name = "/dev/null";
