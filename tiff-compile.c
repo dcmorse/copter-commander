@@ -460,7 +460,7 @@ coco_tiff_compile_system( char *indir, char *outdir )
 
   rasters_h_fd = fopen( rasters_h, "w" );
   if (NULL==rasters_h) return 0;
-  if (log_file) fprintf( log_file, "Compiling \".tiffs\" to \".c\"s" );
+  if (log_file) fprintf( log_file, "Compiling \".tiff\"s to \".c\"s" );
   for (i=0; i<4; i++)
     {
       char *subindir = coco_directory_plus_file( indir, subdirs[i], 0 );

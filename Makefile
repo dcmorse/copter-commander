@@ -47,7 +47,7 @@
 # 
 
 COCO_MAJOR_VERSION=1
-COCO_MINOR_VERSION=7
+COCO_MINOR_VERSION=8
 
 # ____________________________________________________________________________
 #                           *** VARIABLES ***

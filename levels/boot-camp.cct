@@ -1,7 +1,7 @@
 ;;; -*- Mode: lisp; -*-
 
 (define-coco-level boot-camp
-    1 7                                 ; coco-version
+    1 8                                 ; coco-version
     1                                   ; level-version
     2500                                ; width
     ((ggpb (pillbox (- board-w (w pillbox)) good-guys 2 gghq))

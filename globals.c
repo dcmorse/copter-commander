@@ -74,15 +74,15 @@ struct coco_version_number {
 #define COCO_NETWORK_COMPATIBLE_VERSIONS_SIZE 1
 static struct coco_version_number coco_network_compatible_versions
  [COCO_NETWORK_COMPATIBLE_VERSIONS_SIZE]
- = { { 1, 7 } };
+ = { { 1, 8 } };
 /* One day, if there is ever a compatible version, this will be replace by
    something like:
 static struct coco_version_number coco_network_compatible_versions[COCO_NETWORK_COMPATIBLE_VERSIONS_SIZE] = { { 1, 1 } } */
 
-#define COCO_LEVEL_FILE_FORMAT_COMPATIBLE_VERSIONS_SIZE 1
+#define COCO_LEVEL_FILE_FORMAT_COMPATIBLE_VERSIONS_SIZE 3
 static struct coco_version_number coco_level_file_format_compatible_versions
  [COCO_LEVEL_FILE_FORMAT_COMPATIBLE_VERSIONS_SIZE]
- = { { 1, 0 } };
+ = { { 1, 0 }, { 1, 7 }, { 1, 8 } };
 /* One day, if there is ever a compatible version, this will be replace by
    something like:
 static struct coco_version_number coco_level_file_format_compatible_versions[COCO_LEVEL_FILE_FORMAT_COMPATIBLE_VERSIONS_SIZE] = { { 1, 1 } } */

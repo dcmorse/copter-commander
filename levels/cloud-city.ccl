@@ -1,7 +1,7 @@
 ;;; -*- Mode: lisp; -*-
 
 (define-coco-level cloud-city
-    1 7                                 ; coco-version
+    1 8                                 ; coco-version
     2                                   ; level-version
     7000                                ; width
     ((ggpb (pillbox (- board-w (w pillbox)) good-guys 0 gghq))

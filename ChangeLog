@@ -1,9 +1,19 @@
+2002-02-11  David Morse  <svref@yahoo.com>
+
+	* tiff-compile.c (coco_tiff_compile_system): typeo
+
 2002-02-08  David Morse  <svref@yahoo.com>
+
+	* globals.c: version 1.8 will be map-compatible with 1.7 and 1.0,
+	but not network-compatible with them.
+
+	* (levels) ++ minor version of all levels
 
 	* Makefile (${COCO_TAR_FILE}): add oo-compiler.fas and
 	oo-compiler.lib to dependancies, so that they're never
 	forgotten (like they were in 1.7).
 	(${COCO_TAR_FILE}): Ooops, forgot object-time.h/.lisp.
+	(COCO_MINOR_VERSION): ++ minor version.
 
 	* INSTALL: [ #510323 ] Sprinkle pleas for help
 

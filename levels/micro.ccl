@@ -2,7 +2,7 @@
 
 
 (define-coco-level micro
-    1 7                                 ; coco-version
+    1 8                                 ; coco-version
     3                                   ; level-version
     2000                                ; width
     ((ggpb (pillbox (- board-w (w pillbox)) good-guys 0 gghq))
