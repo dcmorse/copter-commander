@@ -2321,10 +2321,8 @@ coco_use_new_game_dialog( GtkWidget *parent_window )
 void
 coco_refresh_window_eventually( void )
 {
-#ifdef COCO_DEBUG
-  coco_warn_printf( "coco_refresh_window_eventually unimplemented\n" );
-#endif
-  return;
+  coco_refresh_window();
+  coco_cookie( "coco_refresh_window_eventually implemented poorly.\n" );
 }
 
 void

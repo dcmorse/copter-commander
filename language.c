@@ -624,3 +624,14 @@ coco_tend_towards( int current, int goal, int by )
 
 }
 
+/* splice middle into center of body (modifying body), returning new cursor position. */
+int 
+coco_strsplice( char *body, int cursor, const char *middle )
+{
+  int midlen = strlen( middle );
+  char *body_cursor = body + cursor;
+  assert( cursor <= strlen( body ) );
+  memmove( body_cursor + midlen, body_cursor, strlen( body_cursor ) + 1 );
+  memmove( body_cursor, middle, midlen );
+  return cursor + midlen;
+}

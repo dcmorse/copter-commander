@@ -366,9 +366,9 @@ struct coco_raster *coco_firetruck_rasters[COCO_FIRETRUCK_RASTER_COUNT] = {
 /* 20 fps */
 /* struct timeval coco_ideal_frame_rate = { 0,  50000 }; */
 /* 15 fps */
-struct timeval coco_ideal_frame_rate = { 0,  66666 };
+/* struct timeval coco_ideal_frame_rate = { 0,  66666 }; */
 /* 14 fps */
-/* struct timeval coco_ideal_frame_rate = { 0,  71429 }; */
+struct timeval coco_ideal_frame_rate = { 0,  71429 };
 /* 12 fps */
 /* struct timeval coco_ideal_frame_rate = { 0,  83333 }; */
 /* 10 fps */
@@ -735,3 +735,10 @@ coco_sobject_cl *coco_aa_targetable_classes[] = {
 coco_sobject_cl *coco_at_targetable_classes[] = {
   COCO_MECH_CLASS, COCO_GROUND_VEHICLE_CLASS
 };
+
+coco_bool coco_key_special( coco_key key )
+{
+  return (key<COCO_KEY_SPACE) || (key>= COCO_KEY_DELETE)
+    || ((key >='A') && (key <= 'Z'));
+}
+

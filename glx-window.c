@@ -31,9 +31,8 @@ coco_bool coco_start_game_asap = COCO_TRUE;
 
 char *coco_gnu_info_string = "For\n"
 "more information about these matters\n"
-"press [L] to print the licence to the\n"
-"standard output.";
-char *coco_low_tech_menu = "Press [P] to play.\nPress [ESC] to quit.";
+"type `/license' at the console.";
+char *coco_low_tech_menu = "Press [RETURN] to continue.\nPress [ESC] to quit.";
 
 coco_bool coco_use_keyboard_for_gui_p = COCO_TRUE;
 
@@ -382,6 +381,10 @@ coco_handle_ui_events( void )
   /* coco_poll_pointer(); */
   if (need_redraw && !coco_get_inhibit_refresh())
     coco_refresh_window();
+#ifdef COCO_DEBUG  
+  if (need_redraw && coco_get_inhibit_refresh())
+    coco_cookie( "not exposing because of inhibit_refresh()\n" );
+#endif
 }
 
 void 
@@ -538,6 +541,9 @@ coco_send_garbage_key( void )
 void
 coco_refresh_window_eventually( void )
 {
+  coco_cookie( "refresh_window_eventually() %d\n", xdisplay && xwindow );
+#ifdef COCO_IGNORE
+  /* For some reason this doesn't work -dm 07-22-2001 */
   if (xdisplay && xwindow)
     {
       XEvent event;
@@ -555,6 +561,9 @@ coco_refresh_window_eventually( void )
         coco_warn_printf( "XSendEvent failed: couldn't send ourselves "
                           "an expose.\n" );
     }    
+#else /* COCO_IGNORE */
+  coco_refresh_window();
+#endif  /* COCO_IGNORE */
 }
 
 void

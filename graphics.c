@@ -566,6 +566,24 @@ coco_draw_string( coco_gnum x, coco_gnum y,
   char ch = 'x';
   int font_height = coco_font_height( font );
   int yoffset = 0;
+#ifdef COCO_DEBUG
+  { /* droolproofing */
+    const char *s;
+    const char *end = string + ((nchars_or_minus_one<0) 
+                                ? strlen( string )
+                                : nchars_or_minus_one );
+    for (s=string; s != end; s++)
+      {
+        char ch = *s;
+        if (((ch<' ')||(ch>'~')) && (ch != '\n'))
+          coco_fatal_printf( COCO_ERROR_COCO_IMPLEMENTAION_PROBLEM,
+                             "Unprintable char in argument to "
+                             "coco_draw_string, code=%d, string=\"%s\", "
+                             "nchars=%d\n",
+                             (int) ch, string, nchars_or_minus_one );
+      }
+  }
+#endif
   if (origin != COCO_BASELINE) 
     {
       int font_ascent;

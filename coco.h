@@ -144,6 +144,9 @@ coco_u16 COCO_U16_HTON( u16 );
 #define COCO_ERROR_BAD_LEVEL 15
 #define COCO_ERROR_SERVER_VERSION_INCOMPATIBLE 16
 #define COCO_ERROR_SOUND_FILE_PROBLEMS 17
+#ifdef COCO_CONSOLE
+#define COCO_ERROR_CONSOLE_NOT_IMPLEMENTED 18 
+#endif
 
 /* gnome.c or glx.c */
 
@@ -298,6 +301,9 @@ void coco_time_pad_end( struct timeval *private, struct timeval *how_long );
 int coco_tend_towards( int current, int goal, int by );
 
 
+int coco_strsplice( char *body, int cursor, const char *middle );
+
+
 /* graphics.c */
 
 typedef unsigned int coco_color;
@@ -338,8 +344,10 @@ typedef unsigned int coco_color;
 #define COCO_COLOR_GREY_D 0xCFCFCFFF
 #define COCO_COLOR_GREY_E 0xDFDFDFFF
 #define COCO_COLOR_GREY_F 0xEFEFEFFF
+#ifdef COCO_CONSOLE
 #define COCO_COLOR_CONSOLE_FG COCO_COLOR_WHITE
 #define COCO_COLOR_CONSOLE_BG COCO_COLOR_GREY_3
+#endif
 
 extern coco_color COCO_COLOR_FONT;
 
@@ -1029,7 +1037,7 @@ extern int coco_sky_option; /* as interpreted by enum coco_sky_colors */
 
 /* also change coco_ideal_frame_rate in gamesho.c */
 extern struct timeval coco_ideal_frame_rate;
-#define COCO_IDEAL_FRAMES_PER_SECOND 15
+#define COCO_IDEAL_FRAMES_PER_SECOND 14
 #define COCO_RESPAWN_SECONDS 4
 #define COCO_RESPAWN_BASE_SNAP_SECONDS 1
 
@@ -1131,14 +1139,18 @@ extern coco_gnum coco_real_window_h;
 
 extern char coco_game_status_string[COCO_GAME_STATUS_SIZE];
 
-typedef int coco_clientstate;
-#define COCO_CLIENT_TABULA_RASA 0
-#define COCO_CLIENT_DEMO 1 /* splash movie or idle thereafter */
-#define COCO_CLIENT_CHOOSE_SERVER_DIALOG 2
-#define COCO_CLIENT_CHATROOM_DIALOG 3
-#define COCO_CLIENT_PLAY 4
-#define COCO_CLIENT_IN_GAME_ESCAPE_DIALOG 5
-#define COCO_CLIENT_GAME_OVER 6
+typedef enum {
+  COCO_CLIENT_TABULA_RASA,
+  COCO_CLIENT_DEMO,
+  COCO_CLIENT_CHOOSE_SERVER_DIALOG,
+  COCO_CLIENT_CHATROOM_DIALOG,
+  COCO_CLIENT_PLAY,
+  COCO_CLIENT_IN_GAME_ESCAPE_DIALOG,
+  COCO_CLIENT_GAME_OVER
+#ifdef COCO_CONSOLE
+  , COCO_CLIENT_CONSOLE
+#endif
+} coco_clientstate;
 
 coco_clientstate coco_get_client_state( void );
 void coco_set_client_state( coco_clientstate state );
@@ -1835,10 +1847,119 @@ extern struct coco_tutorial_info coco_tutorial_infos[COCO_TUTORIAL_INFO_SIZE];
 extern struct coco_tutorial_info *coco_tutorial;
 
 
-/* console.c */
+#ifdef COCO_CONSOLE
+/* console-*.c */
+
+#define COCO_CONSOLE_INT_UNBOUND INT_MIN
+#define COCO_CONSOLE_NAT_UNBOUND 1234
+#define COCO_CONSOLE_STRING_UNBOUND NULL
+#define COCO_CONSOLE_STRING_REST_UNBOUND NULL
+
+const char *coco_console_skip_chars( const char *line, const char *charset );
+extern const char *coco_console_whitespace;
+
+struct coco_console_command;
+
+union coco_console_actual_arg {
+  int aaint;
+  int aanat;
+  char *aastr;   /* always coco_malloc'ed */
+  char *aastrrr; /* always coco_malloc'ed */
+  struct coco_console_command *aacmd; /* statically allocated */
+};
+
+enum coco_console_arg_type {
+  COCO_CAT_INT=0,
+  COCO_CAT_NAT=1,
+  COCO_CAT_STRING=2,
+  COCO_CAT_STRING_REST=3, /* a string that's ended by EOL not space */
+  COCO_CAT_CMD=4 /* a command name, used when a command is an argument, e.g. /help /join */
+};
+
+
+enum coco_console_arg_optionality {
+  COCO_CAO_PROMPT, /* ask user, with default */
+  COCO_CAO_DEFAULT, /* just use default */
+  COCO_CAO_UNBOUND /* have no value */
+};
+
+struct coco_console_task_stack_entry;
+
+enum coco_console_input_parse {
+  COCO_ILLEGAL,
+  COCO_INCOMPLETE,
+  COCO_LEGAL
+};
+
+struct coco_console_formal_arg {
+  char *name;
+  enum coco_console_arg_type type;
+  enum coco_console_arg_optionality optionality;
+  /* used if optionality = COCO_CAO_DEFAULT: */
+  union coco_console_actual_arg (* default_getter)( void );
+  enum coco_console_input_parse (* parser)( const char *, union coco_console_actual_arg );
+};
+
+/* includes 1 for sentinel and 1 for good luck :) */
+#define COCO_CONSOLE_MAX_ARGS 6
+
+struct coco_console_command {
+  char *name;
+  struct coco_console_formal_arg args[COCO_CONSOLE_MAX_ARGS];
+  void (* fn)
+       ( struct coco_console_command *, union coco_console_actual_arg * );
+  char *help;
+  coco_bool undocumented; /* if true, doesn't show up in help -- so /exit and /quit don't show up */
+};
+
+extern struct coco_console_command coco_console_commands[];
+extern struct coco_console_command coco_console_default_command;
+
+void coco_console_pop_with_line( const char *line );
+
+
+const char *coco_console_prompt( void );
+
+void coco_console_push_eval_loop( void );
+
+struct coco_console_task_stack_entry {
+  /* When prompt is NULL, its non-interactive, which means
+     "just exec the function as soon as its on the top of the stack." */
+  char *prompt;
+  coco_bool prompt_malloced;
+  void (* pop_handler)( const char *, void *, void * );
+  /* pop_handler should free pop_handy* if nesc. */
+  void *pop_handy1;
+  void *pop_handy2;
+  enum coco_console_input_parse (* parser)( const char *, union coco_console_actual_arg );
+};
+
+void coco_console_new_task( struct coco_console_task_stack_entry *entry );
+
+void coco_console_printf( const char *fmt, ... );
+
+enum coco_console_deployment_ {
+  COCO_HIDDEN = 0, COCO_MINIMAL = 1, COCO_FULLSCREEN = 2
+};
+
+enum coco_console_deployment_ coco_console_get_mode( void );
+void coco_console_set_mode( enum coco_console_deployment_ );
+
 
 void coco_console_draw( void );
 
+void
+coco_console_key( coco_key key, char *string_or_null, 
+                  coco_bool is_press );
+
+void
+coco_console_prepare_for_user_typing( void );
+
+
+enum coco_console_input_parse coco_console_parse_any_string( const char *input );
+
+
+#endif /* COCO_CONSOLE */
 
 /* clsho.c */
 

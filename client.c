@@ -995,7 +995,9 @@ coco_cstate_draw( struct coco_cstate *cstate )
         }
     }
   coco_end_point_drawing();
+#ifdef COCO_CONSOLE
   coco_console_draw();
+#endif
   if (COCO_NEUTRAL != cstate->game_over_nationality)
     coco_draw_game_over_message( cstate->game_over_nationality );
   if (!coco_draw_background_before_everything_else)
@@ -1100,17 +1102,6 @@ coco_reload_textures( void )
 }
 #endif /* COCO_IGNORE */
 
-/* splice middle into center of body (modifying body), returning new cursor position. */
-int 
-coco_strsplice( char *body, int cursor, const char *middle )
-{
-  int midlen = strlen( middle );
-  char *body_cursor = body + cursor;
-  assert( cursor <= strlen( body ) );
-  memmove( body_cursor + midlen, body_cursor, strlen( body_cursor ) + 1 );
-  memmove( body_cursor, middle, midlen );
-  return cursor + midlen;
-}
 
 
 
@@ -1151,12 +1142,32 @@ coco_key_press( coco_key key, char *string_or_null,
     }
   /* mode-local bindings */
   switch (coco_get_client_state()) {
+#ifdef COCO_CONSOLE
+  case COCO_CLIENT_DEMO:
+    coco_set_client_state( COCO_CLIENT_CONSOLE );
+    coco_set_inhibit_refresh( COCO_FALSE );
+    coco_console_set_mode( COCO_FULLSCREEN );
+    /* no break */
+  case COCO_CLIENT_CONSOLE:
+  case COCO_CLIENT_TABULA_RASA:
+  case COCO_CLIENT_CHOOSE_SERVER_DIALOG:
   case COCO_CLIENT_CHATROOM_DIALOG:
-    switch (key) {
-    case COCO_KEY_SPACE: 
+  case COCO_CLIENT_IN_GAME_ESCAPE_DIALOG:
+  case COCO_CLIENT_GAME_OVER:
+    if (coco_console_get_mode() < COCO_MINIMAL)
+      {
+        if (key == COCO_KEY_ESCAPE)
+          coco_fatal_printf( COCO_ERROR_CONSOLE_NOT_IMPLEMENTED,
+                             "escape pressed\n" );
+        else coco_console_set_mode( COCO_MINIMAL );
+      }
+    else coco_console_key( key, string_or_null, COCO_TRUE );
+    break;
+#else /* not COCO_CONSOLE */
+  case COCO_CLIENT_CHATROOM_DIALOG:
+    if ((key == COCO_KEY_SPACE)
+        && coco_use_keyboard_for_gui_p)
       coco_send_play_message_maybe();
-      break;
-    }
     break;
   case COCO_CLIENT_DEMO:
     if (coco_use_keyboard_for_gui_p)
@@ -1173,6 +1184,15 @@ coco_key_press( coco_key key, char *string_or_null,
         break;
       }
     break;
+  case COCO_CLIENT_TABULA_RASA:
+  case COCO_CLIENT_CHOOSE_SERVER_DIALOG:
+  case COCO_CLIENT_IN_GAME_ESCAPE_DIALOG:
+  case COCO_CLIENT_GAME_OVER:
+    coco_draw_color( COCO_COLOR_FONT );
+    coco_draw_string( 100, 100, "No keys defined now.  Fiddle with the gui.",
+                      -1, &coco_default_font, COCO_TOP );
+    break;
+#endif /* COCO_CONSOLE */
   case COCO_CLIENT_PLAY:
     if (coco_in_game_chat_mode)
       {
@@ -1230,26 +1250,28 @@ coco_key_press( coco_key key, char *string_or_null,
       {
         switch (key) {
         case COCO_KEY_TAB:
-            if (!coco_get_pointer_grabbed_flag())
-              coco_grab_pointer();
-            return; /* don't bother telling server */
+          if (!coco_get_pointer_grabbed_flag())
+            coco_grab_pointer();
+          return; /* don't bother telling server */
         case COCO_KEY_ESCAPE:
-            coco_ungrab_pointer();
-            return; /* don't bother telling server */
+          coco_ungrab_pointer();
+          return; /* don't bother telling server */
+#ifndef COCO_CONSOLE
         case COCO_KEY_RETURN:
-            coco_in_game_chat_mode = COCO_TRUE;
-            coco_in_game_chat_buffer[0] = '\0';
-            coco_in_game_chat_cursor = 0;
-            coco_censor_keys = COCO_TRUE;
-            return;
+          coco_in_game_chat_mode = COCO_TRUE;
+          coco_in_game_chat_buffer[0] = '\0';
+          coco_in_game_chat_cursor = 0;
+          coco_censor_keys = COCO_TRUE;
+          return;
+#endif /* COCO_CONSOLE */
 #ifdef COCO_IGNORE
         case 'n': /* nvidia texture corruption bug */
-            if ((coco_get_bit( keystate, COCO_KEY_CONTROL )))
-              {
+          if ((coco_get_bit( keystate, COCO_KEY_CONTROL )))
+            {
               coco_reload_textures();
               coco_display_notice( "Textures Reloaded" );
-              }
-            return;
+            }
+          return;
 #endif /* COCO_IGNORE */
         case 's': /* sound toggle */
           if (coco_get_bit( keystate, COCO_KEY_CONTROL ))
@@ -1365,7 +1387,7 @@ coco_key_press( coco_key key, char *string_or_null,
 
         }
       }
-     coco_write_client2server_packet_maybe();
+    coco_write_client2server_packet_maybe();
     break;
   }
 }
@@ -1460,8 +1482,9 @@ coco_draw_pointer_grab_warnings( void )
 void 
 coco_draw_window( void )
 {
+  coco_clientstate state = coco_get_client_state();
   coco_draw_frame_number = COCO_U32_ADD_MODULAR( coco_draw_frame_number );
-  switch (coco_get_client_state()) {
+  switch (state) {
   case COCO_CLIENT_DEMO:
     coco_play_intro_movie_frame( COCO_FALSE, COCO_FALSE );
     break;
@@ -1510,6 +1533,13 @@ coco_draw_window( void )
                       coco_get_client_state() );
     break;
   }
+#ifdef COCO_CONSOLE
+  if (state != COCO_CLIENT_PLAY)
+    {
+      coco_cookie( "redrawing with console\n" );
+      coco_console_draw();
+    }
+#endif
 }
 
 
@@ -1711,7 +1741,8 @@ coco_play_intro_movie_frame( coco_bool advance_frame, coco_bool rewind )
                                                &width, &height, &ascent );
                   coco_draw_string( (coco_real_window_w - width)>>1,
                                     ybase,
-                                    buf, chars_to_draw,
+                                    buf, 
+                                    COCO_MIN( chars_to_draw, strlen( buf ) ),
                                     &coco_default_font, COCO_TOP );
                   chars_drawn += strlen( buf );
                   ybase -= height<<1;
@@ -1725,7 +1756,10 @@ coco_play_intro_movie_frame( coco_bool advance_frame, coco_bool rewind )
                                                    NULL );
                       coco_draw_string( (coco_real_window_w - width)>>1,
                                         ybase,
-                                        buf, (chars_to_draw - chars_drawn),
+                                        buf, 
+                                        COCO_MIN( (chars_to_draw
+                                                   - chars_drawn), 
+                                                  strlen( buf ) ),
                                         &coco_default_font, COCO_TOP );
                       chars_drawn += strlen( buf );
                       ybase -= low_tech_menu_height + height;
@@ -1758,7 +1792,9 @@ coco_play_intro_movie_frame( coco_bool advance_frame, coco_bool rewind )
                      coco_dbg = 0; */
                   coco_draw_string( (coco_real_window_w - width)>>1,
                                     ybase,
-                                    buf, (chars_to_draw - chars_drawn),
+                                    buf, 
+                                    COCO_MIN( (chars_to_draw - chars_drawn),
+                                              strlen( buf ) ),
                                     &coco_default_font, COCO_TOP );
                   chars_drawn += strlen( buf );
                   ybase -= height;
