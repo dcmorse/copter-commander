@@ -1,0 +1,4 @@
+#define COCO_HEADQUARTERS_GREY_RASTER_W 103
+#define COCO_HEADQUARTERS_GREY_RASTER_H 35
+
+extern struct coco_raster coco_headquarters_grey_raster;

@@ -1,0 +1,282 @@
+                  Copter Commander Implementation Notes.
+                                     
+0.    Environment
+      A. C at runtime
+      B. Lisp data compiles into C
+         1. oo compiler -> sobjects
+         2. tiff compiler -> raster structs
+            a) Man Libtiff was too hard for me to deal with, hence
+               the current course of action.
+            b) Current source distribution can't compile its tiffs
+               to c files, unless you happen to own Mirai ($$).
+            c) Raster-dumper.lisp holds the interesting part of
+               the translation program.  It *is* GPL.  Its in the
+               copter-commander source distribution, as are the
+               source tiffs.
+      C. Sounds (.wav) and Levels (.ccl) are external to executable
+      D. Rasters are internal to executable
+         1. There are about 100 of them.
+I.    Network Architecture
+      A. Client-Server
+         1. Client is the window the user interacts with.
+         2. Server never opens a window, and is command line only.  
+            a) Sticks around until all players leave a game, then 
+               exits.
+      B. Single Executable
+         1. This is an artifact of an early design goal to have
+            the install process be "put the executable in your $PATH".
+            a) you still can if you don't care about sounds and you
+               specify the path to the level as --level argument.
+         2. Client can always find path to server by looking at argv[0].
+      C. Network Transmissions
+         0. reliable versus unreliable
+            a) UDP gives low-latency transmissions.  From testing, I
+               discovered that the smaller the packet size the bigger
+               the chance of a packet getting through.
+            b) TCP is reliable but higher latency.
+         1. drawing data --  UDP server -> client
+            a) Only bare minimum to render a screen.  
+         2. device data -- UDP client -> server
+            a) Sent continuously, but more redundantly after the
+               user generates new input.
+         3. message system -- TCP full duplex
+            a) used for negotiating game connection and bootstrapping 
+               UDP.  
+            b) Also non-speed sensitive data such as user<->user talk.
+         4. How did it turn out?
+            a) for LANs its fine
+            b) for phone modem its untested.
+            c) for cable-modem to cable-modem link, with the server
+               a 500 Mhz Pentium III running Mesa and the client
+               simultaneously, I recall it being good most of the time,
+               but when lots of explosions etc were being rendered
+               on the server machine, I, (the remote client) lost a
+               frame or ten.  Haven't tried it recently though.
+      D. Security concerns
+         1. Client has very limited information
+         2. Server must be trusted by all
+         3. Spoofing
+            a) Don't defend against client to client jamming, etc.
+         4. Cheesy attacks
+            a) A hacked client could decide not to render clouds, 
+               making them useless as cover.
+            b) Someone could start multiple clients on the same team and
+               therefore get lots of funds.  But imagine if those unmanned
+               copters got shot down, all the money the other side would 
+               get.
+II.   Object System
+      A. oo-compiler.lisp
+         0. Why not just use C++?
+            a) Main reason: I don't know it as well as C.
+            b) Problems with binary compatibility across compilers
+            c) This system requires clisp be installed on the developer's
+               system, but not on joe-system-administrator's.  It generates
+               ansi C, which everyone can compile anywhere.
+         1. creates c "classes",  "instances", and "generic functions".  
+            a) Classes are structs with per-class slots and method slots.
+            b) Instances are unions of all their superclasses' slots.
+               They have a pointer to their class, e.g.
+               COCO_SOBJECT_CL( instance ).
+            c) To keep some indirection, both class and instance slots
+               are accessed through reader/writer macros, e.g.
+               COCO_SOBJECT_X( instance ) gets an sobject's x, and
+               COCO_SOBJECT_DX( instance ) = 5 sets it to 5.
+            d) Generic functions aka's C++'s virtual functions.
+               i)   not as fast as it could be, but WAY fast enough.
+               ii)  calling G.F.s requires some minor contortionism, see
+                    comment at beginning of oo-compiler.lisp
+            e) Methods are just standard c functions.  There is a
+               protocol for calling the next method, search for
+               "call-next-method" in sobject.lisp.
+         2. Various handy features probably only useful for sobjects:
+            a) subclasses of a certain root class (*cough* sobject) may
+               be autmatically numbered.  Unlike an address, this number
+               can be sent over the network.
+            b) COCO_SOBJECT_NAME( instance ) gets the char * name of 
+               its class
+         3. oo-compiler has the concept of a root class, where it likes
+            to pile a lot of extra info.
+      B. sobject.lisp
+         1. File defines the only root class, sobject, and all its
+            inferiors.
+         2. Method declarations go in methods.h.
+         3. Method definitions go in methods.c.
+      C. cobjects and sobjects
+         1. sobject stands for server-object.  These are big fat unions
+            sitting on the server side.
+         2. To efficiently send data to the client, something smaller is
+            needed, a cobject: client object.
+         3. Cobject only about 6 bytes long each.
+         4. One piece of data a cobject has is its class index.  This
+            identifies the related sobject's class.
+         5. I think they all also have an x coordinate.
+         6. The class index is the tag that tells how to read the union.
+         7. Have to worry about network byte order and byte swapping.
+         8. Through jury-rigging, cobjects have a few generic-function-
+            like-guys stowed away as sobject per-class variables.
+            a) draw function
+            b) byte swapping function.
+      D. Was all this worth the complexity cost?
+         1. Maintaining oo-compiler by hand would be impossibly
+            error prone.
+         2. By authoring the object system in-house, handy back doors
+            can be easily introduced.  E.g. class index.
+         3. File sizes: for copter-commander 1.0, oo-compiler was 1000
+            lines of lisp, sobject.lisp was another 1000.  Together
+            these generate 6000 lines of C, or 28% of the total C code.
+         4. The system is more shabbily documented and harder to learn 
+            than C++.  
+         5. Never had any trouble with the generated code.
+III.  Graphics
+      A. OpenGL has all the needed features and way more besides
+         1. Its popular
+         2. Its cross platform
+         3. Currently on Linux, it has a slow software implementation, 
+            and fast, hard to install, and buggier hardware ones.
+         4. Maybe X would have been better.
+            a) no texture mapping, but that's hardly essential
+            b) certainly faster than Mesa for raster drawing, 
+               since it can store rasters in X-server side pixmaps.
+            c) I fess up, I don't know it as well as GL.
+            d) X is not expanding to new graphics technologies.  But 
+               this game only needs 1990 level technology right now.
+         5. Some games use DGA - Direct Graphics Access.
+            a) its not too stable an api on Linux at the moment.
+      B. Rasters
+         1. Static C arrays
+         2. drawn by glDrawPixels or glBitmap
+         3. built by tiff compiler
+         4. Dimensions available at compile time for known image
+            (e.g. COCO_COBRA_GREEN_E_RASTER_W) or run time for
+            variable image (e.g. raster.w).
+         5. Alpha blending brings Mesa to its knees, so its off
+            by default, and switchable on command line or hotkey.
+      C. Textures implement sprite rotation.
+         1. Used for copters only
+         2. Also use tiff compiler, but are 2^n wide by 2^m high to
+            satisfy OpenGL.
+         3. Speed hit under Mesa OpenGL implementation
+         4. Nvidia corruption bug - workaround is Control-n
+      D. Other primitives
+         1. Rotatable missiles are drawn as polygons.
+            a) predates adoption of textures for copter drawing.
+         2. Other lines and rectangles are drawn specially:
+            a) copter blades
+            b) tank barrels
+            c) the ground
+            d) bullets
+            e) starscape
+IV.   Sound
+      A. Multiple backends.
+         1. api is defined in sound.h
+         2. mute-sound.c, esd-sound.c, or openal-sound.c is statically
+            linked with executable.
+         3. Sounds are sent over the wire as cobjects, just like
+            things to draw.  However, their "draw" functions
+            call sound.h functions instead of graphics ones.
+      B. Mute is the no-op backend.
+      C. ESD just uses gnome convenience functions, designed
+         for GUIs not games.  Does not spatially scale sounds.
+         1. Mixing multiple sounds hangs renderer.
+      D. OpenAL does everything one could want, esp theoretically
+         1. Mixing multiple sounds still hangs renderer.
+         2. could an openal thread be given a lower priority,
+            to keep it from usurping rendering thread?
+         3. OpenAL sound scaling is left to chance.
+V.    Input Devices
+      A. Mouse and Keyboard driven the traditional way: X events.
+         1. Performance problems under heavy load.
+         2. Polling was tried, but made no difference.
+         3. Under gnome, really use gdk events, but the struct
+            layout is identical to X events.
+      B. Other options
+         1. DGA mouse?  Quake supports it.
+         2. Joystick would be nice.  Plenty of buttons.
+            Probably pollable directly by application.
+VI.   User Interface
+      A. Game screen domination protocol not settled on Linux.
+         1. Either set video mode and grab mouse is the Quake way.
+            a) mouse doesn't run off edge of window
+            b) user doesn't have to worry about video mode -- until
+               system crashes in the wrong one.
+         2. Or Run in window is the Xbill way.
+            a) Mouse runs of edge of window -- loosing focus = ouch!
+            b) window doesn't take up full screen
+         3. Decided for the Xbill way.
+            a) mouse is grabbed and clipped to window.  Flashing 
+               help reminds user how to undo it, without being
+               too obnoxious during regular play.
+            b) XF86 user can set video mode manually using 
+               C-A-Keypad-+.  Window content is conveniently 640x480.
+            c) Does this method suck?
+      B. Graphical User Interface serves to:
+         1. Negotiate network connection to server, and spawn it if
+            necessary.
+         2. Convey administrative content: keybindings, non-warranty, etc.
+      C. Rudimentary Window API defined in "window.c" section of coco.h
+         1. gnome-window.c implements the api, and adds help menus
+            and other goodies.
+            a) It doesn't shut down cleanly, but so what?
+            b) gnome-kennel is borrowed code from BEAST for laying
+               out implicit grids of widgets.
+         2. glx-window.c implements the api, barely.  
+            a) it came before gnome-window.c
+            b) its much shorter and simpler
+            c) its still very useful for porting to marginally 
+               supported systems, e.g. debian stable, RedHat5.1.
+            d) its currently incompatible with esd-sound.c.
+         3. Leaves room for a microsoft-window.c backend.
+VII.  Level Parser
+      A. Levels look like lisp definitions.
+      B. Its really just a junky hand written parser.
+      C. There are levels that are installed with the distro, or
+         the user can specify his or her own.
+      D. Where are the operators (*,+,random) documented?  Mostly
+         its learn-by-example from the distributed .ccl files.
+      E. When the gui chooses a level it parses it twice.
+         1) first time is in client process, to check for egregious
+            syntax problems.  Returns prettier error message in that
+            case.
+         2) second time is in server process, where it really creates
+            the sobjects.
+      F. Its in "ccl.c".
+      G. Much more likely to call malloc than the rest of coco, but 
+         who cares?  Its run once.
+VIII. System Construction
+      A. Its a dumb makefile, with hand-edited variables.
+      B. Why not use autoconf and automake?
+         Its documentation sucks.  Its hard to guess.
+         How come everyone else can figure it out?
+         Beats me.  I think they might not use it right, and just
+            copy other's configurations.  Or maybe I'm stupid.  Or maybe I
+            can't find some key documentation that everyone else uses.  
+            Bleh.  I'm bitter.
+      C. Some compile time tests are run on a host system.
+         1. configure-endian.sh
+         2. configure-sizeof-int.sh
+         3. configure-sizeof-short.sh
+         4. Really coco_u32, coco_i32, coco_u16, coco_i16 are the base 
+            types.  If the system finds that sizeof( short ) != 16 bits
+            it panics and asks for assitance.  Similarly for ints.
+IX.   History and Scale
+      A. Version 1.0 took about 15 months of real time to create.  Probably
+         2-4 man months of 40 hour weeks were spent developing it.
+      B. The first prototype was in Allegro Common Lisp, and wasn't 
+         client-server.  It was mostly to get a grasp of what was needed
+         for the oo-compiler.  It took under a week and had only copters,
+         bullets, bombs, guns and missiles.
+      C. If I'd known how damn good cmucl was back then, I mighta written
+         the whole thing in that, instead of C.
+         1. Then again, there are no easy good rpms of it
+         2. And writing gnome, OpenGL, OpenAL, etc bindings woulda been
+            a pain...
+         3. No modern cmucl for Alpha or Windows2Krash.
+         4. So maybe I stand by this C descision after all.
+      D. The basic game seemed to be done after only 35% of the programmer 
+         time through.  Everything else was boring packaging trying to
+         make it tractable to new users.  E.g. GUI, website, bugfix, chat
+         mode.  That's chewed down my coding enthusiasm.
+      E. Not counting machine generated code, copter-commander 1.0 is
+         20,000 lines of code.  That's 100-300 lines of finished code per
+         8 hour day.  Keep in mind that much time was spent using non-code
+         editors, e.g. GIMP and Digatal Audio Processor (DAP).

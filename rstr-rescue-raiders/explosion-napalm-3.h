@@ -1,0 +1,4 @@
+#define COCO_EXPLOSION_NAPALM_3_RASTER_W 150
+#define COCO_EXPLOSION_NAPALM_3_RASTER_H 10
+
+extern struct coco_raster coco_explosion_napalm_3_raster;

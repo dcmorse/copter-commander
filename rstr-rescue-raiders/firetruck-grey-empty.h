@@ -1,0 +1,4 @@
+#define COCO_FIRETRUCK_GREY_EMPTY_RASTER_W 50
+#define COCO_FIRETRUCK_GREY_EMPTY_RASTER_H 22
+
+extern struct coco_raster coco_firetruck_grey_empty_raster;

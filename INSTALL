@@ -1,0 +1,70 @@
+HOW TO BUILD COPTER COMMANDER
+
+________________________________________________________________
+
+Short form:
+
+
+  cd copter-commander-VERSION
+  emacs Makefile                # adjust variables if needed
+  make                          # check for errors
+  make install
+
+then try the command "copter-commander"
+
+________________________________________________________________
+
+Long form:
+
+You REALLY want gnome-libs-1.2.8-0_helix_1 or thereabouts installed on
+your system.  That's what I've been testing against.  If you have no
+gnome, you can make due with glx-copter-commander, see "Making due with
+glx-copter-commander", below.
+
+You also need the gtk-gl-area library installed.  See
+http://www.student.oulu.fi/~jlof/gtkglarea
+
+If you're getting poor performance, visual artifacts, laggy mouse, etc,
+check out http://www.speakeasy.org/~morse/copter-commander/opengl.html
+
+Sound is supported, sort of.  If you have OpenAL (www.openal.org) on your
+system, then set the COCO_SOUND entry in the makefile to openal.  If you
+have gnome on your system, but no OpenAL, set it to esd.  Otherwise set it
+to mute.  The problem with both OpenAL and ESD is that they take too much
+CPU, and this results in lost frames of animation.  For that reason a C-s
+hotkey was introduced, to turn it on and off when you need too.  Also, I
+know that the sound is played as a seperate thread, so a MP machine should
+have good performance.  But, dammit, the sound card has specialized
+hardware for doing this kind of stuff, it shouldn't tie up the cpu!  If
+anyone has advice on this, please tell.  How do other games do it?
+
+________________________________________________________________
+
+Making due with glx-copter-commander:
+
+Two executables are made: copter-commander, linked against gnome
+libraries, and glx-copter-commander, linked against bare X and OpenGL.
+This version has an obvuscated UI, but its easy to build on wierd systems
+without gnome, say, Irix.  
+
+Most of your setup you do with the command line.  First start a server:
+
+  glx-copter-commander server --level balloon-run
+
+Then start a client with
+
+  glx-copter-commander --host <SERVER>
+
+The client and host may run on the same machine without much slowdown.
+
+Once the client has started, put your mouse over the window and press 'p',
+then space.  (Or maybe the other way round?).  The first negotiates a
+connection.  The second starts the game, if it hasn't already.  Yes,
+there's NO visual feedback for the connection being made, or players
+joining.  That's why this is deprecated.  :|
+
+________________________________________________________________
+
+Troubleshooting:
+
+Contact copter-commander-devel@bomberlan.net

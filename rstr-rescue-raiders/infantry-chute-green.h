@@ -1,0 +1,4 @@
+#define COCO_INFANTRY_CHUTE_GREEN_RASTER_W 21
+#define COCO_INFANTRY_CHUTE_GREEN_RASTER_H 30
+
+extern struct coco_raster coco_infantry_chute_green_raster;

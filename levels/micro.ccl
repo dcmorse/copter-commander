@@ -1,0 +1,20 @@
+;;; -*- Mode: lisp; -*-
+
+
+(define-coco-level micro
+    1 0                                 ; coco-version
+    1                                   ; level-version
+    2000                                ; width
+    ((ggpb (pillbox (- board-w (w pillbox)) good-guys 0 gghq))
+     (gghq (headquarters (right-center headquarters 300) good-guys ggpb))
+     (gglp (landing-pad (right-center headquarters 500)))
+        
+     (bbpb (pillbox 0 bad-guys 0 bbhq))      
+     (bbhq (headquarters (left-center headquarters 300) bad-guys bbpb))
+     (bblp (landing-pad (left-center landing-pad 500)))
+
+     (nil  (traffic-sign (left-center traffic-sign -300) 0))
+     (nil  (traffic-sign (right-center traffic-sign -300) 0))
+
+     ))
+

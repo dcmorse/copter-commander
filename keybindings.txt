@@ -1,0 +1,23 @@
+escape               ungrab mouse
+tab                  regrab mouse
+                     
+mouse left           turn around
+shift, mouse middle  fire gun
+z, mouse right       drop bomb
+x                    launch missle
+c                    launch rocket
+space                parachute men (when on board)
+                     
+t                    order tank
+m                    order man
+e                    order engineer
+a                    order anti-aircraft truck
+v                    order demolition van
+h                    order helicopter gunship
+                     
+return               talk mode (return sends)
+                     
+C-s                  toggle sound on/off
+C-b                  toggle alpha blending on/off
+C-n                  reload copter graphic, 
+                     hack for nVidia 0.95 bug.

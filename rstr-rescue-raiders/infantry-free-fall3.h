@@ -1,0 +1,4 @@
+#define COCO_INFANTRY_FREE_FALL3_RASTER_W 13
+#define COCO_INFANTRY_FREE_FALL3_RASTER_H 16
+
+extern struct coco_raster coco_infantry_free_fall3_raster;

@@ -1,0 +1,4 @@
+#define COCO_COPTER_COMMANDER_RASTER_W 238
+#define COCO_COPTER_COMMANDER_RASTER_H 29
+
+extern struct coco_raster coco_copter_commander_raster;

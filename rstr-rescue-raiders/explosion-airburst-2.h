@@ -1,0 +1,4 @@
+#define COCO_EXPLOSION_AIRBURST_2_RASTER_W 70
+#define COCO_EXPLOSION_AIRBURST_2_RASTER_H 70
+
+extern struct coco_raster coco_explosion_airburst_2_raster;

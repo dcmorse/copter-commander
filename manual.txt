@@ -1,0 +1,59 @@
+Copter Commander is a side-scrolling multi-player game.  To learn it, play
+by yourself once or twice on the "flashpoint" level.  Or for a harder
+challenge, try the "solo-play" level.
+
+The objective of Copter Commander is to destroy the opponents Headquarters
+Crawler (HQC).  The HQC is extremely armored, most weapons can not damage
+it.  Only a demolition van, laden with unstable explosives, is capable of
+doing the job.
+
+As Copter Commander, you must deploy your demolition vans and other units,
+and escort them to their targets.  
+
+You pilot a heavily armed helicopter gunship.  Its capabilities:
+
+ * rapid fire cannon     - a good close range weapon against any foe
+ * 500 pound bombs       - the weapon of choice versus ground targets
+ * radar guided missiles - long range weapon, primarily air to air
+ * 2.75 inch rockets     - a powerful air to ground weapon
+ * Paratroopers          - men picked up from the ground may be air dropped 
+
+You may order certain types of units to assist you.  These will emerge
+beside your landing pad and begin their long trek towards enemy territory:
+
+ * Demolition Van        - very vulnerable units for destroying enemy HQC
+ * Tank                  - tough land unit excellent versus all other units
+ * Anti Aircraft Truck   - carries a single radar guided missile 
+ * Man                   - versatile infantry, may capture some buildings
+ * Engineer              - a type of infantry, can repair damaged guns
+
+Levels may contain a number of buildings of various types:
+
+ * Hut                   - floats deadly barrage balloons to deter aircraft
+ * Bunker                - invulnerable to direct assault by non-tank units
+ * Anti Aircraft Gun     - attacks hostile copters
+ * Anti Tank Gun         - makes salad of hostile ground vehicles
+ * Landing Pad           - refuels and repairs copters
+ * HQ Crawler            - mounts a deadly radar guided missile launcher
+
+Each player has a certain amount of funds available, which may be used to
+purchase troops, including replacement helicopter gunships.  The costs
+are:  
+
+ * Man                   - 1 fund
+ * Engineer              - 2 funds
+ * Demolition Van        - 2 funds
+ * Anti Aircraft Truck   - 3 funds
+ * Tank                  - 4 funds
+ * Civvie Helicopter     - 4 funds, should you run out of Gunships
+ * Helicopter Gunship    - 20 funds
+
+More funds can be obtained by destroying enemy units and engaging in
+daring attacks.
+
+Levels start with each team's HQ Crawlers on opposite sides of the level,
+moving slowly towards each other.  Sides try to capture buildings near the
+enemy's HQC in order to make it hard for their enemies to get past them.
+The first team's demo van to make it to the enemy HQ Crawler wins.
+
+Good Luck, Copter Commander!
