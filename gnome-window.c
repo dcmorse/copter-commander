@@ -1194,9 +1194,11 @@ coco_chatroom_dialog_new( GtkWindow *window_parent )
   gtk_box_pack_start( GTK_BOX( outter_vbox ), 
                       paned,
                       TRUE, TRUE, 0 );
-  /* set chatroom dialog minimum size to be pretty big -dm 05-07-2001 */
-  gtk_widget_set_usize( dialog, COCO_OFFICIAL_WINDOW_W,
-                        COCO_OFFICIAL_WINDOW_H );
+  { /* set chatroom dialog minimum size to be pretty big -dm 05-07-2001 */
+    gint w, h;
+    gdk_window_get_size( GTK_WIDGET( window_parent )->window, &w, &h);
+    gtk_widget_set_usize( dialog, w, h );
+  }
   /* enable user resizing */
   gtk_window_set_policy( GTK_WINDOW( dialog ), FALSE, TRUE, FALSE );
 
