@@ -1303,6 +1303,13 @@ coco_gtk_widget_destroy_adapter( void *data, union coco_message *message )
 }
 
 
+void
+coco_set_dialog_position( GtkWindow *dialog )
+{
+  /* or could use gtk_widget_set_uposition( dialog, 1, 2 ) */
+  gtk_window_set_position( dialog, GTK_WIN_POS_CENTER );
+}
+
 GtkWidget *
 coco_chatroom_dialog_new( GtkWindow *window_parent )
 {
@@ -1326,7 +1333,9 @@ coco_chatroom_dialog_new( GtkWindow *window_parent )
   { /* set chatroom dialog minimum size to be pretty big -dm 05-07-2001 */
     gint w, h;
     gdk_window_get_size( GTK_WIDGET( window_parent )->window, &w, &h);
-    gtk_widget_set_usize( dialog, w, h );
+    gtk_widget_set_usize( dialog, 
+                          COCO_MAX( 100, w-100 ), COCO_MAX( 100, h-100 ) );
+    /* gtk_widget_set_uposition( dialog, 1, 2 ); doesn't work */
   }
   /* enable user resizing */
   gtk_window_set_policy( GTK_WINDOW( dialog ), FALSE, TRUE, FALSE );
@@ -1353,6 +1362,8 @@ coco_chatroom_dialog_new( GtkWindow *window_parent )
                         (gpointer) id );
   }
 
+  coco_set_dialog_position( GTK_WINDOW( dialog ) );
+  
   gtk_widget_show_all( outter_vbox );
 
   return dialog;
@@ -1554,6 +1565,8 @@ coco_use_join_dialog( GtkWidget *parent_window )
 
   gtk_widget_show_all( table );
 
+  coco_set_dialog_position( GTK_WINDOW( dialog ) );
+
  RETRY:
   button_index = gnome_dialog_run( GNOME_DIALOG( dialog ) );
   if (0==button_index)
@@ -1753,6 +1766,7 @@ coco_tutorial_dialog_new( GtkWidget *parent_window )
       radio = gtk_radio_button_new_with_label_from_widget( prev, pretty );
       gtk_box_pack_start( vbox, radio, TRUE, TRUE, 0 );
     }
+  coco_set_dialog_position( GTK_WINDOW( dialog ) );
   gtk_widget_show_all( GNOME_DIALOG( dialog )->vbox );
   return dialog;
 }
@@ -1905,6 +1919,7 @@ coco_join_progress_dialog_new( GtkWindow *parent_window, char *host, int port,
   gtk_progress_bar_set_orientation( GTK_PROGRESS_BAR( progress ),
                                     GTK_PROGRESS_LEFT_TO_RIGHT );
   gtk_box_pack_start( vbox, progress, TRUE, TRUE, 0 );
+  coco_set_dialog_position( GTK_WINDOW( dialog ) );
   gtk_widget_show( progress );
   if (progress_return) *progress_return = progress;
   return dialog;
@@ -2202,6 +2217,8 @@ coco_use_new_game_dialog( GtkWidget *parent_window )
   }
 
   /* coco_gtk_kennel_resize( kennel, 5, 5 ); */
+
+  coco_set_dialog_position( GTK_WINDOW( dialog ) );
 
  RETRY:
   button_index = gnome_dialog_run( GNOME_DIALOG( dialog ) );

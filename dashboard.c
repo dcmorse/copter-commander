@@ -135,7 +135,7 @@ coco_draw_dashboard_fuel( int x, struct coco_cstate *cstate,
   coco_i32 cla_idx = cstate->dashinfo.camera_class_index;
   coco_sobject_cl *cla = (cla_idx < 0) 
     ? NULL : (coco_sobject_classes + cla_idx);
-  int seconds, minutes;
+  int seconds;
 
   /* figure out draw color */
   if (cla
@@ -155,7 +155,8 @@ coco_draw_dashboard_fuel( int x, struct coco_cstate *cstate,
                         / ((double) cla->max_fuel)))
     : COCO_PI;
   length = COCO_FUEL_ICON_RASTER_H - 2;
-  x0 = x + (COCO_FUEL_ICON_RASTER_W>>1);
+  /* 1=fudge to make it look right */
+  x0 = x + COCO_DASHBOARD_ICON_INNER_TAB - (COCO_FUEL_ICON_RASTER_W>>1) - 1;
   /* 4=height of dot above bottom of raster: */
   y0 = COCO_DASHBOARD_BASELINE + 4;
   coco_draw_line( x0,
@@ -166,8 +167,7 @@ coco_draw_dashboard_fuel( int x, struct coco_cstate *cstate,
 
   /* draw boring old string */
   seconds = fuel / cstate->dashinfo.server_fps;
-  minutes = seconds / 60;
-  sprintf( buf, "%d:%02d", minutes, seconds % 60 );
+  sprintf( buf, "%d:%02d", seconds / 60, seconds % 60 );
   coco_draw_dashboard_string( x, buf );
 }
 

@@ -268,12 +268,25 @@
                  "coco_every_sobject_blip_color_index")
 
 (c-define-generic-function "sobject_is_visible" "sobject" "coco_bool"
-                           (("cam_left" "coco_gnum")
+                           (("sstate" "coco_sstate *")
+                            ("cam_left" "coco_gnum")
                             ("cam_right" "coco_gnum")
                             ("cam_or_null" "coco_sobject *")))
 
 (c-define-method "sobject_is_visible" "sobject" 
                  "coco_every_sobject_is_visible")
+
+(c-define-generic-function "sobject_summon_places" "sobject" "void"
+                           (("sstate"     "coco_sstate *")
+                            ("enable_return" "coco_bool **")
+                            ("disable_until_return" "coco_u32 **")))
+
+
+(c-define-method "sobject_summon_places" "sobject"
+                 "coco_every_sobject_summon_places")
+
+
+
 
 (c-define-class "sndobject" ("sobject")
   (("canonical_w"  "0")
@@ -284,10 +297,13 @@
    ("sound" :arg "coco_sound_type")
    ("facing" "0")
    ("nationality" "COCO_NEUTRAL")
-   ("phase"       "COCO_VAPOR")))
+   ("phase"       "COCO_VAPOR")
+   ;; If set, is audible to only that plr, and disregards spatial test.
+   ("audible_to_player" "-1" "int") 
+   ))
 
 (c-define-method "sobject_update_state" "sndobject" 
-                 "coco_sndobject_update_state")
+                 "coco_auto_die_update_state")
 
 (c-define-method "sobject_is_visible" "sndobject" 
                  "coco_sndobject_is_visible")
@@ -470,8 +486,17 @@
    ("health_max"   "5")
    ("x_force"      "2")
    ("dashboard_icon" "&coco_cargo_copter_icon_raster")
-   ("max_kits"     "1"))
+   ("max_kits"     "1")
+   ;; cargo copter can summon even if other units don't
+   ("summon_enable" "COCO_TRUE" "coco_bool")
+   ("summon_disable_until" "0" "coco_u32"))
   :init-by-list-fn :automatic)
+
+(c-define-method "sobject_summon_places" "cargo_copter"
+                 "coco_cargo_copter_summon_places")
+
+(c-define-method "sobject_update_state" "cargo_copter" 
+                 "coco_cargo_copter_update_state")
 
 (c-define-class "mech" ("camera")
   (("energy"       "COCO_SOBJECT_MAX_ENERGY( inst )" "coco_u16")
@@ -985,6 +1010,27 @@
 (c-define-method "effective_damage" "infantry" 
                  "coco_infantry_effective_damage")
 
+(c-define-class "flying_player_name" ("sobject")
+  (("facing" "0")
+   ("phase" "COCO_VAPOR")
+   ("is_comp"      :arg "coco_bool")
+   ("p_or_c_index" :arg "unsigned char")
+   ("z" "2")
+   ("cobject_draw" "coco_flying_player_name_draw")
+   ("cobject_guess_nationality_fn"
+    "coco_flying_player_name_guess_nationality")
+   ("default_blip_color_index" 
+       "COCO_BLIP_TRIPLET_TRANSPARENT")))
+
+(c-define-method "sobject_is_visible" "flying_player_name" 
+                 "coco_flying_player_name_is_visible")
+
+(c-define-method "sobject_update_state" "flying_player_name" 
+                 "coco_auto_die_update_state")
+
+(c-define-method "sobject_to_cobject" "flying_player_name"
+                 "coco_flying_player_name_to_cobject")
+
 (c-define-class "munition" ("sobject")
   (("dx"           :arg)
    ("dy"           :arg)
@@ -1151,7 +1197,7 @@
 (c-define-method "ground_collide" "spark" "coco_ignore_ground_collide")
 
 (c-define-method "sobject_update_state" "spark"
-                 "coco_spark_update_state")
+                 "coco_auto_die_update_state")
 
 (c-define-class "shrapnel" ("munition")
   (("facing"       "0")

@@ -1285,6 +1285,27 @@ coco_emit_smoke_helper( coco_sobject *sobject, coco_sstate *sstate,
 
 
 
+void
+coco_summon_places( coco_sobject *sobject_or_null, 
+                    coco_sstate *sstate,
+                    coco_nationality nationality,
+                    coco_bool **summon_enable, 
+                    coco_u32 **summon_disable_until )
+{
+  if (sobject_or_null)
+    coco_sobject_summon_places( sobject_or_null, 
+                                COCO_SOBJECT_CL( sobject_or_null ),
+                                sstate, summon_enable, summon_disable_until );
+  else
+    {
+      struct coco_team *team = sstate->teams + nationality - COCO_GOOD_GUYS;
+      *summon_enable = & (team->summon_enable);
+      *summon_disable_until = & (team->summon_disable_until);
+    }
+}
+
+
+
 /* return true if something was summoned */
 coco_bool
 coco_summon_unit_maybe( coco_sstate *sstate, coco_sobject_cl *cl, 
@@ -1297,8 +1318,11 @@ coco_summon_unit_maybe( coco_sstate *sstate, coco_sobject_cl *cl,
                         coco_sobject *summoner /* possibly NULL */
                         )
 {
-  struct coco_team *team = sstate->teams + nationality - COCO_GOOD_GUYS;
-  if (team->summon_enable 
+  coco_bool *summon_enable;
+  coco_u32 *summon_disable_until;
+  coco_summon_places( summoner, sstate, nationality, &summon_enable,
+                      &summon_disable_until );
+  if (*summon_enable 
       && coco_subtract_funds_available( p_or_c_index, is_comp, cl->cost ))
     {
       coco_sobject *unit = coco_sstate_allocate_sobject( sstate );
@@ -1334,9 +1358,10 @@ coco_summon_unit_maybe( coco_sstate *sstate, coco_sobject_cl *cl,
               : (-COCO_GROUND_UNIT_WARP_IN_X - cw);
           init_fn( unit, cl, x, nationality );
           delta_t = COCO_GROUND_UNIT_DX_MAX * (COCO_SOBJECT_W( unit ) + 5);
-          team->summon_enable = COCO_FALSE;
-          team->summon_disable_until
+          *summon_enable = COCO_FALSE;
+          *summon_disable_until
             = COCO_U32_ADD_N_MODULAR( sstate->time, delta_t );
+          coco_make_snd( COCO_SOUND_SUMMON_POP, sstate, x, COCO_GROUND_Y );
           return COCO_TRUE;
         }
       else
@@ -1419,6 +1444,35 @@ coco_camera_update_state( coco_sobject *sobject,
   else coco_warn_printf( "%s %d is not comp nor plr\n",
                          COCO_SOBJECT_NAME( sobject ),
                          COCO_SOBJECT_INDEX( sobject ) );
+
+  { /* flying-player-name */
+    coco_sobject *fpn;
+    fpn = coco_sstate_allocate_sobject( sstate );
+    if (fpn)
+      {
+        int p_or_c_index = is_comp
+          ? COCO_SOBJECT_COMP_INDEX( sobject )
+          : COCO_SOBJECT_CAMERA_INDEX( sobject );
+        coco_nationality nat = COCO_SOBJECT_NATIONALITY( sobject );
+        if ((nat != COCO_GOOD_GUYS)&&(nat != COCO_BAD_GUYS))
+          {
+            coco_warn_printf( "camera has unknown nationality %d, "
+                              "its flying_player_name will be COCO_BAD_GUYS\n",
+                              nat );
+            nat = COCO_BAD_GUYS;
+          }
+
+        assert( p_or_c_index >= 0 );
+
+        coco_init_flying_player_name( fpn, COCO_FLYING_PLAYER_NAME_CLASS,
+                                      COCO_SOBJECT_X( sobject ),
+                                      COCO_SOBJECT_Y( sobject ),
+                                      nat,
+                                      is_comp, p_or_c_index );
+      }
+  }
+
+  /* call-next-method */
   return coco_sobject_update_state( sobject, cl->super, sstate );
 }
 
@@ -2057,7 +2111,6 @@ coco_mech_update_state( coco_sobject *sobject,
     if ((COCO_SOBJECT_Y( sobject ) > COCO_GROUND_Y+1)
         && !landed_p)
       {
-        coco_cookie( "here %d\n", run );
         if (run)
           {
             coco_gnum dxroom;
@@ -3019,6 +3072,24 @@ coco_metal_shrapnel_to_cobject( coco_sobject *sobject, coco_sobject_cl *cl,
 }
 
 void
+coco_flying_player_name_to_cobject( coco_sobject *sobject, coco_sobject_cl *cl,
+                                    coco_cobject *cobject, coco_gnum cam_left,
+                                    coco_bool nbo )
+{
+  coco_cnum x, y;
+  COCO_COBJECT_CL_INDEX( cobject ) = COCO_SOBJECT_CL_INDEX( sobject );
+  cobject->fpn.bits 
+    = (1 & (COCO_SOBJECT_NATIONALITY( sobject ) - COCO_GOOD_GUYS))
+    | (COCO_FLYING_PLAYER_NAME_IS_COMP( sobject ) ? 2 : 0)
+    | (COCO_FLYING_PLAYER_NAME_P_OR_C_INDEX( sobject ) << 2);
+  y = COCO_SOBJECT_Y( sobject );
+  x = COCO_SOBJECT_X( sobject ) - cam_left;
+  COCO_COBJECT_X( cobject ) = nbo ? COCO_CNUM_HTON( x ) : x;
+  cobject->fpn.y            = nbo ? COCO_CNUM_HTON( y ) : y;
+}
+
+
+void
 coco_sndobject_to_cobject( coco_sobject *sobject, coco_sobject_cl *cl,
                            coco_cobject *cobject, coco_gnum cam_left,
                            coco_bool nbo )
@@ -3538,17 +3609,46 @@ coco_update_boot_camp( coco_sstate *sstate,
 }
 
 
+coco_bool
+coco_sobject_locked_on( coco_sobject *sobject, coco_sstate *sstate )
+{
+  int index = COCO_SOBJECT_INDEX( sobject );
+  COCO_DO_SSTATE_OBJECTS( missile, sstate,
+  {
+    if (coco_sobject_subtype_p( COCO_SOBJECT_CL( missile ),
+                                COCO_MISSILE_CLASS )
+        && (COCO_MISSILE_TARGET_INDEX( missile ) == index))
+      return COCO_TRUE;
+  });
+  return COCO_FALSE;
+}
+
+
 
 void
 coco_write_cstate_serial_header( struct coco_cstate_serial_header *str, 
                                  coco_sstate *sstate, 
                                  coco_sobject *cam_object_or_null,
-                                 int player_index,
+                                 int p_or_c_index, coco_bool is_comp,
                                  int cobject_count,
                                  int cblip_count,
                                  coco_i32 cam_left,
                                  coco_i32 camera_index )
 {
+  coco_bool *summon_enable;
+  coco_u32 *summon_disable_until;
+  int enable, lock;
+
+  coco_summon_places( cam_object_or_null, sstate, 
+                      COCO_PORC_NATIONALITY( p_or_c_index, is_comp ),
+                      &summon_enable, &summon_disable_until );
+
+  enable = ((!(*summon_enable)) << COCO_DASHINFO_BIT_SUMMON_DISABLE);
+  lock = cam_object_or_null 
+    ? (coco_sobject_locked_on( cam_object_or_null, sstate )
+       << COCO_DASHINFO_BIT_MISSILE_LOCK)
+    : 0;
+
   str->time = sstate->time;
   str->cobject_count = cobject_count;
   str->cblip_count = cblip_count;
@@ -3562,6 +3662,8 @@ coco_write_cstate_serial_header( struct coco_cstate_serial_header *str,
   str->minor_mission = sstate->tutorial_objectives.minor_mission;
   str->angle_on      = sstate->tutorial_objectives.angle_on;
   str->angle         = sstate->tutorial_objectives.angle;
+
+
   if (cam_object_or_null 
       && coco_sobject_subtype_p( COCO_SOBJECT_CL( cam_object_or_null ),
                                  COCO_COPTER_CLASS ))
@@ -3575,6 +3677,7 @@ coco_write_cstate_serial_header( struct coco_cstate_serial_header *str,
       str->dashinfo.engitroopers = COCO_COPTER_ENGITROOPERS( cam_object_or_null );
       str->dashinfo.fuel         = COCO_COPTER_FUEL( cam_object_or_null );
       str->dashinfo.kits         = COCO_COPTER_KITS( cam_object_or_null );
+      str->dashinfo.bits         = enable | lock;
     }
   else if (cam_object_or_null
            && coco_sobject_subtype_p( COCO_SOBJECT_CL( cam_object_or_null ),
@@ -3589,16 +3692,21 @@ coco_write_cstate_serial_header( struct coco_cstate_serial_header *str,
       str->dashinfo.engitroopers = 0;
       str->dashinfo.fuel         = COCO_MECH_ENERGY( cam_object_or_null );
       str->dashinfo.kits         = 0;
+      str->dashinfo.bits         = enable | lock;
     }
   else
-    str->dashinfo.bullets = str->dashinfo.bombs = str->dashinfo.missiles
-      = str->dashinfo.rockets = str->dashinfo.paratroopers
-      = str->dashinfo.fuel = str->dashinfo.kits = 0;
-  str->dashinfo.copters = coco_players[player_index].copters;
-  str->dashinfo.funds   = coco_players[player_index].funds;
+    {
+      str->dashinfo.bullets = str->dashinfo.bombs = str->dashinfo.missiles
+        = str->dashinfo.rockets = str->dashinfo.paratroopers
+        = str->dashinfo.fuel = str->dashinfo.kits = 0;
+      str->dashinfo.bits = enable;
+    }
+  str->dashinfo.copters = COCO_PORC_COPTERS( p_or_c_index, is_comp );
+  str->dashinfo.funds   = COCO_PORC_FUNDS( p_or_c_index, is_comp );
   str->dashinfo.server_fps = COCO_IDEAL_FRAMES_PER_SECOND;
   str->dashinfo.fancy_class_index 
-    = sstate->favorite_copter_class[player_index]->cl_index;
+    = COCO_PORC_FAVORITE_COPTER_CLASS( p_or_c_index, is_comp )->cl_index;
+  /* = sstate->favorite_copter_class[p_or_c_index]->cl_index; */
   str->dashinfo.camera_class_index
     = cam_object_or_null ? COCO_SOBJECT_CL_INDEX( cam_object_or_null ) : -1;
 }
@@ -3682,7 +3790,7 @@ coco_format_sstate_to_buffer( coco_sstate *sstate, int p_or_c_index,
   {
     /* this counting test must be synced with test below */
     coco_blip_index ci;
-    if (coco_sobject_is_visible( sobject, COCO_SOBJECT_CL( sobject ), 
+    if (coco_sobject_is_visible( sobject, COCO_SOBJECT_CL( sobject ), sstate,
                                  cam_left, cam_right, cam_object ))
       {
         if ((cam_idx >= 0) && (COCO_SOBJECT_INDEX( sobject ) == cam_idx))
@@ -3709,7 +3817,7 @@ coco_format_sstate_to_buffer( coco_sstate *sstate, int p_or_c_index,
     }
 
   coco_write_cstate_serial_header( send_buffer, sstate, cam_object,
-                                   p_or_c_index,
+                                   p_or_c_index, is_comp,
                                    cobject_count, cblip_count, cam_left,
                                    client_cam_idx );
   if (network_byte_order)
@@ -3725,7 +3833,7 @@ coco_format_sstate_to_buffer( coco_sstate *sstate, int p_or_c_index,
     COCO_DO_SSTATE_OBJECTS( sobject, sstate, 
     {
       /* this writing test must be synced with test above */
-      if (coco_sobject_is_visible( sobject, COCO_SOBJECT_CL( sobject ),
+      if (coco_sobject_is_visible( sobject, COCO_SOBJECT_CL( sobject ), sstate,
                                    cam_left, cam_right, cam_object ))
         {
           coco_sobject_to_cobject( sobject, COCO_SOBJECT_CL( sobject ),
@@ -3817,3 +3925,48 @@ coco_make_snd( coco_sound_type sound, coco_sstate *sstate,
     coco_init_sndobject( sobject, COCO_SNDOBJECT_CLASS, x, y, sound );
 }
 
+
+
+coco_bool
+coco_sobject_is_obscured( coco_sobject *sobject, coco_sstate *sstate )
+{
+  coco_gnum xx0, yy0, xx1, yy1;
+  coco_znum zz;
+  int ii;
+  xx0 = COCO_SOBJECT_X( sobject );
+  yy0 = COCO_SOBJECT_Y( sobject );
+  xx1 = xx0 + COCO_SOBJECT_W( sobject );
+  yy1 = yy0 + COCO_SOBJECT_H( sobject );
+  zz = COCO_SOBJECT_Z( sobject );
+  ii = COCO_SOBJECT_INDEX( sobject );
+  /* couldn't use COCO_DO_SSTATE_OBJECTS cuz of bugs */
+  { 
+    coco_sobject *sobj = sstate->sobjects;
+    coco_sobject *coco_sobject_end = sobj + sstate->sobject_size;
+    for (; sobj < coco_sobject_end; sobj++) 
+      if (COCO_SOBJECT_IN_USE( sobj ))
+        {
+          coco_gnum x0, y0, x1, y1;
+          coco_znum z;
+          int i;
+          x0 = COCO_SOBJECT_X( sobj );
+          y0 = COCO_SOBJECT_Y( sobj );
+          x1 = x0 + COCO_SOBJECT_W( sobj );
+          y1 = y0 + COCO_SOBJECT_H( sobj );
+          z = COCO_SOBJECT_Z( sobj );
+          i = COCO_SOBJECT_INDEX( sobj );
+          if (((z > zz) || ((z == zz) && (i>ii)))
+              &&
+              (((x0 <= xx0) && (x1 >= xx0)) || ((x0 <= xx1) && (x1 >= xx1)))
+              && 
+              (((y0 <= yy0) && (y1 >= yy0)) || ((y0 <= yy1) && (y1 >= yy1))))
+            {
+              if ((x0 <= xx0) && (x1 >= xx1)
+                  &&
+                  (y0 <= yy0) && (y1 >= yy1))
+                return COCO_TRUE;
+            }
+        }
+  };
+  return COCO_FALSE;
+}

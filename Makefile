@@ -39,12 +39,15 @@
 #
 # If your name is David Morse, you probably want to compile with
 # make COCO_OPTIMIZATION_FLAGS=-"g -DCOCO_DEBUG" COCO_LEVEL_DIRECTORY=/home/dm/coco/levels COCO_SOUND_DIRECTORY=/home/dm/coco/sounds COCO_SOUND=openal copter-commander
+# or on shadow
+# make COCO_OPTIMIZATION_FLAGS=-"g -DCOCO_DEBUG" COCO_LEVEL_DIRECTORY=/roam/dm/coco/levels COCO_SOUND_DIRECTORY=/roam/dm/coco/sounds COCO_OPENAL_INCLUDE_DIRECTORY=/usr/yokel/include COCO_OPENAL_LIB_DIRECTORY=/usr/yokel/lib COCO_SOUND=openal copter-commander
 # or if you're on cramwurm
 # make COCO_SOUND=mute COCO_GL_INCLUDE_DIRECTORY=/usr/local/include COCO_GL_LIB_DIRECTORY=/usr/local/lib COCO_LEVEL_DIRECTORY=/home/dm/coco/levels COCO_SOUND_DIRECTORY=/home/dm/coco/sounds glx-copter-commander
 
 # ____________________________________________________________________________
 #                            *** VERSION ***
 
+# Also have to change coco_version_string in globals.c -- should fix.
 COCO_MAJOR_VERSION=1
 COCO_MINOR_VERSION=1
 

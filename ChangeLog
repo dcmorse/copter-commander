@@ -1,3 +1,38 @@
+2001-07-11  David Morse  <dm@bomberlan.net>
+
+	* console.c: work in progress.
+
+2001-07-07  David Morse  <dm@bomberlan.net>
+
+	* methods.c (coco_flying_player_name_is_visible): not visible in
+	clouds.
+
+	* client.c (coco_play_intro_movie_frame): enforce maximum frame
+	rate during intro.
+
+	* dashboard.c (coco_draw_dashboard_fuel): fix fuel needle drawing
+	in wrong place.
+
+	* sobject.lisp (flying_player_name): created.
+
+2001-07-05  David Morse  <dm@bomberlan.net>
+
+	* gnome-window.c (coco_set_dialog_position): created and called.
+
+	* background-rescue-raiders.c (coco_set_sky_color): night by
+	default.
+
+	* openal-sound.c: largely re-wrote to improve performance. (or
+	maybe de-improve, but it works better on shadow).
+
+2001-07-04  David Morse  <dm@bomberlan.net>
+
+	* client.c (coco_cstate_draw): support for radar border status
+	color
+
+	* server.c (coco_write_cstate_serial_header): support for radar
+	border status color
+
 2001-06-25  David Morse  <dm@bomberlan.net>
 
 	* keybindings.txt: updated for mech and cargo copters.

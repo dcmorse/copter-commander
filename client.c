@@ -230,6 +230,12 @@ coco_neutral_guess_nationality( coco_cobject *cobject )
 }
 
 int
+coco_flying_player_name_guess_nationality( coco_cobject *cobject )
+{
+  return (int) (cobject->fpn.bits & 1) + COCO_GOOD_GUYS;
+}
+
+int
 coco_hut_guess_nationality( coco_cobject *cobject )
 {
   return (int) COCO_COBJECT_RASTER_INDEX( cobject );
@@ -470,6 +476,26 @@ coco_metal_shrapnel_draw( coco_cobject *cobject, coco_sobject_cl *cla )
   do scla = scla->super;
   while (scla->cobject_draw == coco_metal_shrapnel_draw);
   scla->cobject_draw( cobject, cla->super );
+}
+
+void
+coco_flying_player_name_draw( coco_cobject *cobject, coco_sobject_cl *cla )
+{
+  coco_nationality name_nat = COCO_COBJECT_NATIONALITY_GUESS( cobject );
+  coco_nationality cam_nat = coco_get_player_nationality( COCO_NEUTRAL );
+  int bits = cobject->fpn.bits;
+  coco_bool is_comp = (bits & 2) != 0;
+  int p_or_c_index = bits >> 2;
+  coco_color color = (name_nat == cam_nat) 
+    ? COCO_COLOR_FRY_FLYING_PLAYER_NAME
+    : COCO_COLOR_EMY_FLYING_PLAYER_NAME;
+  coco_cnum x = COCO_COBJECT_X( cobject );
+  coco_cnum y = COCO_COBJECT_Y( cobject );
+  const char *name = is_comp
+    ? coco_comp_names[coco_comps[p_or_c_index].name_index]
+    : coco_players[p_or_c_index].name;
+  coco_draw_color( color );
+  coco_draw_string( x, y, name, -1, &coco_default_font, COCO_BOTTOM );
 }
 
 
@@ -784,7 +810,6 @@ coco_mech_draw( coco_cobject *cobject, coco_sobject_cl *cla )
   lpdx = lp->dx;
   lpdy = lp->dy;
   coco_draw_raster( x+lpdx, y+lpdy, lp->r );
-  coco_cookie( "ti=%d\n", (int) ti );
   tp = coco_torso_parts+ti;
   coco_draw_raster( x+tp->dx, y+tp->dy+lp->dh, tp->r );
 }
@@ -920,6 +945,7 @@ coco_draw_mission_objective( struct coco_cstate *cstate )
 void 
 coco_cstate_draw( struct coco_cstate *cstate )
 {
+  coco_color line_color;
   struct timeval now;
   /*  struct timezone tz;*/
   int i;
@@ -945,7 +971,13 @@ coco_cstate_draw( struct coco_cstate *cstate )
             cla->cobject_draw( cobject, cla );
           }
       }
-  coco_draw_color( COCO_COLOR_DASHBOARD_FG );
+  if (cstate->dashinfo.bits & (1<<COCO_DASHINFO_BIT_MISSILE_LOCK))
+    line_color = COCO_COLOR_DASHBOARD_MISSILE_LOCK;
+  else if (cstate->dashinfo.bits & (1<<COCO_DASHINFO_BIT_SUMMON_DISABLE))
+    line_color = COCO_COLOR_DASHBOARD_SUMMON_DISABLE;
+  else
+    line_color = COCO_COLOR_DASHBOARD_FG;
+  coco_draw_color( line_color );
   coco_draw_line( 0, COCO_RADAR_Y-1, coco_real_window_w, COCO_RADAR_Y-1 );
   coco_draw_line( 0,                  COCO_RADAR_Y+COCO_RADAR_H, 
                   coco_real_window_w, COCO_RADAR_Y+COCO_RADAR_H );
@@ -1581,7 +1613,12 @@ coco_draw_intro_movie_smoke( coco_gnum truck_x, coco_gnum truck_y,
 coco_bool
 coco_play_intro_movie_frame( coco_bool advance_frame, coco_bool rewind )
 {
+  struct timeval mintime;
+  struct timeval tmp;
   static unsigned int movie_frame = 0;
+
+  coco_time_pad_start( &tmp );
+
   if (rewind) movie_frame = 0;
   coco_clear_window();
 
@@ -1603,8 +1640,7 @@ coco_play_intro_movie_frame( coco_bool advance_frame, coco_bool rewind )
       static int last_ascended_frame = 0;
       static int last_ascended_star_x, last_ascended_star_y;
       int y_theoretical, star_x;
-      star_x = (-COCO_MOVIE_TRUCK_FRAME<<3)
-        - ((movie_frame - COCO_MOVIE_TRUCK_FRAME) * 12);
+      star_x = (-movie_frame<<3);
       y_theoretical = (movie_frame + 15 - COCO_MOVIE_TRUCK_FRAME) <<1;
       if (!((y_theoretical + (COCO_COPTER_COMMANDER_RASTER_H<<2))
             >= coco_real_window_h))
@@ -1745,6 +1781,9 @@ coco_play_intro_movie_frame( coco_bool advance_frame, coco_bool rewind )
     coco_missile_draw( &cobject, COCO_MISSILE_CLASS );
   } */
   coco_swap_buffer();
+  mintime.tv_sec = 0;
+  mintime.tv_usec = 13000;
+  coco_time_pad_end( &tmp, &mintime );
   if (advance_frame) movie_frame++;
   return movie_frame<1000;
 }
@@ -1842,13 +1881,15 @@ coco_handle_compflux_message_helper( coco_msg_ptr msg, coco_nationality nat,
   for (i=0; i<COCO_MAX_COMPS; i++)
     if (msg->compflux.comps[i].in_use)
       {
-        if (msg->compflux.comps[i].nationality == nat) 
+        coco_nationality cfnat = msg->compflux.comps[i].nationality;
+        if (cfnat == nat) 
           {
             count++;
             next_last_i = last_i;
             last_i = i;
           }
       }
+    else coco_comps[i].in_use = COCO_FALSE;
   switch (count) {
   case 0:
     return COCO_FALSE;
@@ -1885,6 +1926,16 @@ void
 coco_handle_compflux_message( coco_msg_ptr msg )
 {
   coco_nationality mynat = coco_get_player_nationality( COCO_NEUTRAL );
+  int j;
+  for (j=0; j<COCO_MAX_COMPS; j++)
+    if (msg->compflux.comps[j].in_use)
+      {
+        coco_comps[j].in_use = COCO_TRUE;
+        coco_comps[j].index = j;
+        coco_comps[j].nationality = msg->compflux.comps[j].nationality;
+        coco_comps[j].name_index = msg->compflux.comps[j].name_index;
+      }
+    else coco_comps[j].in_use = COCO_FALSE;
   if (coco_old_compflux_initialized && coco_old_compflux_interesting)
     {
       int i;

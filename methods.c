@@ -88,20 +88,26 @@ coco_slow_heal( coco_sobject *sobject, coco_sstate *sstate )
 }
 
 coco_bool
-coco_sndobject_update_state( coco_sobject *sobject,
-                             coco_sobject_cl *cl,
-                             coco_sstate *sstate )
+coco_auto_die_update_state( coco_sobject *sobject,
+                            coco_sobject_cl *cl,
+                            coco_sstate *sstate )
 {
   return COCO_FALSE;
 }
 
-coco_bool 
-coco_spark_update_state( coco_sobject *sobject, 
-                         coco_sobject_cl *cl, 
-                         coco_sstate *sstate )
+coco_bool
+coco_cargo_copter_update_state( coco_sobject *sobject,
+                                coco_sobject_cl *cl,
+                                coco_sstate *sstate )
 {
-  return COCO_FALSE;
+  if ((!COCO_CARGO_COPTER_SUMMON_ENABLE( sobject ))
+      && (sstate->time 
+          == COCO_CARGO_COPTER_SUMMON_DISABLE_UNTIL( sobject )))
+    COCO_CARGO_COPTER_SUMMON_ENABLE( sobject ) = COCO_TRUE;
+  /* call-next-method */
+  return coco_sobject_update_state( sobject, cl->super, sstate );
 }
+
 
 coco_bool 
 coco_ground_unit_update_state( coco_sobject *sobject, 
@@ -899,6 +905,7 @@ coco_metal_shrapnel_update_state( coco_sobject *sobject,
   /* call-next-method */
   return coco_sobject_update_state( sobject, cl->super, sstate );
 }
+
 
 
 coco_bool 
@@ -2786,9 +2793,42 @@ coco_copter_mech_blip_color_index( coco_sobject *sobject,
 }
 
 
+void 
+coco_cargo_copter_summon_places( coco_sobject *sobject, coco_sobject_cl *cl,
+                                 coco_sstate *sstate, 
+                                 coco_bool **summon_enable,
+                                 coco_u32 **summon_disable_until )
+{
+  if (COCO_COPTER_LANDED_P( sobject )
+      && !(COCO_COPTER_LANDED_ON_PAD_P( sobject )))
+    {
+      *summon_enable
+        = &COCO_CARGO_COPTER_SUMMON_ENABLE( sobject );
+      *summon_disable_until
+        = &COCO_CARGO_COPTER_SUMMON_DISABLE_UNTIL( sobject );
+    }
+  else
+    /* call-next-method */
+    coco_sobject_summon_places( sobject, cl->super, sstate, summon_enable,
+                                summon_disable_until );
+}
+
+void 
+coco_every_sobject_summon_places( coco_sobject *sobject, coco_sobject_cl *cl,
+                                 coco_sstate *sstate, 
+                                 coco_bool **summon_enable,
+                                 coco_u32 **summon_disable_until )
+{
+  struct coco_team *t = sstate->teams 
+    + COCO_SOBJECT_NATIONALITY( sobject ) - COCO_GOOD_GUYS;
+  *summon_enable = &(t->summon_enable);
+  *summon_disable_until = &(t->summon_disable_until);
+}
+
 coco_bool
 coco_every_sobject_is_visible( coco_sobject *sobject,
                                coco_sobject_cl *cl,
+                               coco_sstate *sstate, 
                                coco_gnum cam_left,
                                coco_gnum cam_right,
                                coco_sobject *cam_or_null )
@@ -2801,12 +2841,16 @@ coco_every_sobject_is_visible( coco_sobject *sobject,
 coco_bool
 coco_sndobject_is_visible( coco_sobject *sobject,
                            coco_sobject_cl *cl,
+                           coco_sstate *sstate, 
                            coco_gnum cam_left,
                            coco_gnum cam_right,
                            coco_sobject *cam_or_null )
 {
   coco_gnum obj_x = COCO_SOBJECT_X( sobject );
-  if (cam_or_null)
+  int audible = COCO_SNDOBJECT_AUDIBLE_TO_PLAYER( sobject );
+  if (cam_or_null && (audible >= 0))
+    return audible == COCO_SOBJECT_CAMERA_INDEX( cam_or_null );
+  else if (cam_or_null)
     {
       coco_gnum r = coco_game_fx_radius[COCO_SNDOBJECT_SOUND( sobject )];
       coco_gnum d = abs( obj_x - COCO_SOBJECT_X( cam_or_null ) );
@@ -2814,6 +2858,36 @@ coco_sndobject_is_visible( coco_sobject *sobject,
     }
   else return (cam_left <= obj_x) && (obj_x <= cam_right);
 }
+
+coco_bool
+coco_flying_player_name_is_visible( coco_sobject *sobject,
+                                    coco_sobject_cl *cl,
+                                    coco_sstate *sstate, 
+                                    coco_gnum cam_left,
+                                    coco_gnum cam_right,
+                                    coco_sobject *cam_or_null )
+{
+  coco_bool is_comp, is_comp_same, p_or_c_index_same, nat_same;
+  int p_or_c_index;
+  /* call-next-method */
+  if (!cam_or_null 
+      || !coco_sobject_is_visible( sobject, cl->super, sstate, cam_left, 
+                                   cam_right, cam_or_null ))
+    return COCO_FALSE;
+  is_comp = (p_or_c_index = COCO_SOBJECT_COMP_INDEX( cam_or_null )) >= 0;
+  if (!is_comp) p_or_c_index = COCO_SOBJECT_CAMERA_INDEX( cam_or_null );
+  is_comp_same 
+    = COCO_FLYING_PLAYER_NAME_IS_COMP( sobject ) == is_comp;
+  p_or_c_index_same
+    = COCO_FLYING_PLAYER_NAME_P_OR_C_INDEX( sobject ) == p_or_c_index;
+  nat_same
+    = (COCO_SOBJECT_NATIONALITY( sobject )
+       == COCO_SOBJECT_NATIONALITY( cam_or_null ));
+  return (!(is_comp_same && p_or_c_index_same))
+            && (nat_same
+                ||coco_sobject_is_obscured( cam_or_null, sstate ) < 2 );
+}
+
 
 coco_mini_point
 coco_sobject_weapon_hardpoint_by_raster_index( coco_sobject_cl *cla, 

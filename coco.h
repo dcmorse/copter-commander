@@ -290,6 +290,10 @@ int coco_check_hton( void );
 
 int coco_dice( int number, unsigned char sides );
 
+void coco_time_pad_start( struct timeval *private );
+
+void coco_time_pad_end( struct timeval *private, struct timeval *how_long );
+
 /* graphics.c */
 
 typedef unsigned int coco_color;
@@ -351,7 +355,11 @@ extern coco_color COCO_COLOR_FONT;
 #define COCO_COLOR_BARREL COCO_COLOR_GREY
 #define COCO_COLOR_DASHBOARD_FG COCO_COLOR_GREY
 #define COCO_COLOR_DASHBOARD_FULL COCO_COLOR_GREEN_GREY
+#define COCO_COLOR_DASHBOARD_SUMMON_DISABLE COCO_COLOR_YELLOW
+#define COCO_COLOR_DASHBOARD_MISSILE_LOCK COCO_COLOR_RED
 #define COCO_COLOR_MISSION_OBJECTIVE COCO_COLOR_FONT
+#define COCO_COLOR_FRY_FLYING_PLAYER_NAME COCO_COLOR_FONT
+#define COCO_COLOR_EMY_FLYING_PLAYER_NAME COCO_COLOR_RED
 #elif (COCO_APPEARANCE == COCO_APPEARANCE_DOODLE)
 #define COCO_COLOR_BACKGROUND COCO_COLOR_GREY_E
 #define COCO_COLOR_GROUND COCO_COLOR_GREY_4
@@ -366,6 +374,8 @@ extern coco_color COCO_COLOR_FONT;
 #define COCO_COLOR_DASHBOARD_FG COCO_COLOR_GREY_3
 #define COCO_COLOR_DASHBOARD_FULL COCO_COLOR_BLACK
 #define COCO_COLOR_MISSION_OBJECTIVE COCO_COLOR_BLACK
+#define COCO_COLOR_FRY_FLYING_PLAYER_NAME COCO_COLOR_GREY_2
+#define COCO_COLOR_EMY_FLYING_PLAYER_NAME COCO_COLOR_BLACK
 #else
 #error COCO_APPEARANCE is not a value known to coco.h
 #endif
@@ -644,11 +654,16 @@ struct coco_dashboard_info {
   coco_u32 copters;
   coco_u32 funds;
   coco_u32 fuel;
+  unsigned char bits; /* COCO_DASHINFO_BIT_* */
   unsigned char kits;
   unsigned char server_fps;
   unsigned char fancy_class_index;
   coco_i32 camera_class_index; /* so wide a type for -1 */
 };
+
+ /* 0: summon-disable, 1: missile-lock */
+#define COCO_DASHINFO_BIT_SUMMON_DISABLE 0
+#define COCO_DASHINFO_BIT_MISSILE_LOCK 1
 
 /* adding members to this requires modification of the associated _hton
    and _ntoh functions. */
@@ -1053,10 +1068,11 @@ typedef unsigned char coco_sound_type;
 #define COCO_SOUND_COPTER_TAKE_OFF    13
 #define COCO_SOUND_MECH_TAKE_OFF      14
 #define COCO_SOUND_PLASMA_CANNON      15
+#define COCO_SOUND_SUMMON_POP         16
 
 /* sounds get 0-(coco_game_sounds_size - 1), and have some arrays that big
    in gamesho. */
-#define COCO_GAME_SOUNDS_SIZE         16
+#define COCO_GAME_SOUNDS_SIZE         17
 
 
 #define COCO_FX_NONE             255
@@ -1194,6 +1210,16 @@ struct coco_spark_cobject {
   signed char dy;
 };
 
+struct coco_flying_player_name_cobject {
+  unsigned char class_index;
+  /* 0: nationality - COCO_GOOD_GUYS
+     1: is_comp
+     2-7: p_or_c_index */
+  unsigned char bits;
+  coco_cnum x;
+  coco_cnum y;
+};
+
 
 /* "inherits" from coco_raster_y_cobject */
 struct coco_metal_shrapnel_cobject {
@@ -1247,6 +1273,7 @@ union coco_cobject {
   struct coco_raster_barrel_cobject raster_barrel;
   struct coco_raster_y_cobject ry;
   struct coco_sound_cobject sound;
+  struct coco_flying_player_name_cobject fpn;
   struct coco_raster_y_angle_cobject rya;
   struct coco_plasma_cobject plasma;
   struct coco_metal_shrapnel_cobject metal_shrapnel;
@@ -1290,6 +1317,7 @@ int coco_mech_guess_nationality( coco_cobject *cobject );
 int coco_cobject_whimpy_guess_nationality( coco_cobject *cobject );
 int coco_copter_guess_nationality( coco_cobject *cobject );
 int coco_neutral_guess_nationality( coco_cobject *cobject );
+int coco_flying_player_name_guess_nationality( coco_cobject *cobject );
 int coco_hut_guess_nationality( coco_cobject *cobject );
 int coco_2raster_guess_nationality( coco_cobject *cobject );
 int coco_firetruck_guess_nationality( coco_cobject *cobject );
@@ -1641,22 +1669,30 @@ void
 coco_make_snd( coco_sound_type sound, coco_sstate *sstate, 
                coco_gnum x, coco_gnum y );
 
+/* fields marked "c" are available on the client and server, and are public.
+   otherwise they're only maintained on the server side. */
 struct coco_comp {
-  coco_bool in_use;
-  int index;
-  coco_nationality nationality;
+  coco_bool in_use;                 /* c */
+  int index;                        /* c */
+  coco_nationality nationality;     /* c */
   float funds;
   coco_u32 copters;
   struct coco_keyboard_pointer_state kpstate;
-  unsigned char name_index;
+  unsigned char name_index;         /* c */
+  /* below here (approximately) is private to the AI. */
   coco_bool queue_remove;
   coco_gnum cruise_altitude; /* altitude to seek when idle */
   coco_gnum overgun;         /* small y offset gunning emy copter */
-  coco_bool refuelling;
-  coco_gnum goto_area;
+  coco_bool refuelling;      /* go refuel and rearm */
+  coco_gnum goto_area;       /* low priority x-coordinate to fly to */
 };
 
 struct coco_comp coco_comps[COCO_MAX_COMPS];
+
+#define COCO_PORC_COPTERS( index, is_comp ) ((is_comp) ? coco_comps[index].copters : coco_players[index].copters)
+#define COCO_PORC_FUNDS( index, is_comp ) ((is_comp) ? coco_comps[index].funds : coco_players[index].funds)
+#define COCO_PORC_NATIONALITY( index, is_comp ) ((is_comp) ? coco_comps[index].nationality : coco_players[index].nationality)
+#define COCO_PORC_FAVORITE_COPTER_CLASS( index, is_comp ) ((is_comp) ? COCO_COMP_FAVORITE_COPTER_CLASS : sstate->favorite_copter_class[index])
 
 #define COCO_GNUM_TO_RXNUM( x, bw ) ((COCO_OFFICIAL_WINDOW_W * (x)) / (bw))
 #define COCO_GNUM_TO_RYNUM( y )     ((COCO_RADAR_H * (y)) / COCO_VIEWABLE_H)
@@ -1677,6 +1713,10 @@ coco_sobject *
 coco_emit_smoke_helper( coco_sobject *sobject, coco_sstate *sstate, 
                         coco_gnum x, coco_gnum y );
 
+
+
+coco_bool
+coco_sobject_is_obscured( coco_sobject *sobject, coco_sstate *sstate );
 
 
 /* dashboard.c */

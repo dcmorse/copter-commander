@@ -434,7 +434,8 @@ char *coco_game_sound_names[COCO_GAME_SOUNDS_SIZE] = {
   "tank-gun-f",
   "take-off-f",
   "abuse-mech-warm-up",
-  "openal-plasma"
+  "openal-plasma",
+  "pop"
 };
 
 coco_gnum coco_game_fx_radius[COCO_GAME_SOUNDS_SIZE] = {
@@ -454,6 +455,7 @@ coco_gnum coco_game_fx_radius[COCO_GAME_SOUNDS_SIZE] = {
   0.1 * COCO_OFFICIAL_WINDOW_W,
   0.1 * COCO_OFFICIAL_WINDOW_W,
   1.0 * COCO_OFFICIAL_WINDOW_W,
+  COCO_GNUM_MAX,
 };
 
 

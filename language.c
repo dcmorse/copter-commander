@@ -17,8 +17,8 @@
  * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
  */
 
-#include "coco.h"
 
+#include <sys/time.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <stdarg.h>
@@ -31,13 +31,18 @@
 #include <errno.h>
 #include <alloca.h>
 
-char *coco_errno_string( int error_number )
+#include "coco.h"
+
+
+char *
+coco_errno_string( int error_number )
 {
   return strerror( error_number );
 }
 
 
-void coco_fatal_printf( int exit_code, const char *fmt, ... )
+void 
+coco_fatal_printf( int exit_code, const char *fmt, ... )
 {
   va_list ap;
   va_start(ap, fmt);
@@ -47,7 +52,8 @@ void coco_fatal_printf( int exit_code, const char *fmt, ... )
   exit( exit_code );
 }
 
-void coco_warn_printf( const char *fmt, ... )
+void 
+coco_warn_printf( const char *fmt, ... )
 {
   va_list ap;
   va_start(ap, fmt);
@@ -55,7 +61,8 @@ void coco_warn_printf( const char *fmt, ... )
   va_end( ap );
 }
 
-void coco_log_printf( const char *fmt, ... )
+void 
+coco_log_printf( const char *fmt, ... )
 {
   va_list ap;
   va_start(ap, fmt);
@@ -64,7 +71,8 @@ void coco_log_printf( const char *fmt, ... )
 }
 
 /* return non-void so we can be used inside expressions */
-int coco_cookie( const char *fmt, ... )
+int 
+coco_cookie( const char *fmt, ... )
 {
 #ifdef COCO_DEBUG
   va_list ap;
@@ -274,7 +282,7 @@ coco_subtract_timevals( struct timeval *tv_return,
   long u1 = tv1->tv_usec;
   long u2 = tv2->tv_usec;
   long udiff = u1 - u2;
-  int nega = (udiff<0) ? 1 : 0;
+  int nega = udiff < 0;
   tv_return->tv_sec = tv1->tv_sec - tv2->tv_sec - nega;
   tv_return->tv_usec = udiff + (nega ? 1000000 : 0);
 }
@@ -509,5 +517,42 @@ coco_dice( int number, unsigned char sides )
       bytes_left--;
     }
   return acc;
+}
+
+void
+coco_time_pad_start( struct timeval *private )
+{
+  if (0 != gettimeofday( private, NULL ))
+    {
+      private->tv_sec = private->tv_usec = 0;
+      coco_warn_printf( "Gettimeofday failed with errno=%d: %s\n",
+                        errno, coco_errno_string( errno ) );
+    }
+}
+
+
+void
+coco_time_pad_end( struct timeval *private, struct timeval *how_long )
+{
+  struct timeval diff, now;
+  fd_set fdset;
+  FD_ZERO( &fdset );
+  if (0 != gettimeofday( &now, NULL ))
+    {
+      coco_warn_printf( "Gettimeofday failed with errno=%d: %s\n",
+                        errno, coco_errno_string( errno ) );
+      return;
+    }
+  coco_subtract_timevals( &diff, &now, private );
+  coco_subtract_timevals( &diff, how_long, &diff );
+  if ((diff.tv_sec < 0)
+      || ((diff.tv_usec <= 0) && (diff.tv_sec == 0)))
+    {
+      /* coco_warn_printf( "Slow renederer\n" ); */
+      return;
+    }
+  else if (-1 == select( 1, &fdset, &fdset, &fdset, &diff ))
+    coco_warn_printf( "Sleeping select failed with errno=%d: %s\n",
+                      errno, coco_errno_string( errno ) );
 }
 

@@ -24,9 +24,14 @@ void coco_finalize_sobject( coco_sobject *sobject, coco_sobject_cl *cl );
 #endif
 
 coco_bool
-coco_sndobject_update_state( coco_sobject *sobject,
-                             coco_sobject_cl *cl,
-                             coco_sstate *sstate );
+coco_auto_die_update_state( coco_sobject *sobject,
+                            coco_sobject_cl *cl,
+                            coco_sstate *sstate );
+
+coco_bool
+coco_cargo_copter_update_state( coco_sobject *sobject,
+                                coco_sobject_cl *cl,
+                                coco_sstate *sstate );
 
 coco_bool
 coco_mech_update_state( coco_sobject *sobject,
@@ -37,10 +42,6 @@ coco_bool
 coco_plasma_update_state( coco_sobject *sobject,
                           coco_sobject_cl *cl,
                           coco_sstate *sstate );
-
-coco_bool coco_spark_update_state( coco_sobject *sobject, 
-                                   coco_sobject_cl *cl, 
-                                   coco_sstate *sstate );
 
 coco_bool coco_ground_unit_update_state( coco_sobject *sobject, 
                                          coco_sobject_cl *cl, 
@@ -269,6 +270,12 @@ void coco_ground_rasteroid_to_cobject( coco_sobject *sobject,
                                        coco_cobject *cobject,
                                        coco_gnum cam_left,
                                        coco_bool nbo );
+
+void coco_flying_player_name_to_cobject( coco_sobject *sobject, 
+                                         coco_sobject_cl *cl,
+                                         coco_cobject *cobject,
+                                         coco_gnum cam_left,
+                                         coco_bool nbo );
 
 void coco_metal_shrapnel_to_cobject( coco_sobject *sobject,
                                      coco_sobject_cl *cl,
@@ -584,16 +591,39 @@ coco_copter_mech_blip_color_index( coco_sobject *sobject,
                                    coco_sstate *sstate );
 
 
+void 
+coco_cargo_copter_summon_places( coco_sobject *sobject, coco_sobject_cl *cl,
+                                 coco_sstate *sstate, 
+                                 coco_bool **summon_enable,
+                                 coco_u32 **summon_disable_until );
+
+void 
+coco_every_sobject_summon_places( coco_sobject *sobject, coco_sobject_cl *cl,
+                                  coco_sstate *sstate, 
+                                  coco_bool **summon_enable,
+                                  coco_u32 **summon_disable_until );
+
+
 coco_bool
 coco_every_sobject_is_visible( coco_sobject *sobject,
                                coco_sobject_cl *cl,
+                               coco_sstate *sstate, 
                                coco_gnum cam_left,
                                coco_gnum cam_right,
                                coco_sobject *cam_or_null );
 
 coco_bool
+coco_flying_player_name_is_visible( coco_sobject *sobject,
+                                    coco_sobject_cl *cl,
+                                    coco_sstate *sstate, 
+                                    coco_gnum cam_left,
+                                    coco_gnum cam_right,
+                                    coco_sobject *cam_or_null );
+
+coco_bool
 coco_sndobject_is_visible( coco_sobject *sobject,
                            coco_sobject_cl *cl,
+                           coco_sstate *sstate, 
                            coco_gnum cam_left,
                            coco_gnum cam_right,
                            coco_sobject *cam_or_null );
@@ -634,6 +664,10 @@ void coco_cloud_draw( coco_cobject *cobject, coco_sobject_cl *cla );
 void coco_mech_draw( coco_cobject *cobject, coco_sobject_cl *cla );
 
 void coco_spark_draw( coco_cobject *cobject, coco_sobject_cl *cla );
+
+void coco_flying_player_name_draw( coco_cobject *cobject, 
+                                   coco_sobject_cl *cla );
+
 
 coco_sobject *coco_copter_emit_smoke( coco_sobject *sobject, 
                                       coco_sobject_cl *cla,

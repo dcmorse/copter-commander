@@ -20,7 +20,7 @@
 #include "coco.h"
 
 
-const char *coco_version_string = "1.0";
+const char *coco_version_string = "1.1";
 
 const char *coco_product_name = COCO_PRODUCT_NAME;
 const char *coco_run_name;      /* argv[0] */

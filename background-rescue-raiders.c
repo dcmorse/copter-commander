@@ -32,10 +32,12 @@ static enum coco_sky_colors coco_sky_color;
 void
 coco_set_sky_color( void )
 {
-  int hour;
   assert( 0 <=  coco_eye_candy );
   if ((coco_sky_option >= 0) && (coco_sky_option < COCO_SKY_LIMIT))
     coco_sky_color = coco_sky_option;
+  else
+    coco_sky_color = COCO_NIGHT;
+  /* before sky color defaulted based on time of day and candy.
   else if (coco_eye_candy <= 6)
     coco_sky_color = COCO_NIGHT;
   else
@@ -80,6 +82,7 @@ coco_set_sky_color( void )
         break;
       }
     }
+  */
 }
 
 static struct {
