@@ -889,10 +889,10 @@ coco_cstate_draw( struct coco_cstate *cstate )
   for (i=cstate->cblips_length-1; i>=0; i--)
     {
       struct coco_cblip cblip = cstate->cblips[i];
-      coco_color_index ci = cblip.color_index;
-      if (ci != COCO_INDEX_TRANSPARENT)
+      coco_blip_index ci = cblip.color_index;
+      if (ci != COCO_BLIP_TRANSPARENT)
         {
-          coco_draw_color( coco_palette[ci] );
+          coco_draw_color( coco_blip_to_color[ci] );
           coco_point_drawing_vertex( cblip.x, 
                                      ((coco_gnum) cblip.y) + COCO_RADAR_Y );
         }

@@ -77,7 +77,6 @@ typedef signed char coco_rynum; /* y pixels on low-res radar screen. */
 #define COCO_RYNUM_HTON( rynum ) (rynum)
 #define COCO_RYNUM_NTOH( rynum ) (rynum)
 typedef signed char coco_facing; /* either -1, 0, or 1.  1=facing right. */
-typedef unsigned char coco_color_index; /* for radar blips. */
 typedef unsigned char coco_angle; /* 0==256==positive-x-axis.  64==positive-y-axis */
 #define COCO_ANGLE_TO_FLOAT_DEGREES( coco_angle ) \
   ((float) coco_angle * (360.0 / 256.0))
@@ -367,34 +366,49 @@ typedef unsigned int coco_color;
 #error COCO_APPEARANCE is not a value known to coco.h
 #endif
 
-extern const coco_color coco_palette[256];
+/* These days this is used only for transmitting color of shrapnel,
+   must sync with coco_palette in graphics.c */
+typedef unsigned char coco_color_index;
+extern const coco_color coco_palette[];
 #define COCO_INDEX_TRANSPARENT 0
-#define COCO_INDEX_BLACK 1
-#define COCO_INDEX_RED   2
-#define COCO_INDEX_GREEN 3
-#define COCO_INDEX_BLUE  4
-#define COCO_INDEX_GREY  5
-#define COCO_INDEX_BROWN 6
-#define COCO_INDEX_LIGHT_BLUE 7
-#define COCO_INDEX_ORANGE 8
-#define COCO_INDEX_WHITE 9
-#define COCO_INDEX_YELLOW 10
-#define COCO_INDEX_GREY_C 11
-#define COCO_INDEX_DARK_YELLOW 12
-#define COCO_INDEX_DARK_RED 13
-#define COCO_INDEX_KHAKI 14
-#define COCO_COLOR_INDEX( color_index ) (coco_palette[color_index])
+#define COCO_INDEX_RED         1
+#define COCO_INDEX_BLUE        2
+#define COCO_INDEX_GREEN       3
+#define COCO_INDEX_LIGHT_BLUE  4
+#define COCO_INDEX_BROWN       5
+#define COCO_COLOR_INDEX( color_index ) ((coco_palette)[(color_index)])
 
-typedef coco_u32 coco_color_index_triplet;
-#define COCO_CITRIP_FRIENDLY( citriplet ) (255 & ((citriplet)>>16))
-#define COCO_CITRIP_HOSTILE( citriplet )  (255 & ((citriplet)>>8))
-#define COCO_CITRIP_NEUTRAL( citriplet ) (255 & (citriplet))
-#define COCO_MAKE_COLOR_INDEX_TRIPLET( friendly, hostile, neutral ) \
+typedef unsigned char coco_blip_index;
+extern const coco_color coco_blip_to_color[];
+#define COCO_BLIP_TRANSPARENT 0
+#define COCO_BLIP_EMY_MUNITION 1
+#define COCO_BLIP_EMY_PLAYER 2
+#define COCO_BLIP_EMY_BUILDING 4
+#define COCO_BLIP_EMY 8 /* generic enemy junks */
+#define COCO_BLIP_EMY_BULLET 13
+#define COCO_BLIP_EMY_BALLOON 14
+#define COCO_BLIP_EXPLOSION 3
+#define COCO_BLIP_NEUTRAL_BUILDING 6
+#define COCO_BLIP_CAMERA_BLINK 7
+#define COCO_BLIP_FRY 5 /* generic friendly junks */
+#define COCO_BLIP_FRY_PLAYER 9
+#define COCO_BLIP_FRY_MUNITION 10
+#define COCO_BLIP_FRY_BUILDING 11
+#define COCO_BLIP_FRY_BULLET 12
+#define COCO_BLIP_FRY_INFANTRY 15
+#define COCO_BLIP_FRY_BALLOON 16
+/* next entry is 17 */
+
+typedef coco_u32 coco_blip_triplet;
+#define COCO_BLIP_TRIPLET_FRY( citriplet ) (255 & ((citriplet)>>16))
+#define COCO_BLIP_TRIPLET_EMY( citriplet )  (255 & ((citriplet)>>8))
+#define COCO_BLIP_TRIPLET_NTL( citriplet ) (255 & (citriplet))
+#define COCO_MAKE_BLIP_TRIPLET( friendly, hostile, neutral ) \
   (((friendly)<<16) + ((hostile)<<8) + (neutral))
-#define COCO_COLOR_INDEX_TRIPLET_TRANSPARENT             \
-  COCO_MAKE_COLOR_INDEX_TRIPLET( COCO_INDEX_TRANSPARENT, \
-                                 COCO_INDEX_TRANSPARENT, \
-                                 COCO_INDEX_TRANSPARENT )
+#define COCO_BLIP_TRIPLET_TRANSPARENT             \
+  COCO_MAKE_BLIP_TRIPLET( COCO_BLIP_TRANSPARENT, \
+                          COCO_BLIP_TRANSPARENT, \
+                          COCO_BLIP_TRANSPARENT )
 
 void coco_draw_color( coco_color color );
 void coco_clear_window_color( coco_color color );
@@ -1158,7 +1172,7 @@ void coco_cobject_rasteroid_draw( coco_cobject *cobject,
 struct coco_cblip {
   coco_rxnum x;
   coco_rynum y;
-  coco_color_index color_index;
+  coco_blip_index color_index;
 };
 
 
@@ -1393,6 +1407,7 @@ struct coco_comp {
   char name[COCO_PLAYER_NAME_MAX];
 };
 
+struct coco_comp coco_comps[COCO_MAX_COMPS];
 
 /* comp.c */
 

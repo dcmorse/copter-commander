@@ -17,7 +17,7 @@ struct coco_sobject_class_ {
   coco_health health_max;
   coco_health damage;
   coco_bool clip_to_board;
-  coco_color_index_triplet default_blip_color_index;
+  coco_blip_triplet default_blip_color_index;
   coco_gnum canonical_w;
   coco_gnum canonical_h;
   coco_znum z;
@@ -64,7 +64,7 @@ struct coco_sobject_class_ {
   coco_bool (* infantry_enter_hut)( coco_sobject *, coco_sobject_cl * , coco_sobject * , coco_sstate * , coco_bool * );
   coco_gnum (* camera_velocity_offset)( coco_sobject *, coco_sobject_cl * );
   coco_bool (* sobject_is_visible)( coco_sobject *, coco_sobject_cl * , coco_gnum , coco_gnum , coco_sobject * );
-  coco_color_index (* sobject_blip_color_index)( coco_sobject *, coco_sobject_cl * , int , coco_sstate * );
+  coco_blip_index (* sobject_blip_color_index)( coco_sobject *, coco_sobject_cl * , int , coco_bool , coco_sstate * );
   coco_bool (* ground_trooper_target_p)( coco_sobject *, coco_sobject_cl * , coco_sobject * );
   void (* sobject_neutral_building_collide)( coco_sobject *, coco_sobject_cl * , coco_sobject * );
   void (* sobject_to_cobject)( coco_sobject *, coco_sobject_cl * , coco_cobject * , coco_gnum , coco_bool );
@@ -199,7 +199,7 @@ struct coco_explosion {
   coco_nationality nationality;
   coco_health health;
   coco_angle angle;
-  coco_color_index scratch_blip;
+  coco_blip_index scratch_blip;
 };
 
 struct coco_small_metal_shrapnel {
@@ -223,7 +223,7 @@ struct coco_small_metal_shrapnel {
   coco_nationality nationality;
   coco_health health;
   coco_angle angle;
-  coco_color_index scratch_blip;
+  coco_blip_index scratch_blip;
   coco_color_index color_index;
 };
 
@@ -248,7 +248,7 @@ struct coco_med_metal_shrapnel {
   coco_nationality nationality;
   coco_health health;
   coco_angle angle;
-  coco_color_index scratch_blip;
+  coco_blip_index scratch_blip;
   coco_color_index color_index;
 };
 
@@ -273,7 +273,7 @@ struct coco_big_metal_shrapnel {
   coco_nationality nationality;
   coco_health health;
   coco_angle angle;
-  coco_color_index scratch_blip;
+  coco_blip_index scratch_blip;
   coco_color_index color_index;
 };
 
@@ -298,7 +298,7 @@ struct coco_metal_shrapnel {
   coco_nationality nationality;
   coco_health health;
   coco_angle angle;
-  coco_color_index scratch_blip;
+  coco_blip_index scratch_blip;
   coco_color_index color_index;
 };
 
@@ -323,7 +323,7 @@ struct coco_shrapnel {
   coco_nationality nationality;
   coco_health health;
   coco_angle angle;
-  coco_color_index scratch_blip;
+  coco_blip_index scratch_blip;
 };
 
 struct coco_spark {
@@ -347,7 +347,7 @@ struct coco_spark {
   coco_nationality nationality;
   coco_health health;
   coco_angle angle;
-  coco_color_index scratch_blip;
+  coco_blip_index scratch_blip;
   signed char spark_dx;
   signed char spark_dy;
 };
@@ -373,7 +373,7 @@ struct coco_missile {
   coco_nationality nationality;
   coco_health health;
   coco_angle angle;
-  coco_color_index scratch_blip;
+  coco_blip_index scratch_blip;
   unsigned int fuel;
   int target_index;
 };
@@ -399,7 +399,7 @@ struct coco_rocket {
   coco_nationality nationality;
   coco_health health;
   coco_angle angle;
-  coco_color_index scratch_blip;
+  coco_blip_index scratch_blip;
 };
 
 struct coco_abstract_missile {
@@ -423,7 +423,7 @@ struct coco_abstract_missile {
   coco_nationality nationality;
   coco_health health;
   coco_angle angle;
-  coco_color_index scratch_blip;
+  coco_blip_index scratch_blip;
 };
 
 struct coco_bomb {
@@ -447,7 +447,7 @@ struct coco_bomb {
   coco_nationality nationality;
   coco_health health;
   coco_angle angle;
-  coco_color_index scratch_blip;
+  coco_blip_index scratch_blip;
   unsigned char horiz_ticks;
 };
 
@@ -472,7 +472,7 @@ struct coco_tank_bullet {
   coco_nationality nationality;
   coco_health health;
   coco_angle angle;
-  coco_color_index scratch_blip;
+  coco_blip_index scratch_blip;
   coco_u32 expiration_date;
 };
 
@@ -497,7 +497,7 @@ struct coco_rifle_bullet {
   coco_nationality nationality;
   coco_health health;
   coco_angle angle;
-  coco_color_index scratch_blip;
+  coco_blip_index scratch_blip;
   coco_u32 expiration_date;
 };
 
@@ -522,7 +522,7 @@ struct coco_bullet {
   coco_nationality nationality;
   coco_health health;
   coco_angle angle;
-  coco_color_index scratch_blip;
+  coco_blip_index scratch_blip;
   coco_u32 expiration_date;
 };
 
@@ -547,7 +547,7 @@ struct coco_munition {
   coco_nationality nationality;
   coco_health health;
   coco_angle angle;
-  coco_color_index scratch_blip;
+  coco_blip_index scratch_blip;
 };
 
 struct coco_engineer {
@@ -571,7 +571,7 @@ struct coco_engineer {
   coco_nationality nationality;
   coco_health health;
   coco_angle angle;
-  coco_color_index scratch_blip;
+  coco_blip_index scratch_blip;
   unsigned char parachutes;
   coco_gnum parachute_height;
 };
@@ -597,7 +597,7 @@ struct coco_infantry {
   coco_nationality nationality;
   coco_health health;
   coco_angle angle;
-  coco_color_index scratch_blip;
+  coco_blip_index scratch_blip;
   unsigned char parachutes;
   coco_gnum parachute_height;
 };
@@ -623,7 +623,7 @@ struct coco_firetruck {
   coco_nationality nationality;
   coco_health health;
   coco_angle angle;
-  coco_color_index scratch_blip;
+  coco_blip_index scratch_blip;
   unsigned char smoke_countdown;
 };
 
@@ -648,7 +648,7 @@ struct coco_tank {
   coco_nationality nationality;
   coco_health health;
   coco_angle angle;
-  coco_color_index scratch_blip;
+  coco_blip_index scratch_blip;
 };
 
 struct coco_demo_van {
@@ -672,7 +672,7 @@ struct coco_demo_van {
   coco_nationality nationality;
   coco_health health;
   coco_angle angle;
-  coco_color_index scratch_blip;
+  coco_blip_index scratch_blip;
 };
 
 struct coco_ground_vehicle {
@@ -696,7 +696,7 @@ struct coco_ground_vehicle {
   coco_nationality nationality;
   coco_health health;
   coco_angle angle;
-  coco_color_index scratch_blip;
+  coco_blip_index scratch_blip;
 };
 
 struct coco_ground_unit {
@@ -720,7 +720,7 @@ struct coco_ground_unit {
   coco_nationality nationality;
   coco_health health;
   coco_angle angle;
-  coco_color_index scratch_blip;
+  coco_blip_index scratch_blip;
 };
 
 struct coco_gun_rubble {
@@ -744,7 +744,7 @@ struct coco_gun_rubble {
   coco_nationality nationality;
   coco_health health;
   coco_angle angle;
-  coco_color_index scratch_blip;
+  coco_blip_index scratch_blip;
   unsigned char reincarnation_class_index;
   int points_till_reincarnation;
   coco_nationality reincarnation_nationality;
@@ -771,7 +771,7 @@ struct coco_at_gun {
   coco_nationality nationality;
   coco_health health;
   coco_angle angle;
-  coco_color_index scratch_blip;
+  coco_blip_index scratch_blip;
   unsigned short cooldown;
 };
 
@@ -796,7 +796,7 @@ struct coco_aa_gun {
   coco_nationality nationality;
   coco_health health;
   coco_angle angle;
-  coco_color_index scratch_blip;
+  coco_blip_index scratch_blip;
   unsigned short cooldown;
 };
 
@@ -821,7 +821,7 @@ struct coco_gun {
   coco_nationality nationality;
   coco_health health;
   coco_angle angle;
-  coco_color_index scratch_blip;
+  coco_blip_index scratch_blip;
   unsigned short cooldown;
 };
 
@@ -846,7 +846,7 @@ struct coco_headquarters {
   coco_nationality nationality;
   coco_health health;
   coco_angle angle;
-  coco_color_index scratch_blip;
+  coco_blip_index scratch_blip;
   unsigned char smoke_countdown;
   int pillbox_index;
 };
@@ -872,7 +872,7 @@ struct coco_landing_pad {
   coco_nationality nationality;
   coco_health health;
   coco_angle angle;
-  coco_color_index scratch_blip;
+  coco_blip_index scratch_blip;
 };
 
 struct coco_pillbox {
@@ -896,7 +896,7 @@ struct coco_pillbox {
   coco_nationality nationality;
   coco_health health;
   coco_angle angle;
-  coco_color_index scratch_blip;
+  coco_blip_index scratch_blip;
   unsigned char defenders;
   int headquarters_index;
 };
@@ -922,7 +922,7 @@ struct coco_bunker {
   coco_nationality nationality;
   coco_health health;
   coco_angle angle;
-  coco_color_index scratch_blip;
+  coco_blip_index scratch_blip;
   unsigned char defenders;
 };
 
@@ -947,7 +947,7 @@ struct coco_hut {
   coco_nationality nationality;
   coco_health health;
   coco_angle angle;
-  coco_color_index scratch_blip;
+  coco_blip_index scratch_blip;
   int line_index;
   int points_till_reincarnation;
 };
@@ -973,7 +973,7 @@ struct coco_traffic_sign {
   coco_nationality nationality;
   coco_health health;
   coco_angle angle;
-  coco_color_index scratch_blip;
+  coco_blip_index scratch_blip;
 };
 
 struct coco_building {
@@ -997,7 +997,7 @@ struct coco_building {
   coco_nationality nationality;
   coco_health health;
   coco_angle angle;
-  coco_color_index scratch_blip;
+  coco_blip_index scratch_blip;
 };
 
 struct coco_balloon_line {
@@ -1021,7 +1021,7 @@ struct coco_balloon_line {
   coco_nationality nationality;
   coco_health health;
   coco_angle angle;
-  coco_color_index scratch_blip;
+  coco_blip_index scratch_blip;
   int hut_index;
   int balloon_index;
 };
@@ -1047,7 +1047,7 @@ struct coco_balloon {
   coco_nationality nationality;
   coco_health health;
   coco_angle angle;
-  coco_color_index scratch_blip;
+  coco_blip_index scratch_blip;
   int line_index;
   coco_u32 balloon_time_phase;
 };
@@ -1073,7 +1073,7 @@ struct coco_balloon_part {
   coco_nationality nationality;
   coco_health health;
   coco_angle angle;
-  coco_color_index scratch_blip;
+  coco_blip_index scratch_blip;
 };
 
 struct coco_cloud {
@@ -1097,7 +1097,7 @@ struct coco_cloud {
   coco_nationality nationality;
   coco_health health;
   coco_angle angle;
-  coco_color_index scratch_blip;
+  coco_blip_index scratch_blip;
 };
 
 struct coco_smoke {
@@ -1121,7 +1121,7 @@ struct coco_smoke {
   coco_nationality nationality;
   coco_health health;
   coco_angle angle;
-  coco_color_index scratch_blip;
+  coco_blip_index scratch_blip;
 };
 
 struct coco_bubble_copter {
@@ -1145,7 +1145,7 @@ struct coco_bubble_copter {
   coco_nationality nationality;
   coco_health health;
   coco_angle angle;
-  coco_color_index scratch_blip;
+  coco_blip_index scratch_blip;
   unsigned short bullets;
   unsigned char bombs;
   unsigned char missiles;
@@ -1183,7 +1183,7 @@ struct coco_cobra {
   coco_nationality nationality;
   coco_health health;
   coco_angle angle;
-  coco_color_index scratch_blip;
+  coco_blip_index scratch_blip;
   unsigned short bullets;
   unsigned char bombs;
   unsigned char missiles;
@@ -1221,7 +1221,7 @@ struct coco_copter {
   coco_nationality nationality;
   coco_health health;
   coco_angle angle;
-  coco_color_index scratch_blip;
+  coco_blip_index scratch_blip;
   unsigned short bullets;
   unsigned char bombs;
   unsigned char missiles;
@@ -1259,7 +1259,7 @@ struct coco_inviso_camera {
   coco_nationality nationality;
   coco_health health;
   coco_angle angle;
-  coco_color_index scratch_blip;
+  coco_blip_index scratch_blip;
 };
 
 struct coco_camera {
@@ -1283,7 +1283,7 @@ struct coco_camera {
   coco_nationality nationality;
   coco_health health;
   coco_angle angle;
-  coco_color_index scratch_blip;
+  coco_blip_index scratch_blip;
 };
 
 struct coco_sndobject {
@@ -1307,7 +1307,7 @@ struct coco_sndobject {
   coco_nationality nationality;
   coco_health health;
   coco_angle angle;
-  coco_color_index scratch_blip;
+  coco_blip_index scratch_blip;
   coco_sound_type sound;
 };
 
@@ -1332,7 +1332,7 @@ struct coco_every_sobject {
   coco_nationality nationality;
   coco_health health;
   coco_angle angle;
-  coco_color_index scratch_blip;
+  coco_blip_index scratch_blip;
 };
 
 union coco_sobject_inst {
@@ -1406,8 +1406,8 @@ coco_gnum
 coco_camera_velocity_offset( coco_sobject * inst, coco_sobject_cl * cl );
 coco_bool
 coco_sobject_is_visible( coco_sobject * inst, coco_sobject_cl * cl, coco_gnum cam_left, coco_gnum cam_right, coco_sobject * cam_or_null );
-coco_color_index
-coco_sobject_blip_color_index( coco_sobject * inst, coco_sobject_cl * cl, int player_index, coco_sstate * sstate );
+coco_blip_index
+coco_sobject_blip_color_index( coco_sobject * inst, coco_sobject_cl * cl, int p_or_c_index, coco_bool is_comp, coco_sstate * sstate );
 coco_bool
 coco_ground_trooper_target_p( coco_sobject * inst, coco_sobject_cl * cl, coco_sobject * trooper );
 void

@@ -22,7 +22,7 @@ coco_sobject_cl coco_sobject_classes[] = {
     COCO_NIGH_INVULNERABLE,             /* health_max */
     COCO_NIGH_INVULNERABLE,             /* damage */
     COCO_FALSE,                         /* clip_to_board */
-    COCO_MAKE_COLOR_INDEX_TRIPLET( COCO_INDEX_GREY, COCO_INDEX_ORANGE, COCO_INDEX_ORANGE ), /* default_blip_color_index */
+    COCO_MAKE_BLIP_TRIPLET( COCO_BLIP_FRY, COCO_BLIP_EMY, COCO_BLIP_EMY ), /* default_blip_color_index */
     1 /* placeholder */,                /* canonical_w */
     1 /* placeholder */,                /* canonical_h */
     0,                                  /* z */
@@ -98,7 +98,7 @@ coco_sobject_cl coco_sobject_classes[] = {
     COCO_NIGH_INVULNERABLE,             /* health_max */
     COCO_NIGH_INVULNERABLE,             /* damage */
     COCO_FALSE,                         /* clip_to_board */
-    COCO_MAKE_COLOR_INDEX_TRIPLET( COCO_INDEX_GREY, COCO_INDEX_ORANGE, COCO_INDEX_ORANGE ), /* default_blip_color_index */
+    COCO_MAKE_BLIP_TRIPLET( COCO_BLIP_FRY, COCO_BLIP_EMY, COCO_BLIP_EMY ), /* default_blip_color_index */
     0,                                  /* canonical_w */
     0,                                  /* canonical_h */
     0,                                  /* z */
@@ -174,7 +174,7 @@ coco_sobject_cl coco_sobject_classes[] = {
     COCO_NIGH_INVULNERABLE,             /* health_max */
     COCO_NIGH_INVULNERABLE,             /* damage */
     COCO_FALSE,                         /* clip_to_board */
-    COCO_MAKE_COLOR_INDEX_TRIPLET( COCO_INDEX_WHITE, COCO_INDEX_RED, COCO_INDEX_RED ), /* default_blip_color_index */
+    COCO_MAKE_BLIP_TRIPLET( COCO_BLIP_FRY_PLAYER, COCO_BLIP_EMY_PLAYER, COCO_BLIP_EMY_PLAYER ), /* default_blip_color_index */
     1 /* placeholder */,                /* canonical_w */
     1 /* placeholder */,                /* canonical_h */
     0,                                  /* z */
@@ -250,7 +250,7 @@ coco_sobject_cl coco_sobject_classes[] = {
     COCO_NIGH_INVULNERABLE,             /* health_max */
     COCO_NIGH_INVULNERABLE,             /* damage */
     COCO_FALSE,                         /* clip_to_board */
-    COCO_COLOR_INDEX_TRIPLET_TRANSPARENT, /* default_blip_color_index */
+    COCO_BLIP_TRIPLET_TRANSPARENT,      /* default_blip_color_index */
     0,                                  /* canonical_w */
     1 /* placeholder */,                /* canonical_h */
     0,                                  /* z */
@@ -326,7 +326,7 @@ coco_sobject_cl coco_sobject_classes[] = {
     4,                                  /* health_max */
     COCO_COPTER_DAMAGE,                 /* damage */
     COCO_TRUE,                          /* clip_to_board */
-    COCO_MAKE_COLOR_INDEX_TRIPLET( COCO_INDEX_WHITE, COCO_INDEX_RED, COCO_INDEX_RED ), /* default_blip_color_index */
+    COCO_MAKE_BLIP_TRIPLET( COCO_BLIP_FRY_PLAYER, COCO_BLIP_EMY_PLAYER, COCO_BLIP_EMY_PLAYER ), /* default_blip_color_index */
     1 /* placeholder */,                /* canonical_w */
     1 /* placeholder */,                /* canonical_h */
     0,                                  /* z */
@@ -402,7 +402,7 @@ coco_sobject_cl coco_sobject_classes[] = {
     4,                                  /* health_max */
     COCO_COPTER_DAMAGE,                 /* damage */
     COCO_TRUE,                          /* clip_to_board */
-    COCO_MAKE_COLOR_INDEX_TRIPLET( COCO_INDEX_WHITE, COCO_INDEX_RED, COCO_INDEX_RED ), /* default_blip_color_index */
+    COCO_MAKE_BLIP_TRIPLET( COCO_BLIP_FRY_PLAYER, COCO_BLIP_EMY_PLAYER, COCO_BLIP_EMY_PLAYER ), /* default_blip_color_index */
     100,                                /* canonical_w */
     30,                                 /* canonical_h */
     0,                                  /* z */
@@ -478,7 +478,7 @@ coco_sobject_cl coco_sobject_classes[] = {
     3,                                  /* health_max */
     COCO_COPTER_DAMAGE,                 /* damage */
     COCO_TRUE,                          /* clip_to_board */
-    COCO_MAKE_COLOR_INDEX_TRIPLET( COCO_INDEX_WHITE, COCO_INDEX_RED, COCO_INDEX_RED ), /* default_blip_color_index */
+    COCO_MAKE_BLIP_TRIPLET( COCO_BLIP_FRY_PLAYER, COCO_BLIP_EMY_PLAYER, COCO_BLIP_EMY_PLAYER ), /* default_blip_color_index */
     83,                                 /* canonical_w */
     30,                                 /* canonical_h */
     0,                                  /* z */
@@ -554,7 +554,7 @@ coco_sobject_cl coco_sobject_classes[] = {
     COCO_NIGH_INVULNERABLE,             /* health_max */
     COCO_NIGH_INVULNERABLE,             /* damage */
     COCO_FALSE,                         /* clip_to_board */
-    COCO_COLOR_INDEX_TRIPLET_TRANSPARENT, /* default_blip_color_index */
+    COCO_BLIP_TRIPLET_TRANSPARENT,      /* default_blip_color_index */
     COCO_SMOKE_BIG_RASTER_W,            /* canonical_w */
     1 /* placeholder */,                /* canonical_h */
     2,                                  /* z */
@@ -630,7 +630,7 @@ coco_sobject_cl coco_sobject_classes[] = {
     COCO_NIGH_INVULNERABLE,             /* health_max */
     COCO_NIGH_INVULNERABLE,             /* damage */
     COCO_FALSE,                         /* clip_to_board */
-    COCO_COLOR_INDEX_TRIPLET_TRANSPARENT, /* default_blip_color_index */
+    COCO_BLIP_TRIPLET_TRANSPARENT,      /* default_blip_color_index */
     COCO_CLOUD_RASTER_W,                /* canonical_w */
     1 /* placeholder */,                /* canonical_h */
     1,                                  /* z */
@@ -706,7 +706,7 @@ coco_sobject_cl coco_sobject_classes[] = {
     COCO_NIGH_INVULNERABLE,             /* health_max */
     COCO_NIGH_INVULNERABLE,             /* damage */
     COCO_FALSE,                         /* clip_to_board */
-    COCO_MAKE_COLOR_INDEX_TRIPLET( COCO_INDEX_GREY, COCO_INDEX_ORANGE, COCO_INDEX_ORANGE ), /* default_blip_color_index */
+    COCO_MAKE_BLIP_TRIPLET( COCO_BLIP_FRY, COCO_BLIP_EMY, COCO_BLIP_EMY ), /* default_blip_color_index */
     1 /* placeholder */,                /* canonical_w */
     1 /* placeholder */,                /* canonical_h */
     0,                                  /* z */
@@ -782,7 +782,7 @@ coco_sobject_cl coco_sobject_classes[] = {
     4 * COCO_BULLET_DAMAGE,             /* health_max */
     7,                                  /* damage */
     COCO_TRUE,                          /* clip_to_board */
-    COCO_MAKE_COLOR_INDEX_TRIPLET( COCO_INDEX_KHAKI, COCO_INDEX_KHAKI, COCO_INDEX_KHAKI ), /* default_blip_color_index */
+    COCO_MAKE_BLIP_TRIPLET( COCO_BLIP_FRY_BALLOON, COCO_BLIP_EMY_BALLOON, COCO_BLIP_EMY_BALLOON ), /* default_blip_color_index */
     COCO_BALLOON_W_RASTER_W,            /* canonical_w */
     1 /* placeholder */,                /* canonical_h */
     0,                                  /* z */
@@ -858,7 +858,7 @@ coco_sobject_cl coco_sobject_classes[] = {
     1,                                  /* health_max */
     3,                                  /* damage */
     COCO_FALSE,                         /* clip_to_board */
-    COCO_COLOR_INDEX_TRIPLET_TRANSPARENT, /* default_blip_color_index */
+    COCO_BLIP_TRIPLET_TRANSPARENT,      /* default_blip_color_index */
     1,                                  /* canonical_w */
     1 /* placeholder */,                /* canonical_h */
     0,                                  /* z */
@@ -934,7 +934,7 @@ coco_sobject_cl coco_sobject_classes[] = {
     COCO_NIGH_INVULNERABLE,             /* health_max */
     COCO_NIGH_INVULNERABLE,             /* damage */
     COCO_FALSE,                         /* clip_to_board */
-    COCO_MAKE_COLOR_INDEX_TRIPLET( COCO_INDEX_GREY_C, COCO_INDEX_ORANGE, COCO_INDEX_BROWN ), /* default_blip_color_index */
+    COCO_MAKE_BLIP_TRIPLET( COCO_BLIP_FRY_BUILDING, COCO_BLIP_EMY_BUILDING, COCO_BLIP_EMY_BUILDING ), /* default_blip_color_index */
     1 /* placeholder */,                /* canonical_w */
     1 /* placeholder */,                /* canonical_h */
     -1,                                 /* z */
@@ -1010,7 +1010,7 @@ coco_sobject_cl coco_sobject_classes[] = {
     COCO_NIGH_INVULNERABLE,             /* health_max */
     COCO_NIGH_INVULNERABLE,             /* damage */
     COCO_FALSE,                         /* clip_to_board */
-    COCO_COLOR_INDEX_TRIPLET_TRANSPARENT, /* default_blip_color_index */
+    COCO_BLIP_TRIPLET_TRANSPARENT,      /* default_blip_color_index */
     1 /* placeholder */,                /* canonical_w */
     1 /* placeholder */,                /* canonical_h */
     -1,                                 /* z */
@@ -1086,7 +1086,7 @@ coco_sobject_cl coco_sobject_classes[] = {
     COCO_MISSILE_DAMAGE<<1,             /* health_max */
     COCO_NIGH_INVULNERABLE,             /* damage */
     COCO_FALSE,                         /* clip_to_board */
-    COCO_MAKE_COLOR_INDEX_TRIPLET( COCO_INDEX_GREY_C, COCO_INDEX_ORANGE, COCO_INDEX_BROWN ), /* default_blip_color_index */
+    COCO_MAKE_BLIP_TRIPLET( COCO_BLIP_FRY_BUILDING, COCO_BLIP_EMY_BUILDING, COCO_BLIP_EMY_BUILDING ), /* default_blip_color_index */
     COCO_HUT_NEUTRAL_RASTER_W,          /* canonical_w */
     1 /* placeholder */,                /* canonical_h */
     -1,                                 /* z */
@@ -1162,7 +1162,7 @@ coco_sobject_cl coco_sobject_classes[] = {
     COCO_NIGH_INVULNERABLE,             /* health_max */
     COCO_NIGH_INVULNERABLE,             /* damage */
     COCO_FALSE,                         /* clip_to_board */
-    COCO_MAKE_COLOR_INDEX_TRIPLET( COCO_INDEX_GREY_C, COCO_INDEX_ORANGE, COCO_INDEX_BROWN ), /* default_blip_color_index */
+    COCO_MAKE_BLIP_TRIPLET( COCO_BLIP_FRY_BUILDING, COCO_BLIP_EMY_BUILDING, COCO_BLIP_EMY_BUILDING ), /* default_blip_color_index */
     COCO_BUNKER_GREEN_RASTER_W,         /* canonical_w */
     1 /* placeholder */,                /* canonical_h */
     -1,                                 /* z */
@@ -1238,7 +1238,7 @@ coco_sobject_cl coco_sobject_classes[] = {
     COCO_NIGH_INVULNERABLE,             /* health_max */
     COCO_NIGH_INVULNERABLE,             /* damage */
     COCO_FALSE,                         /* clip_to_board */
-    COCO_MAKE_COLOR_INDEX_TRIPLET( COCO_INDEX_GREY_C, COCO_INDEX_ORANGE, COCO_INDEX_BROWN ), /* default_blip_color_index */
+    COCO_MAKE_BLIP_TRIPLET( COCO_BLIP_FRY_BUILDING, COCO_BLIP_EMY_BUILDING, COCO_BLIP_EMY_BUILDING ), /* default_blip_color_index */
     COCO_PILLBOX_RASTER_W,              /* canonical_w */
     1 /* placeholder */,                /* canonical_h */
     -1,                                 /* z */
@@ -1314,7 +1314,7 @@ coco_sobject_cl coco_sobject_classes[] = {
     COCO_NIGH_INVULNERABLE,             /* health_max */
     COCO_NIGH_INVULNERABLE,             /* damage */
     COCO_FALSE,                         /* clip_to_board */
-    COCO_MAKE_COLOR_INDEX_TRIPLET( COCO_INDEX_GREY_C, COCO_INDEX_GREY_C, COCO_INDEX_GREY_C ), /* default_blip_color_index */
+    COCO_MAKE_BLIP_TRIPLET( COCO_BLIP_FRY_BUILDING, COCO_BLIP_EMY_BUILDING, COCO_BLIP_NEUTRAL_BUILDING ), /* default_blip_color_index */
     COCO_LANDING_PAD_RASTER_W,          /* canonical_w */
     1 /* placeholder */,                /* canonical_h */
     -1,                                 /* z */
@@ -1390,7 +1390,7 @@ coco_sobject_cl coco_sobject_classes[] = {
     COCO_NIGH_INVULNERABLE,             /* health_max */
     COCO_NIGH_INVULNERABLE,             /* damage */
     COCO_FALSE,                         /* clip_to_board */
-    COCO_MAKE_COLOR_INDEX_TRIPLET( COCO_INDEX_GREY_C, COCO_INDEX_ORANGE, COCO_INDEX_BROWN ), /* default_blip_color_index */
+    COCO_MAKE_BLIP_TRIPLET( COCO_BLIP_FRY_BUILDING, COCO_BLIP_EMY_BUILDING, COCO_BLIP_EMY_BUILDING ), /* default_blip_color_index */
     COCO_HEADQUARTERS_GREEN_RASTER_W,   /* canonical_w */
     1 /* placeholder */,                /* canonical_h */
     -1,                                 /* z */
@@ -1466,7 +1466,7 @@ coco_sobject_cl coco_sobject_classes[] = {
     23,                                 /* health_max */
     COCO_NIGH_INVULNERABLE,             /* damage */
     COCO_FALSE,                         /* clip_to_board */
-    COCO_MAKE_COLOR_INDEX_TRIPLET( COCO_INDEX_GREY_C, COCO_INDEX_ORANGE, COCO_INDEX_BROWN ), /* default_blip_color_index */
+    COCO_MAKE_BLIP_TRIPLET( COCO_BLIP_FRY_BUILDING, COCO_BLIP_EMY_BUILDING, COCO_BLIP_EMY_BUILDING ), /* default_blip_color_index */
     COCO_GUN_GREY_RASTER_W,             /* canonical_w */
     1 /* placeholder */,                /* canonical_h */
     -1,                                 /* z */
@@ -1542,7 +1542,7 @@ coco_sobject_cl coco_sobject_classes[] = {
     23,                                 /* health_max */
     COCO_NIGH_INVULNERABLE,             /* damage */
     COCO_FALSE,                         /* clip_to_board */
-    COCO_MAKE_COLOR_INDEX_TRIPLET( COCO_INDEX_GREY_C, COCO_INDEX_ORANGE, COCO_INDEX_BROWN ), /* default_blip_color_index */
+    COCO_MAKE_BLIP_TRIPLET( COCO_BLIP_FRY_BUILDING, COCO_BLIP_EMY_BUILDING, COCO_BLIP_EMY_BUILDING ), /* default_blip_color_index */
     COCO_GUN_GREY_RASTER_W,             /* canonical_w */
     1 /* placeholder */,                /* canonical_h */
     -1,                                 /* z */
@@ -1618,7 +1618,7 @@ coco_sobject_cl coco_sobject_classes[] = {
     23,                                 /* health_max */
     COCO_NIGH_INVULNERABLE,             /* damage */
     COCO_FALSE,                         /* clip_to_board */
-    COCO_MAKE_COLOR_INDEX_TRIPLET( COCO_INDEX_GREY_C, COCO_INDEX_ORANGE, COCO_INDEX_BROWN ), /* default_blip_color_index */
+    COCO_MAKE_BLIP_TRIPLET( COCO_BLIP_FRY_BUILDING, COCO_BLIP_EMY_BUILDING, COCO_BLIP_EMY_BUILDING ), /* default_blip_color_index */
     COCO_GUN_GREY_RASTER_W,             /* canonical_w */
     1 /* placeholder */,                /* canonical_h */
     -1,                                 /* z */
@@ -1694,7 +1694,7 @@ coco_sobject_cl coco_sobject_classes[] = {
     COCO_NIGH_INVULNERABLE,             /* health_max */
     COCO_NIGH_INVULNERABLE,             /* damage */
     COCO_FALSE,                         /* clip_to_board */
-    COCO_COLOR_INDEX_TRIPLET_TRANSPARENT, /* default_blip_color_index */
+    COCO_BLIP_TRIPLET_TRANSPARENT,      /* default_blip_color_index */
     COCO_GUN_RUBBLE_RASTER_W,           /* canonical_w */
     1 /* placeholder */,                /* canonical_h */
     -1,                                 /* z */
@@ -1770,7 +1770,7 @@ coco_sobject_cl coco_sobject_classes[] = {
     COCO_BOMB_DAMAGE-1,                 /* health_max */
     COCO_NIGH_INVULNERABLE,             /* damage */
     COCO_FALSE,                         /* clip_to_board */
-    COCO_MAKE_COLOR_INDEX_TRIPLET( COCO_INDEX_GREY, COCO_INDEX_ORANGE, COCO_INDEX_ORANGE ), /* default_blip_color_index */
+    COCO_MAKE_BLIP_TRIPLET( COCO_BLIP_FRY, COCO_BLIP_EMY, COCO_BLIP_EMY ), /* default_blip_color_index */
     1 /* placeholder */,                /* canonical_w */
     1 /* placeholder */,                /* canonical_h */
     0,                                  /* z */
@@ -1846,7 +1846,7 @@ coco_sobject_cl coco_sobject_classes[] = {
     COCO_BOMB_DAMAGE-1,                 /* health_max */
     COCO_NIGH_INVULNERABLE,             /* damage */
     COCO_FALSE,                         /* clip_to_board */
-    COCO_MAKE_COLOR_INDEX_TRIPLET( COCO_INDEX_GREY, COCO_INDEX_ORANGE, COCO_INDEX_ORANGE ), /* default_blip_color_index */
+    COCO_MAKE_BLIP_TRIPLET( COCO_BLIP_FRY, COCO_BLIP_EMY, COCO_BLIP_EMY ), /* default_blip_color_index */
     1 /* placeholder */,                /* canonical_w */
     1 /* placeholder */,                /* canonical_h */
     0,                                  /* z */
@@ -1922,7 +1922,7 @@ coco_sobject_cl coco_sobject_classes[] = {
     2,                                  /* health_max */
     COCO_NIGH_INVULNERABLE,             /* damage */
     COCO_FALSE,                         /* clip_to_board */
-    COCO_MAKE_COLOR_INDEX_TRIPLET( COCO_INDEX_GREY, COCO_INDEX_ORANGE, COCO_INDEX_ORANGE ), /* default_blip_color_index */
+    COCO_MAKE_BLIP_TRIPLET( COCO_BLIP_FRY, COCO_BLIP_EMY, COCO_BLIP_EMY ), /* default_blip_color_index */
     COCO_VAN_GREEN_RASTER_W,            /* canonical_w */
     1 /* placeholder */,                /* canonical_h */
     0,                                  /* z */
@@ -1998,7 +1998,7 @@ coco_sobject_cl coco_sobject_classes[] = {
     COCO_BOMB_DAMAGE*3,                 /* health_max */
     COCO_NIGH_INVULNERABLE,             /* damage */
     COCO_FALSE,                         /* clip_to_board */
-    COCO_MAKE_COLOR_INDEX_TRIPLET( COCO_INDEX_GREY, COCO_INDEX_ORANGE, COCO_INDEX_ORANGE ), /* default_blip_color_index */
+    COCO_MAKE_BLIP_TRIPLET( COCO_BLIP_FRY, COCO_BLIP_EMY, COCO_BLIP_EMY ), /* default_blip_color_index */
     COCO_TANK_GREEN_RASTER_W,           /* canonical_w */
     1 /* placeholder */,                /* canonical_h */
     0,                                  /* z */
@@ -2074,7 +2074,7 @@ coco_sobject_cl coco_sobject_classes[] = {
     COCO_BOMB_DAMAGE-1,                 /* health_max */
     COCO_NIGH_INVULNERABLE,             /* damage */
     COCO_FALSE,                         /* clip_to_board */
-    COCO_MAKE_COLOR_INDEX_TRIPLET( COCO_INDEX_GREY, COCO_INDEX_ORANGE, COCO_INDEX_ORANGE ), /* default_blip_color_index */
+    COCO_MAKE_BLIP_TRIPLET( COCO_BLIP_FRY, COCO_BLIP_EMY, COCO_BLIP_EMY ), /* default_blip_color_index */
     COCO_FIRETRUCK_GREEN_RASTER_W,      /* canonical_w */
     1 /* placeholder */,                /* canonical_h */
     0,                                  /* z */
@@ -2150,7 +2150,7 @@ coco_sobject_cl coco_sobject_classes[] = {
     1,                                  /* health_max */
     0,                                  /* damage */
     COCO_FALSE,                         /* clip_to_board */
-    COCO_MAKE_COLOR_INDEX_TRIPLET( COCO_INDEX_GREY_C, COCO_INDEX_TRANSPARENT, COCO_INDEX_TRANSPARENT ), /* default_blip_color_index */
+    COCO_MAKE_BLIP_TRIPLET( COCO_BLIP_FRY_INFANTRY, COCO_BLIP_TRANSPARENT, COCO_BLIP_TRANSPARENT ), /* default_blip_color_index */
     COCO_INFANTRY_E1_RASTER_W,          /* canonical_w */
     1 /* placeholder */,                /* canonical_h */
     1,                                  /* z */
@@ -2226,7 +2226,7 @@ coco_sobject_cl coco_sobject_classes[] = {
     1,                                  /* health_max */
     0,                                  /* damage */
     COCO_FALSE,                         /* clip_to_board */
-    COCO_MAKE_COLOR_INDEX_TRIPLET( COCO_INDEX_GREY_C, COCO_INDEX_TRANSPARENT, COCO_INDEX_TRANSPARENT ), /* default_blip_color_index */
+    COCO_MAKE_BLIP_TRIPLET( COCO_BLIP_FRY_INFANTRY, COCO_BLIP_TRANSPARENT, COCO_BLIP_TRANSPARENT ), /* default_blip_color_index */
     COCO_INFANTRY_E1_RASTER_W,          /* canonical_w */
     1 /* placeholder */,                /* canonical_h */
     1,                                  /* z */
@@ -2302,7 +2302,7 @@ coco_sobject_cl coco_sobject_classes[] = {
     1,                                  /* health_max */
     COCO_NIGH_INVULNERABLE,             /* damage */
     COCO_FALSE,                         /* clip_to_board */
-    COCO_MAKE_COLOR_INDEX_TRIPLET( COCO_INDEX_YELLOW, COCO_INDEX_RED, COCO_INDEX_ORANGE ), /* default_blip_color_index */
+    COCO_MAKE_BLIP_TRIPLET( COCO_BLIP_FRY_MUNITION, COCO_BLIP_EMY_MUNITION, COCO_BLIP_EMY_MUNITION ), /* default_blip_color_index */
     1 /* placeholder */,                /* canonical_w */
     1 /* placeholder */,                /* canonical_h */
     0,                                  /* z */
@@ -2378,7 +2378,7 @@ coco_sobject_cl coco_sobject_classes[] = {
     1,                                  /* health_max */
     COCO_BULLET_DAMAGE,                 /* damage */
     COCO_FALSE,                         /* clip_to_board */
-    COCO_MAKE_COLOR_INDEX_TRIPLET( COCO_INDEX_DARK_YELLOW, COCO_INDEX_DARK_RED, COCO_INDEX_ORANGE ), /* default_blip_color_index */
+    COCO_MAKE_BLIP_TRIPLET( COCO_BLIP_FRY_BULLET, COCO_BLIP_EMY_BULLET, COCO_BLIP_EMY_BULLET ), /* default_blip_color_index */
     1,                                  /* canonical_w */
     1 /* placeholder */,                /* canonical_h */
     0,                                  /* z */
@@ -2454,7 +2454,7 @@ coco_sobject_cl coco_sobject_classes[] = {
     1,                                  /* health_max */
     COCO_BULLET_DAMAGE,                 /* damage */
     COCO_FALSE,                         /* clip_to_board */
-    COCO_MAKE_COLOR_INDEX_TRIPLET( COCO_INDEX_DARK_YELLOW, COCO_INDEX_DARK_RED, COCO_INDEX_ORANGE ), /* default_blip_color_index */
+    COCO_MAKE_BLIP_TRIPLET( COCO_BLIP_FRY_BULLET, COCO_BLIP_EMY_BULLET, COCO_BLIP_EMY_BULLET ), /* default_blip_color_index */
     1,                                  /* canonical_w */
     1 /* placeholder */,                /* canonical_h */
     0,                                  /* z */
@@ -2530,7 +2530,7 @@ coco_sobject_cl coco_sobject_classes[] = {
     1,                                  /* health_max */
     COCO_BULLET_DAMAGE<<1,              /* damage */
     COCO_FALSE,                         /* clip_to_board */
-    COCO_MAKE_COLOR_INDEX_TRIPLET( COCO_INDEX_DARK_YELLOW, COCO_INDEX_DARK_RED, COCO_INDEX_ORANGE ), /* default_blip_color_index */
+    COCO_MAKE_BLIP_TRIPLET( COCO_BLIP_FRY_BULLET, COCO_BLIP_EMY_BULLET, COCO_BLIP_EMY_BULLET ), /* default_blip_color_index */
     1,                                  /* canonical_w */
     1 /* placeholder */,                /* canonical_h */
     0,                                  /* z */
@@ -2606,7 +2606,7 @@ coco_sobject_cl coco_sobject_classes[] = {
     1,                                  /* health_max */
     COCO_BOMB_DAMAGE,                   /* damage */
     COCO_FALSE,                         /* clip_to_board */
-    COCO_MAKE_COLOR_INDEX_TRIPLET( COCO_INDEX_YELLOW, COCO_INDEX_RED, COCO_INDEX_ORANGE ), /* default_blip_color_index */
+    COCO_MAKE_BLIP_TRIPLET( COCO_BLIP_FRY_MUNITION, COCO_BLIP_EMY_MUNITION, COCO_BLIP_EMY_MUNITION ), /* default_blip_color_index */
     COCO_BOMB_SOUTH_RASTER_W,           /* canonical_w */
     1 /* placeholder */,                /* canonical_h */
     0,                                  /* z */
@@ -2682,7 +2682,7 @@ coco_sobject_cl coco_sobject_classes[] = {
     1,                                  /* health_max */
     COCO_MISSILE_DAMAGE,                /* damage */
     COCO_FALSE,                         /* clip_to_board */
-    COCO_MAKE_COLOR_INDEX_TRIPLET( COCO_INDEX_YELLOW, COCO_INDEX_RED, COCO_INDEX_ORANGE ), /* default_blip_color_index */
+    COCO_MAKE_BLIP_TRIPLET( COCO_BLIP_FRY_MUNITION, COCO_BLIP_EMY_MUNITION, COCO_BLIP_EMY_MUNITION ), /* default_blip_color_index */
     11,                                 /* canonical_w */
     1 /* placeholder */,                /* canonical_h */
     0,                                  /* z */
@@ -2758,7 +2758,7 @@ coco_sobject_cl coco_sobject_classes[] = {
     1,                                  /* health_max */
     COCO_MISSILE_DAMAGE,                /* damage */
     COCO_FALSE,                         /* clip_to_board */
-    COCO_MAKE_COLOR_INDEX_TRIPLET( COCO_INDEX_YELLOW, COCO_INDEX_RED, COCO_INDEX_ORANGE ), /* default_blip_color_index */
+    COCO_MAKE_BLIP_TRIPLET( COCO_BLIP_FRY_MUNITION, COCO_BLIP_EMY_MUNITION, COCO_BLIP_EMY_MUNITION ), /* default_blip_color_index */
     11,                                 /* canonical_w */
     1 /* placeholder */,                /* canonical_h */
     0,                                  /* z */
@@ -2834,7 +2834,7 @@ coco_sobject_cl coco_sobject_classes[] = {
     1,                                  /* health_max */
     COCO_MISSILE_DAMAGE,                /* damage */
     COCO_FALSE,                         /* clip_to_board */
-    COCO_MAKE_COLOR_INDEX_TRIPLET( COCO_INDEX_YELLOW, COCO_INDEX_RED, COCO_INDEX_ORANGE ), /* default_blip_color_index */
+    COCO_MAKE_BLIP_TRIPLET( COCO_BLIP_FRY_MUNITION, COCO_BLIP_EMY_MUNITION, COCO_BLIP_EMY_MUNITION ), /* default_blip_color_index */
     11,                                 /* canonical_w */
     1 /* placeholder */,                /* canonical_h */
     0,                                  /* z */
@@ -2910,7 +2910,7 @@ coco_sobject_cl coco_sobject_classes[] = {
     1,                                  /* health_max */
     COCO_NIGH_INVULNERABLE,             /* damage */
     COCO_FALSE,                         /* clip_to_board */
-    COCO_COLOR_INDEX_TRIPLET_TRANSPARENT, /* default_blip_color_index */
+    COCO_BLIP_TRIPLET_TRANSPARENT,      /* default_blip_color_index */
     1,                                  /* canonical_w */
     1 /* placeholder */,                /* canonical_h */
     2,                                  /* z */
@@ -2986,7 +2986,7 @@ coco_sobject_cl coco_sobject_classes[] = {
     1,                                  /* health_max */
     COCO_SHRAPNEL_DAMAGE,               /* damage */
     COCO_FALSE,                         /* clip_to_board */
-    COCO_COLOR_INDEX_TRIPLET_TRANSPARENT, /* default_blip_color_index */
+    COCO_BLIP_TRIPLET_TRANSPARENT,      /* default_blip_color_index */
     24,                                 /* canonical_w */
     1 /* placeholder */,                /* canonical_h */
     0,                                  /* z */
@@ -3062,7 +3062,7 @@ coco_sobject_cl coco_sobject_classes[] = {
     1,                                  /* health_max */
     COCO_SHRAPNEL_DAMAGE,               /* damage */
     COCO_FALSE,                         /* clip_to_board */
-    COCO_COLOR_INDEX_TRIPLET_TRANSPARENT, /* default_blip_color_index */
+    COCO_BLIP_TRIPLET_TRANSPARENT,      /* default_blip_color_index */
     24,                                 /* canonical_w */
     1 /* placeholder */,                /* canonical_h */
     0,                                  /* z */
@@ -3138,7 +3138,7 @@ coco_sobject_cl coco_sobject_classes[] = {
     1,                                  /* health_max */
     COCO_SHRAPNEL_DAMAGE,               /* damage */
     COCO_FALSE,                         /* clip_to_board */
-    COCO_COLOR_INDEX_TRIPLET_TRANSPARENT, /* default_blip_color_index */
+    COCO_BLIP_TRIPLET_TRANSPARENT,      /* default_blip_color_index */
     COCO_SHRAPNEL_32A_RASTER_W,         /* canonical_w */
     1 /* placeholder */,                /* canonical_h */
     0,                                  /* z */
@@ -3214,7 +3214,7 @@ coco_sobject_cl coco_sobject_classes[] = {
     1,                                  /* health_max */
     COCO_SHRAPNEL_DAMAGE,               /* damage */
     COCO_FALSE,                         /* clip_to_board */
-    COCO_COLOR_INDEX_TRIPLET_TRANSPARENT, /* default_blip_color_index */
+    COCO_BLIP_TRIPLET_TRANSPARENT,      /* default_blip_color_index */
     COCO_SHRAPNEL_24A_RASTER_W,         /* canonical_w */
     1 /* placeholder */,                /* canonical_h */
     0,                                  /* z */
@@ -3290,7 +3290,7 @@ coco_sobject_cl coco_sobject_classes[] = {
     1,                                  /* health_max */
     COCO_SHRAPNEL_DAMAGE,               /* damage */
     COCO_FALSE,                         /* clip_to_board */
-    COCO_COLOR_INDEX_TRIPLET_TRANSPARENT, /* default_blip_color_index */
+    COCO_BLIP_TRIPLET_TRANSPARENT,      /* default_blip_color_index */
     COCO_SHRAPNEL_16A_RASTER_W,         /* canonical_w */
     1 /* placeholder */,                /* canonical_h */
     0,                                  /* z */
@@ -3366,7 +3366,7 @@ coco_sobject_cl coco_sobject_classes[] = {
     1,                                  /* health_max */
     0,                                  /* damage */
     COCO_FALSE,                         /* clip_to_board */
-    COCO_MAKE_COLOR_INDEX_TRIPLET( COCO_INDEX_GREEN, COCO_INDEX_GREEN, COCO_INDEX_GREEN ), /* default_blip_color_index */
+    COCO_MAKE_BLIP_TRIPLET( COCO_BLIP_EXPLOSION, COCO_BLIP_EXPLOSION, COCO_BLIP_EXPLOSION ), /* default_blip_color_index */
     1 /* placeholder */,                /* canonical_w */
     1 /* placeholder */,                /* canonical_h */
     1,                                  /* z */
@@ -3588,19 +3588,19 @@ coco_sobject_is_visible( coco_sobject * inst, coco_sobject_cl * cl, coco_gnum ca
   return (coco_bool) 0; /* convince compiler we don't fall off end */
 }
 
-coco_color_index
-coco_sobject_blip_color_index( coco_sobject * inst, coco_sobject_cl * cl, int player_index, coco_sstate * sstate )
+coco_blip_index
+coco_sobject_blip_color_index( coco_sobject * inst, coco_sobject_cl * cl, int p_or_c_index, coco_bool is_comp, coco_sstate * sstate )
 {
   do
    {
-     coco_color_index (* method)( coco_sobject *, coco_sobject_cl * , int , coco_sstate * ) = cl->sobject_blip_color_index;
+     coco_blip_index (* method)( coco_sobject *, coco_sobject_cl * , int , coco_bool , coco_sstate * ) = cl->sobject_blip_color_index;
      if (method)
-       return method( inst, cl, player_index, sstate );
+       return method( inst, cl, p_or_c_index, is_comp, sstate );
      cl = cl->super;
    }
   while (cl);
   coco_fatal_printf( COCO_ERROR_COCO_IMPLEMENTAION_PROBLEM, "No method on sobject_blip_color_index inst=%p, class_pass_idx = %d, class_slot_idx = %d\n", inst, cl ? cl->cl_index : -1, inst->every.cl->cl_index );
-  return (coco_color_index) 0; /* convince compiler we don't fall off end */
+  return (coco_blip_index) 0; /* convince compiler we don't fall off end */
 }
 
 coco_bool
@@ -3804,7 +3804,7 @@ coco_init_sobject( coco_sobject * inst, coco_sobject_cl * cl, coco_facing facing
   inst->every.nationality = nationality;
   inst->every.health = COCO_SOBJECT_HEALTH_MAX( inst );
   inst->every.angle = 0;
-  inst->every.scratch_blip = COCO_INDEX_TRANSPARENT;
+  inst->every.scratch_blip = COCO_BLIP_TRANSPARENT;
   return inst;
 }
 
@@ -4159,7 +4159,7 @@ coco_sobject *
 coco_init_metal_shrapnel( coco_sobject * inst, coco_sobject_cl * cl, coco_gnum x, coco_gnum y, coco_gnum dx, coco_gnum dy )
 {
   coco_init_shrapnel( inst, cl, x, y, dx, dy );
-  inst->metal_shrapnel.color_index = COCO_INDEX_WHITE;
+  inst->metal_shrapnel.color_index = COCO_INDEX_RED;
   return inst;
 }
 

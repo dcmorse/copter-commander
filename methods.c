@@ -2365,43 +2365,49 @@ coco_infantry_enter_friendly_bunker( coco_sobject *sobject,
 }
 
 
-coco_color_index
+coco_blip_index
 coco_every_sobject_blip_color_index( coco_sobject *sobject, 
                                      coco_sobject_cl *cl,
-                                     int player_index,
+                                     int p_or_c_index,
+                                     coco_bool is_comp,
                                      coco_sstate *sstate )
 {
-  coco_nationality nat = coco_players[player_index].nationality;
+  coco_nationality nat = is_comp
+    ? coco_comps[p_or_c_index].nationality
+    : coco_players[p_or_c_index].nationality;
   coco_nationality onat = COCO_SOBJECT_NATIONALITY( sobject );
-  coco_color_index_triplet citrip 
+  coco_blip_triplet citrip 
     = COCO_SOBJECT_DEFAULT_BLIP_COLOR_INDEX( sobject );
   return ((onat == nat)
-          ? COCO_CITRIP_FRIENDLY( citrip )
+          ? COCO_BLIP_TRIPLET_FRY( citrip )
           : ((onat == COCO_NEUTRAL)
-            ? COCO_CITRIP_NEUTRAL( citrip )
-            : COCO_CITRIP_HOSTILE( citrip )));
+            ? COCO_BLIP_TRIPLET_NTL( citrip )
+            : COCO_BLIP_TRIPLET_EMY( citrip )));
 }
 
 
-coco_color_index
+coco_blip_index
 coco_camera_blip_color_index( coco_sobject *sobject, 
                               coco_sobject_cl *cl,
-                              int player_index,
+                              int p_or_c_index,
+                              coco_bool is_comp,
                               coco_sstate *sstate )
 {
-  if ((!(sstate->time & 12))
-      && (COCO_SOBJECT_CAMERA_INDEX( sobject ) == player_index))
+  if ((!is_comp)
+      && (!(sstate->time & 12))
+      && (COCO_SOBJECT_CAMERA_INDEX( sobject ) == p_or_c_index))
     {
-      return COCO_INDEX_LIGHT_BLUE;
+      return COCO_BLIP_CAMERA_BLINK;
     }
   /* call next method */
-  else return coco_sobject_blip_color_index( sobject, cl->super, player_index, sstate );
+  else return coco_sobject_blip_color_index( sobject, cl->super, p_or_c_index, is_comp, sstate );
 }
 
-coco_color_index
+ coco_blip_index
 coco_copter_blip_color_index( coco_sobject *sobject, 
                               coco_sobject_cl *cl,
-                              int player_index,
+                              int p_or_c_index,
+                              coco_bool is_comp,
                               coco_sstate *sstate )
 {
   if (coco_jamming)
@@ -2409,10 +2415,12 @@ coco_copter_blip_color_index( coco_sobject *sobject,
       coco_nationality nationality = COCO_SOBJECT_NATIONALITY( sobject );
       coco_gnum x = COCO_SOBJECT_X( sobject );
       coco_gnum y = COCO_SOBJECT_Y( sobject );
-      if ((coco_players[player_index].nationality == nationality))
+      if ((nationality == (is_comp 
+                           ? coco_comps[p_or_c_index].nationality
+                           : coco_players[p_or_c_index].nationality)))
         /* call-next-method */
         return coco_sobject_blip_color_index( sobject, cl->super, 
-                                              player_index, sstate );
+                                              p_or_c_index, is_comp, sstate );
       else
         COCO_DO_SSTATE_OBJECTS( sensor, sstate, 
         {
@@ -2430,15 +2438,17 @@ coco_copter_blip_color_index( coco_sobject *sobject,
             {
               /* call-next-method */
               return coco_sobject_blip_color_index( sobject, cl->super, 
-                                                    player_index, sstate );
+                                                    p_or_c_index, is_comp,
+                                                    sstate );
             }
         });
-      return COCO_INDEX_TRANSPARENT;
+      return COCO_BLIP_TRANSPARENT;
     }
   else
     /* call-next-method */
     return coco_sobject_blip_color_index( sobject, cl->super, 
-                                          player_index, sstate );
+                                          p_or_c_index,
+                                          is_comp, sstate );
 }
 
 

@@ -52,7 +52,7 @@
 
    ;; Used for temporarily caching radar blip colors during
    ;; unit serialization
-   ("scratch_blip" "COCO_INDEX_TRANSPARENT" "coco_color_index")
+   ("scratch_blip" "COCO_BLIP_TRANSPARENT" "coco_blip_index")
 
    ;; now the per-class
    ("phase"        "COCO_SOLID" "coco_phase" :allocation :every-class)
@@ -69,8 +69,8 @@
    ("damage"       "COCO_NIGH_INVULNERABLE" "coco_health" :allocation :every-class)
    ("clip_to_board" "COCO_FALSE" "coco_bool" :allocation :every-class)
    ("default_blip_color_index" 
-       "COCO_MAKE_COLOR_INDEX_TRIPLET( COCO_INDEX_GREY, COCO_INDEX_ORANGE, COCO_INDEX_ORANGE )"
-       "coco_color_index_triplet"
+       "COCO_MAKE_BLIP_TRIPLET( COCO_BLIP_FRY, COCO_BLIP_EMY, COCO_BLIP_EMY )"
+       "coco_blip_triplet"
      :allocation :every-class)
    ;; width+height available before the object is created.
    ;; canonical_w is used by all units to place them at the right x 
@@ -237,8 +237,9 @@
                  "coco_trooper_always_target_me")
 
 (c-define-generic-function "sobject_blip_color_index" "sobject" 
-                           "coco_color_index"
-                           (("player_index" "int")
+                           "coco_blip_index"
+                           (("p_or_c_index" "int")
+                            ("is_comp" "coco_bool")
                             ("sstate" "coco_sstate *")))
 
 (c-define-method "sobject_blip_color_index" "sobject"
@@ -280,7 +281,7 @@
   (("camera_index" :arg)
    ("collision_priority" "50")
    ("default_blip_color_index" 
-       "COCO_MAKE_COLOR_INDEX_TRIPLET( COCO_INDEX_WHITE, COCO_INDEX_RED, COCO_INDEX_RED )")))
+       "COCO_MAKE_BLIP_TRIPLET( COCO_BLIP_FRY_PLAYER, COCO_BLIP_EMY_PLAYER, COCO_BLIP_EMY_PLAYER )")))
 
 (c-define-generic-function "camera_velocity_offset" "sobject"
                            "coco_gnum" ())
@@ -303,7 +304,7 @@
    ("y"            "COCO_GROUND_Y + 1")
    ("cobject_draw" "coco_cobject_inviso_draw")
    ("default_blip_color_index" 
-       "COCO_COLOR_INDEX_TRIPLET_TRANSPARENT")
+       "COCO_BLIP_TRIPLET_TRANSPARENT")
        
    ))
 
@@ -427,7 +428,7 @@
    ("raster_count" "COCO_SMOKE_RASTER_COUNT")
    ("canonical_w"  "COCO_SMOKE_BIG_RASTER_W")
    ("default_blip_color_index" 
-       "COCO_COLOR_INDEX_TRIPLET_TRANSPARENT")))
+       "COCO_BLIP_TRIPLET_TRANSPARENT")))
 
 (c-define-class "cloud" ("sobject")
   (("z"            "1")
@@ -438,7 +439,7 @@
    ("raster_count" "COCO_CLOUD_RASTER_COUNT")
    ("canonical_w"  "COCO_CLOUD_RASTER_W")
    ("default_blip_color_index" 
-       "COCO_COLOR_INDEX_TRIPLET_TRANSPARENT"))
+       "COCO_BLIP_TRIPLET_TRANSPARENT"))
   :init-by-list-fn :automatic)
 
 (c-define-method "sobject_update_state" "smoke" 
@@ -467,7 +468,7 @@
    ("damage"       "7")
    ("clip_to_board" "COCO_TRUE")
    ("default_blip_color_index" 
-       "COCO_MAKE_COLOR_INDEX_TRIPLET( COCO_INDEX_KHAKI, COCO_INDEX_KHAKI, COCO_INDEX_KHAKI )"))
+       "COCO_MAKE_BLIP_TRIPLET( COCO_BLIP_FRY_BALLOON, COCO_BLIP_EMY_BALLOON, COCO_BLIP_EMY_BALLOON )"))
   :init-by-list-fn :automatic)
 
 (c-define-method "kaboom" "balloon" "coco_airbursting_kaboom")
@@ -487,7 +488,7 @@
    ("health_max"    "1")
    ("damage"        "3")
    ("default_blip_color_index" 
-       "COCO_COLOR_INDEX_TRIPLET_TRANSPARENT"))
+       "COCO_BLIP_TRIPLET_TRANSPARENT"))
   :init-by-list-fn :automatic)
 
 (c-define-method "sobject_update_state" "balloon_line" 
@@ -503,7 +504,7 @@
    ("collision_priority" "200")
    ("z" "-1")
    ("default_blip_color_index" 
-       "COCO_MAKE_COLOR_INDEX_TRIPLET( COCO_INDEX_GREY_C, COCO_INDEX_ORANGE, COCO_INDEX_BROWN )")))
+       "COCO_MAKE_BLIP_TRIPLET( COCO_BLIP_FRY_BUILDING, COCO_BLIP_EMY_BUILDING, COCO_BLIP_EMY_BUILDING )")))
 
 (c-define-method "kaboom" "building" "coco_airbursting_kaboom")
 
@@ -522,7 +523,7 @@
    ("raster_count"  "COCO_TRAFFIC_SIGN_RASTER_COUNT")
    ("cobject_raster_index_fn" "coco_cobject_standard_raster_index")
    ("default_blip_color_index" 
-       "COCO_COLOR_INDEX_TRIPLET_TRANSPARENT"))
+       "COCO_BLIP_TRIPLET_TRANSPARENT"))
   :init-by-list-fn :automatic)
 
 (c-define-class "hut" ("building")
@@ -590,7 +591,7 @@
    ("raster_count" "COCO_LANDING_PAD_RASTER_COUNT")
    ("canonical_w"  "COCO_LANDING_PAD_RASTER_W")
    ("default_blip_color_index" 
-       "COCO_MAKE_COLOR_INDEX_TRIPLET( COCO_INDEX_GREY_C, COCO_INDEX_GREY_C, COCO_INDEX_GREY_C )"))
+       "COCO_MAKE_BLIP_TRIPLET( COCO_BLIP_FRY_BUILDING, COCO_BLIP_EMY_BUILDING, COCO_BLIP_NEUTRAL_BUILDING )"))
   :init-by-list-fn :automatic)
 
 (c-define-class "headquarters" ("building")
@@ -663,7 +664,7 @@
    ("nationality" "COCO_NEUTRAL")
    ("canonical_w"   "COCO_GUN_RUBBLE_RASTER_W")
    ("default_blip_color_index" 
-       "COCO_COLOR_INDEX_TRIPLET_TRANSPARENT"))
+       "COCO_BLIP_TRIPLET_TRANSPARENT"))
   :init-by-list-fn :automatic)
 
 (c-define-method "sobject_update_state" "gun_rubble"
@@ -762,7 +763,7 @@
    ("infantry_take_buildings_p" "COCO_TRUE")
    ("z" "1")
    ("default_blip_color_index" 
-       "COCO_MAKE_COLOR_INDEX_TRIPLET( COCO_INDEX_GREY_C, COCO_INDEX_TRANSPARENT, COCO_INDEX_TRANSPARENT )")
+       "COCO_MAKE_BLIP_TRIPLET( COCO_BLIP_FRY_INFANTRY, COCO_BLIP_TRANSPARENT, COCO_BLIP_TRANSPARENT )")
    ("cost" "1")
    ("fire_bullet_sound_type" "COCO_SOUND_RIFLE"))
   :init-by-list-fn "coco_infantry_init_from_ground_by_list"
@@ -817,7 +818,7 @@
    ("health_max"   "1")
    ("shrapnel_count" "0")
    ("collision_priority" "25")
-   ("default_blip_color_index" "COCO_MAKE_COLOR_INDEX_TRIPLET( COCO_INDEX_YELLOW, COCO_INDEX_RED, COCO_INDEX_ORANGE )")))
+   ("default_blip_color_index" "COCO_MAKE_BLIP_TRIPLET( COCO_BLIP_FRY_MUNITION, COCO_BLIP_EMY_MUNITION, COCO_BLIP_EMY_MUNITION )")))
 
 (c-define-method "ground_trooper_target_p" "munition"
                  "coco_trooper_never_target_me")
@@ -835,7 +836,7 @@
    ("lifespan"        "COCO_BULLET_LIFESPAN")
    ("spark_count"  "1")
    ("default_blip_color_index" 
-       "COCO_MAKE_COLOR_INDEX_TRIPLET( COCO_INDEX_DARK_YELLOW, COCO_INDEX_DARK_RED, COCO_INDEX_ORANGE )")))
+       "COCO_MAKE_BLIP_TRIPLET( COCO_BLIP_FRY_BULLET, COCO_BLIP_EMY_BULLET, COCO_BLIP_EMY_BULLET )")))
 
 (c-define-method "hostile_collision" "bullet"
                  "coco_bullet_hostile_collision")
@@ -934,7 +935,7 @@
    ("cobject_draw" "coco_spark_draw")
    ("z"            "2") ; bullets are the weap of choice against clouds
    ("default_blip_color_index" 
-       "COCO_COLOR_INDEX_TRIPLET_TRANSPARENT")))
+       "COCO_BLIP_TRIPLET_TRANSPARENT")))
 
 (c-define-method "ground_collide" "spark" "coco_ignore_ground_collide")
 
@@ -952,7 +953,7 @@
    ("shrapnel_count" "0")
    ("canonical_w"  "24")
    ("default_blip_color_index" 
-       "COCO_COLOR_INDEX_TRIPLET_TRANSPARENT")))
+       "COCO_BLIP_TRIPLET_TRANSPARENT")))
 
 (c-define-method "sobject_update_state" "shrapnel"
                  "coco_shrapnel_update_state")
@@ -962,10 +963,10 @@
 ;    ("raster_count" "COCO_FIREBALL_SHRAPNEL_RASTER_COUNT")
 ;    ("canonical_w"  "COCO_FIREBALL_24A_RASTER_W")
 ;    ("default_blip_color_index" 
-;        "COCO_COLOR_INDEX_TRIPLET_TRANSPARENT")))
+;        "COCO_BLIP_TRIPLET_TRANSPARENT")))
 
 (c-define-class "metal_shrapnel" ("shrapnel")
-  (("color_index"   "COCO_INDEX_WHITE" "coco_color_index")
+  (("color_index"   "COCO_INDEX_RED" "coco_color_index")
    ("cobject_draw" "coco_metal_shrapnel_draw")))
 
 (c-define-method "sobject_update_state" "metal_shrapnel"
@@ -996,7 +997,7 @@
    ("nationality"  "COCO_NEUTRAL")
    ("health"       "COCO_NIGH_INVULNERABLE")
    ("default_blip_color_index" 
-       "COCO_MAKE_COLOR_INDEX_TRIPLET( COCO_INDEX_GREEN, COCO_INDEX_GREEN, COCO_INDEX_GREEN )")))
+       "COCO_MAKE_BLIP_TRIPLET( COCO_BLIP_EXPLOSION, COCO_BLIP_EXPLOSION, COCO_BLIP_EXPLOSION )")))
 
 (c-define-method "ground_collide" "explosion" "coco_ignore_ground_collide")
 

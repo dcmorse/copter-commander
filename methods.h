@@ -501,22 +501,25 @@ coco_ignore_bunker( coco_sobject *sobject, coco_sobject_cl *cl,
                     coco_sobject *bunker, coco_sstate *sstate );
 
 
-coco_color_index
+coco_blip_index
 coco_every_sobject_blip_color_index( coco_sobject *sobject, 
                                      coco_sobject_cl *cl,
-                                     int player_index,
+                                     int p_or_c_index,
+                                     coco_bool is_comp,
                                      coco_sstate *sstate );
 
-coco_color_index
+coco_blip_index
 coco_camera_blip_color_index( coco_sobject *sobject, 
                               coco_sobject_cl *cl,
-                              int player_index,
+                              int p_or_c_index,
+                              coco_bool is_comp,
                               coco_sstate *sstate );
 
-coco_color_index
+coco_blip_index
 coco_copter_blip_color_index( coco_sobject *sobject, 
                               coco_sobject_cl *cl,
-                              int player_index,
+                              int p_or_c_index,
+                              coco_bool is_comp,
                               coco_sstate *sstate );
 
 

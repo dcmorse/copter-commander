@@ -964,7 +964,7 @@ coco_sobject_set_raster_index( coco_sobject *sobject, unsigned char index )
 void
 coco_randomize_metal_shrapnel( coco_sobject *sobject )
 {
-  const static coco_color_index color_lut[COCO_METAL_LUT_SIZE]
+  const static coco_color color_lut[COCO_METAL_LUT_SIZE]
     = { COCO_INDEX_RED, COCO_INDEX_BLUE, COCO_INDEX_GREEN,
         COCO_INDEX_LIGHT_BLUE, COCO_INDEX_BROWN };
   COCO_METAL_SHRAPNEL_COLOR_INDEX( sobject )
@@ -2311,16 +2311,16 @@ coco_format_sstate_to_buffer( coco_sstate *sstate, int p_or_c_index,
   COCO_DO_SSTATE_OBJECTS( sobject, sstate,
   {
     /* this counting test must be synced with test below */
-    coco_color_index ci;
+    coco_blip_index ci;
     if (coco_sobject_is_visible( sobject, COCO_SOBJECT_CL( sobject ), 
                                  cam_left, cam_right, cam_object ))
       cobject_count++;
     ci = coco_sobject_blip_color_index( sobject, COCO_SOBJECT_CL( sobject ), 
-                                        p_or_c_index, sstate );
+                                        p_or_c_index, is_comp, sstate );
     /* initialize scratch blip cache */
     COCO_SOBJECT_SCRATCH_BLIP( sobject ) = ci;
     /* Only written if its visible */
-    if (COCO_INDEX_TRANSPARENT != ci) 
+    if (COCO_BLIP_TRANSPARENT != ci) 
       cblip_count++;
   });
   
@@ -2363,10 +2363,10 @@ coco_format_sstate_to_buffer( coco_sstate *sstate, int p_or_c_index,
     if (cblips) *cblips = cblip_ptr;
     COCO_DO_SSTATE_OBJECTS( sobject, sstate, 
     {
-      coco_color_index ci = COCO_SOBJECT_SCRATCH_BLIP( sobject );
+      coco_blip_index ci = COCO_SOBJECT_SCRATCH_BLIP( sobject );
       /* cheating clients might read "transparent" thing's coordinates, and
          gain classified info.  To prevent that we'll not send them. */
-      if (ci != COCO_INDEX_TRANSPARENT)
+      if (ci != COCO_BLIP_TRANSPARENT)
         {
           coco_rxnum x;
           coco_rynum y;

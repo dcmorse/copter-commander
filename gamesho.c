@@ -393,3 +393,22 @@ coco_gnum coco_game_fx_radius[COCO_GAME_SOUNDS_SIZE] = {
 
 
 
+const coco_color coco_blip_to_color[/* <= 256 */] = {
+  COCO_COLOR_TRANSPARENT, 
+  COCO_COLOR_RED,         
+  COCO_COLOR_RED,         
+  COCO_COLOR_GREEN,       
+  COCO_COLOR_ORANGE,      
+  COCO_COLOR_GREY,        
+  COCO_COLOR_BROWN,       
+  COCO_COLOR_LIGHT_BLUE,  
+  COCO_COLOR_ORANGE,      
+  COCO_COLOR_WHITE,
+  COCO_COLOR_YELLOW,      
+  COCO_COLOR_GREY_C,      
+  COCO_COLOR_DARK_YELLOW, 
+  COCO_COLOR_DARK_RED,    
+  COCO_COLOR_KHAKI,
+  COCO_COLOR_GREY_C,      
+  COCO_COLOR_KHAKI,
+};

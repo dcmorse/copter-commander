@@ -28,6 +28,7 @@ coco_bool coco_double_buffer = COCO_TRUE;
 
 /* changes to this order need to be reflected in the (e.g.) COCO_INDEX_BLUE
    defines in coco.h */
+/* The Oooold palette, which you can delete next time you read this.
 const coco_color coco_palette[256] = {
   COCO_COLOR_TRANSPARENT,
   COCO_COLOR_BLACK,
@@ -44,6 +45,16 @@ const coco_color coco_palette[256] = {
   COCO_COLOR_DARK_YELLOW,
   COCO_COLOR_DARK_RED,
   COCO_COLOR_KHAKI,
+};
+*/
+
+const coco_color coco_palette[/* <=256 */] = {
+  COCO_COLOR_TRANSPARENT,
+  COCO_COLOR_RED,
+  COCO_COLOR_BLUE,
+  COCO_COLOR_GREEN,
+  COCO_COLOR_LIGHT_BLUE,
+  COCO_COLOR_BROWN,
 };
 
 void 
