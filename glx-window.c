@@ -137,6 +137,7 @@ coco_make_window( void )
                              0, visual->depth, InputOutput, visual->visual, 
                              CWBorderPixel | CWColormap | CWEventMask, &swa );
     /* This returns an int, but I can't find any doc on what it means. */
+    coco_cookie( "xwindow=%d\n", xwindow );
     XSetStandardProperties( xdisplay, xwindow, coco_product_name, 
                             coco_product_name, None, NULL, 0, &sh );
     if (!glXMakeCurrent( xdisplay, xwindow, context ))
@@ -323,8 +324,13 @@ coco_handle_ui_events( void )
                   coco_set_bit( keystate, key, ispress );
                   if (ispress)
                     { 
+                      /* str is cheesey hack.  Should use xlookupstring or
+                         something. */
+                      char str[2];
+                      str[0] = COCO_KEY_TO_CHAR( key );
+                      str[1] = '\0';
                       if (!wasset) 
-                        coco_key_press( key, "BLAH", keystate );
+                        coco_key_press( key, str, keystate );
                     }
                   else coco_key_release( key, keystate );
                 }

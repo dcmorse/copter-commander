@@ -164,6 +164,80 @@ coco_copy_bit_vec( unsigned char *dest, unsigned char *src, int size )
   memcpy( dest, src, ((size+7) >> 3) * sizeof( unsigned char ) );
 }
 
+/* 
+
+  partial test suite for some and every, below
+  COCO_BIT_VEC_VAR( a, 11 );
+  COCO_BIT_VEC_VAR( b, 11 );
+  COCO_BIT_VEC_VAR( c, 11 );
+  COCO_BIT_VEC_VAR( d, 11 );
+  coco_clear_bit_vec( a, 11, 0 );
+  coco_clear_bit_vec( b, 11, 0 );
+  coco_clear_bit_vec( c, 11, 1 );
+  coco_clear_bit_vec( d, 11, 1 );
+  coco_set_bit( a, X, 1 ); /+ for X = 0, 7, 8, 10 +/
+  coco_set_bit( c, X, 0 );
+  coco_cookie( "some( a ) = %d %s\n",
+               coco_bit_vec_some( a, 11 ),
+               coco_bit_vec_some( a, 11 ) ? "pass" : "fail" );
+  coco_cookie( "some( b ) = %d %s\n",
+               coco_bit_vec_some( b, 11 ),
+               coco_bit_vec_some( b, 11 ) ? "fail" : "pass" );
+  coco_cookie( "every( c ) = %d %s\n",
+               coco_bit_vec_every( c, 11 ),
+               coco_bit_vec_every( c, 11 ) ? "fail" : "pass" );
+  coco_cookie( "every( d ) = %d %s\n",
+               coco_bit_vec_every( d, 11 ),
+               coco_bit_vec_every( d, 11 ) ? "pass" : "fail" );
+  return 0;
+
+ */
+coco_bool 
+coco_bit_vec_some( unsigned char *bit_vector, int size )
+{
+  int i, limit;
+  limit = size >> 3;
+  for (i=0; i<limit; i++)
+    if (bit_vector[i])
+      return COCO_TRUE;
+  return (size&7) && (0 < (bit_vector[limit] & ((1<<(size&7))-1)));
+}
+
+/* tested but not currently needed.
+coco_bool 
+coco_bit_vec_every( unsigned char *bit_vector, int size )
+{
+  int i, limit, mask;
+  limit = size >> 3;
+  for (i=0; i<limit; i++)
+    if (bit_vector[i] != 255)
+      return COCO_FALSE;
+  mask = ((1<<(size&7))-1);
+  return (size&7) && ((bit_vector[limit] & mask) == mask);
+}
+*/
+
+void 
+coco_bit_vec_and( unsigned char *v1, unsigned char *v2, int size,
+                  unsigned char *vreturn )
+{
+  int i, limit;
+  limit = (size+7) >> 3;
+  for (i=0; i<limit; i++)
+    vreturn[i] = v1[i] & v2[i];
+}
+
+void
+coco_bit_vec_not( unsigned char *v1, int size,
+                  unsigned char *vreturn )
+{
+  int i, limit;
+  limit = (size+7) >> 3;
+  for (i=0; i<limit; i++)
+    vreturn[i] = ~(v1[i]);
+}
+
+
 
 /* _Misc______________________________________________________ */
 
@@ -409,5 +483,31 @@ coco_check_hton( void )
   if (i != COCO_I16_HTON( COCO_I16_NTOH( i ) )) return test; test++;
   if (i != COCO_I16_NTOH( COCO_I16_HTON( i ) )) return test; test++;
   return 0;
+}
+
+
+/* function to roll NUMBER of dice with SIDES sides.  I.e. for typical
+   monopoly turn roll 2 dice with 6 sides: coco_dice( 2, 6 ).
+   sides must be <= 255.  This is to call rand() as fewer times than
+   otherwise would be the case.  */
+int
+coco_dice( int number, unsigned char sides )
+{
+  int randomness;
+  int bytes_left = 0; /* bytes of randomness in sides */
+  int acc = number; /* every die starts with 1, not 0 */
+  if (0==sides) return 1; /* nonsense! */
+  for (; number > 0; number--)
+    {
+      if (0==bytes_left)
+        {
+          randomness = rand();
+          bytes_left = sizeof( int );
+        }
+      acc += randomness % sides;
+      randomness >>= 8;
+      bytes_left--;
+    }
+  return acc;
 }
 

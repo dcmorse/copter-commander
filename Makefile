@@ -158,7 +158,7 @@ HDR_FILES = forward-sobject.h methods.h sobject.h coco.h raster.h \
 GAME_C_FILES = language.c clsho.c simple-command-line.c graphics.c network.c \
                gamesho.c methods.c comp.c \
                background-${COCO_APPEARANCE_BASE}.c client.c sobject.c \
-	       screenshot.c server.c ccl.c globals.c main.c
+	       screenshot.c server.c ccl.c globals.c main.c dashboard.c
 
 # Gnome GUI files
 # (note how they cleverly start with "gnome-", so I can easily pass extra flags.)
@@ -218,8 +218,14 @@ rstr-%/rasters.h: tiff-compile
 .PRECIOUS: ${COCO_RASTER_DIRECTORY}/rasters.h
 
 # force recompile of tiffs (changes to which are not otherwise sensed by this makefile)
-art: tiff-compile
+art: tiff-clean tiff-compile
 	./tiff-compile tiffs ${COCO_RASTER_DIRECTORY}
+
+tiff-clean:
+	rm -f ${COCO_RASTER_DIRECTORY}/*.c \
+	      ${COCO_RASTER_DIRECTORY}/*.h  \
+	      ${COCO_RASTER_DIRECTORY}/*.o   \
+	      ${COCO_RASTER_DIRECTORY}/built ;
 
 # Some decisions are put off until configure time then included into
 # coco.h
@@ -379,9 +385,8 @@ sizeof: sizeof.c
 endian: endian.c
 	${CC} ${CFLAGS} -o endian endian.c
 
-clean:
-	rm -f rstr-*/built rstr-*/*.o rstr-*/*.c rstr-*/*.h *.o \
-	  copter-commander glx-copter-commander \
+clean: tiff-clean
+	rm -f *.o copter-commander glx-copter-commander \
 	  config-time.h *.strlit endian sizeof tiff-compile
 
 distclean: clean

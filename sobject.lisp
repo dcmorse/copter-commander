@@ -120,6 +120,8 @@
    ("max_bombs"   "0" "unsigned char"  :allocation :every-class)
    ("max_rockets" "0" "unsigned char"  :allocation :every-class)
    ("max_missiles" "0" "unsigned char"  :allocation :every-class)
+   ("max_plasma"  "0" "unsigned short" :allocation :every-class)
+   ("max_energy"   "0" "unsigned short" :allocation :every-class)
    ("max_internal_infantry" "0" "unsigned char" :allocation :every-class)
    ("max_fuel" "0" "unsigned short" :allocation :every-class)
    ("rotor_points" "NULL" "coco_mini_point *" :allocation :every-class)
@@ -154,7 +156,13 @@
    ;; only used by fancy vehicle classes (mech, cobra, cargo-copter, etc)
    ("dashboard_icon"           "NULL" "struct coco_raster *"
                                :allocation :every-class)
-   )
+   ("dashboard_list"           "0"   "unsigned int"  :allocation :every-class) ;; opengl display list
+   ("dashboard_items"          "NULL" "struct coco_dashboard_item **"
+   :allocation :every-class)
+   ("dashboard_nitems"         "-1"   "int" :allocation :every-class)
+   ("gen_dashboard_items"      "NULL"
+    ("int (*" ")(coco_sobject_cl *, struct coco_dashboard_item **)")
+    :allocation :every-class))
   :class-layout :index
   :named-classes-p t
   :init-by-list-fn :virtual)
@@ -355,7 +363,8 @@
    ("rotate_p"    "COCO_TRUE")
    ("w"           "COCO_SOBJECT_CANONICAL_W( inst )")
    ("h"           "COCO_SOBJECT_CANONICAL_H( inst )")
-   ("airburst_sound_type" "COCO_SOUND_BIG_AIRBURST")))
+   ("airburst_sound_type" "COCO_SOUND_BIG_AIRBURST")
+   ("gen_dashboard_items" "coco_copter_dashboard_items")))
 
 (c-define-method "effective_damage" "copter" 
                  "coco_flesh_damageable_effective_damage")
@@ -448,12 +457,16 @@
    ("dashboard_icon" "&coco_cargo_copter_icon_raster")))
 
 (c-define-class "mech" ("camera")
-  (("energy"       "0"                                "coco_u16")
+  (("energy"       "COCO_SOBJECT_MAX_ENERGY( inst )" "coco_u16")
+   ("max_energy"   "COCO_MECH_CAPACITANCE")
    ;; should missile_cooldown be ported here, or be factored up to camera?
    ;;("missile_cooldown" "COCO_FALSE" "coco_bool")
    ;; when to set missile_cooldown to false again
    ;;("missile_cooldown_time" nil     "coco_u32") 
    ;;("next_missilebeat_on_pad" "0"   "coco_u32")
+   ("last_plasma_fire_time" "0" "coco_u32")
+   ("plasma" "COCO_SOBJECT_MAX_PLASMA( inst )" "unsigned short")
+   ("max_plasma"    "100")
    ("squatting_down" "COCO_FALSE" "coco_bool")
    ("shield_powered" "COCO_FALSE" "coco_bool")
    ("dx_max"       "COCO_MECH_JUMPING_DX_MAX")
@@ -466,8 +479,8 @@
    ;;("raster_index" "0") ;; doesn't use normal raster facility
    ("shrapnel_count" "8")
    ;; copter is now abstract class, with individual model classes below it
-   ("canonical_w"  "17")
-   ("canonical_h"  "40") ;; JUST A GUESS XXX
+   ("canonical_w"  "17") ;; never reset
+   ("canonical_h"  "32") ;; never reset, sampled 32, 28, 35.
    ;;("rasters"      "coco_copter_rasters")
    ("raster_count" "0")
    ("cobject_guess_nationality_fn" "coco_mech_guess_nationality")
@@ -480,6 +493,13 @@
    ("airburst_sound_type" "COCO_SOUND_BIG_AIRBURST")
    ("cost"        "20")
    ("dashboard_icon" "&coco_cobra_icon_raster") ;; XXX wrong
+   ("input_buffers" nil
+    ;; intentially left uninitialized.  Don't have aggregate initializers
+    ;; in oo-compiler, I think.
+    ;; Will be sorted out after ~3 frames of confusion anyway.
+    ("COCO_BIT_VEC_VAR( "
+     ", COCO_MECH_BUFFERED_BUTTONS_HACK*COCO_MECH_BUFFERED_TURNS_HACK )"))
+   ("gen_dashboard_items" "coco_mech_dashboard_items")
    ))
 
 (c-define-method "hostile_collision" "mech" 
@@ -938,7 +958,7 @@
    ("phase"        "COCO_EXPLOSIVE")
    ("health_max"   "1")
    ("shrapnel_count" "0")
-   ("collision_priority" "25")
+   ("collision_priority" "COCO_MUNITION_COLLISION_PRIORITY")
    ("default_blip_color_index" "COCO_MAKE_BLIP_TRIPLET( COCO_BLIP_FRY_MUNITION, COCO_BLIP_EMY_MUNITION, COCO_BLIP_EMY_MUNITION )")))
 
 (c-define-method "ground_trooper_target_p" "munition"
@@ -1041,6 +1061,40 @@
 
 (c-define-method "sobject_update_state" "missile" 
                  "coco_missile_update_state")
+
+(c-define-class "plasma" ("munition")
+  (("damage"       "COCO_PLASMA_DAMAGE")
+   ("radius"       "COCO_SOBJECT_CANONICAL_W( inst )>>1" "unsigned char")
+   ("coherent"    "COCO_TRUE"  "coco_bool")
+   ("cobject_draw" "coco_plasma_draw")
+   ("canonical_w"  "12")
+   ("canonical_h"  "12")
+   ("w"            "COCO_SOBJECT_CANONICAL_W( inst )")
+   ("h"            "COCO_SOBJECT_CANONICAL_H( inst )")
+   ("default_blip_color_index" 
+       "COCO_MAKE_BLIP_TRIPLET( COCO_BLIP_FRY_MUNITION, COCO_BLIP_EMY_MUNITION, COCO_BLIP_EMY_MUNITION )")
+   ("facing"       "0")
+   ("rasters"      "coco_plasma_rasters")
+   ("raster_count" "COCO_PLASMA_RASTER_COUNT")
+   ("raster_index" "nationality")
+   ("collision_priority" "COCO_MUNITION_COLLISION_PRIORITY - 1")
+   ("health_max"   "COCO_NIGH_INVULNERABLE")
+   ("z"            "2")
+   ("phase"       "COCO_SOLID") ;; *snort* how ironic
+   ("cobject_guess_nationality_fn" "coco_raster_guess_nationality")))
+
+
+(c-define-method "sobject_to_cobject" "plasma"
+                 "coco_plasma_to_cobject")
+
+(c-define-method "sobject_update_state" "plasma" 
+                 "coco_plasma_update_state")
+
+(c-define-method "hostile_collision" "plasma"
+                 "coco_plasma_hostile_collision")
+
+(c-define-method "ground_collide" "plasma" 
+                 "coco_plasma_ground_collide")
 
 (c-define-class "spark" ("munition")
   (("phase"        "COCO_VAPOR")

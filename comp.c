@@ -196,8 +196,10 @@ coco_comp_think( struct coco_comp *self,
       dy = COCO_COBJECT_Y( cobjs+ci ) - y;
       cur = dx*dx + dy*dy;
       if ((min > cur)
-          && coco_sobject_subtype_p( COCO_COBJECT_CL( cobjs+ci ), 
+          && (coco_sobject_subtype_p( COCO_COBJECT_CL( cobjs+ci ), 
                                      COCO_COPTER_CLASS )
+              || coco_sobject_subtype_p( COCO_COBJECT_CL( cobjs+ci ), 
+                                         COCO_MECH_CLASS ))
           && (self->nationality
               != COCO_COBJECT_NATIONALITY_GUESS( cobjs+ci )))
         {

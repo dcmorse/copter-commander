@@ -236,6 +236,9 @@ void coco_copy_bit_vec( unsigned char *dest, unsigned char *src, int size );
   ((unsigned char)((bit_vector)[bytenum]))
 #define coco_set_byte( bit_vector, bytenum, byteval ) \
   (((bit_vector)[bytenum]) = (byteval))
+coco_bool coco_bit_vec_some( unsigned char *bit_vector, int size );
+/* not needed
+   coco_bool coco_bit_vec_every( unsigned char *bit_vector, int size ); */
 
 /* _Misc_______ */
 
@@ -284,6 +287,8 @@ typedef coco_u32 coco_mini_point;
 char *coco_sound_name_to_file_name( char *sound_name );
 
 int coco_check_hton( void );
+
+int coco_dice( int number, unsigned char sides );
 
 /* clsho.c */
 
@@ -462,13 +467,14 @@ void coco_rasterpos( coco_gnum x, coco_gnum y );
 
 #include "raster.h"
 void coco_draw_raster( coco_gnum x, coco_gnum y, struct coco_raster *raster );
-void
-coco_draw_raster_rotate( coco_gnum x, coco_gnum y,
-                         coco_gnum w, coco_gnum h,
-                         struct coco_raster *raster );
-void coco_begin_rotated_view( coco_gnum x, coco_gnum y,
-                              coco_angle angle );
+void coco_draw_raster_texmap( coco_gnum x0, coco_gnum y0,
+                              coco_gnum x1, coco_gnum y1,
+                              coco_gnum w, coco_gnum h,
+                              struct coco_raster *raster );
+void coco_begin_rotated_view( coco_gnum x, coco_gnum y, coco_angle angle );
 void coco_end_rotated_view( void );
+void coco_begin_scaled_view( float xstrech, float ystrech );
+void coco_end_scaled_view( void );
 
 void 
 coco_reload_texture( struct coco_raster *raster, coco_gnum w, coco_gnum h );
@@ -654,6 +660,7 @@ struct coco_dashboard_info {
   coco_u32 bombs;
   coco_u32 missiles;
   coco_u32 rockets;
+  coco_u32 plasma;
   coco_u32 paratroopers;
   coco_u32 engitroopers;
   coco_u32 copters;
@@ -906,6 +913,8 @@ struct coco_client_to_server_packet {
    20 is fudge factor. */
 #define COCO_TUTORIAL_ARROW_Y (COCO_VIEWABLE_H - ((COCO_TALK_DISPLAY_SIZE+2)*18 + 40 + 20))
 
+#define COCO_PLASMA_RASTER_COUNT 3
+struct coco_raster *coco_plasma_rasters[COCO_PLASMA_RASTER_COUNT];
 #define COCO_COPTER_RASTER_COUNT 4 /* no associated rasters */
 struct coco_raster *coco_cobra_rasters[COCO_COPTER_RASTER_COUNT];
 struct coco_raster *coco_bubble_copter_rasters[COCO_COPTER_RASTER_COUNT];
@@ -1094,6 +1103,8 @@ coco_bool coco_screenshot( char *file_name );
 
 /* client.c */
 
+
+
 /* These may change if the user figures out how to resize despite our best
    efforts.  They are not used by the server.  The game graphics are
    allowed to break if the user resizes the window. */
@@ -1217,6 +1228,15 @@ struct coco_raster_y_angle_cobject {
   coco_angle angle;
 };
 
+struct coco_plasma_cobject {
+  unsigned char class_index;
+  unsigned char raster_index;
+  coco_cnum x;
+  coco_cnum y;
+  unsigned char bits; /* 0-bit is coherency, above that radius */
+};
+
+
 #define COCO_COBJECT_MECH_TORSO_RASTER_INDEX( cobject ) ((cobject)->mech.lobits&31)
 #define COCO_COBJECT_MECH_LEG_RASTER_INDEX( cobject ) ((cobject)->mech.hibits&63)
 #define COCO_COBJECT_MECH_NATIONALITY( cobject ) \
@@ -1244,6 +1264,7 @@ union coco_cobject {
   struct coco_raster_y_cobject ry;
   struct coco_sound_cobject sound;
   struct coco_raster_y_angle_cobject rya;
+  struct coco_plasma_cobject plasma;
   struct coco_metal_shrapnel_cobject metal_shrapnel;
   struct coco_spark_cobject spark;
   struct coco_mech_cobject mech;
@@ -1290,6 +1311,7 @@ int coco_2raster_guess_nationality( coco_cobject *cobject );
 int coco_firetruck_guess_nationality( coco_cobject *cobject );
 int coco_demo_van_guess_nationality( coco_cobject *cobject );
 int coco_infantry_guess_nationality( coco_cobject *cobject );
+int coco_raster_guess_nationality( coco_cobject *cobject );
 
 
 /* moved to after the definition of coco_sobject_cl */
@@ -1375,8 +1397,38 @@ struct coco_mech_part coco_torso_parts[COCO_MAX_TORSO_PARTS];
 struct coco_mech_part coco_leg_parts[COCO_MAX_LEG_PARTS];
 
 
+struct coco_cstate {
+  void *raw_buffer;
+  coco_u32 raw_buffer_size;
+  coco_u32 time;
+  /* This just means accept ANY packet, regardless of times: */
+  coco_bool in_use; /* FALSE = accept any and set to TRUE */
+  coco_cobject *cobjects;
+  coco_u32 cobjects_length;
+  struct coco_cblip *cblips;
+  coco_u32 cblips_length;
+  coco_nationality game_over_nationality;
+  coco_gnum camera_x;
+  coco_gnum board_w;
+  unsigned char major_mission; /* 255 = none */
+  unsigned char minor_mission;  /* 255 = none */
+  coco_bool angle_on;
+  coco_angle angle; /* only use if angle_on */
+  struct coco_dashboard_info dashinfo;
+};
+
+
+#define COCO_DASHBOARD_BASELINE (5 + COCO_RADAR_Y + COCO_RADAR_H)
+
+
+coco_u32 coco_draw_frame_number;
+
+
+
 /* server.c */
 
+#define COCO_MECH_BUFFERED_BUTTONS_HACK 3 /* left, jump, center */
+#define COCO_MECH_BUFFERED_TURNS_HACK 3
 #define COCO_LOCALHOST_JOIN_TRIES 10
 #define COCO_COMP_FAVORITE_COPTER_CLASS COCO_COBRA_CLASS
 #define COCO_GROUND_UNIT_WARP_IN_X 80
@@ -1394,8 +1446,12 @@ struct coco_mech_part coco_leg_parts[COCO_MAX_LEG_PARTS];
 #define COCO_MECH_JUMPING_DDX_MAX 2
 #define COCO_MECH_DY_MAX 20
 #define COCO_MECH_GRAVITY 3
-#define COCO_MECH_CAPACITANCE 200
+#define COCO_MECH_CAPACITANCE 120
+#define COCO_MECH_POWER 2
+#define COCO_PLASMA_ENERGY 20
+#define COCO_MUNITION_COLLISION_PRIORITY 25
 #define COCO_BULLET_SPEED 30 /* can't be higher than balloon_w */
+#define COCO_PLASMA_SPEED 25
 #define COCO_BULLET_LIFESPAN 20
 #define COCO_BULLET_RANGE \
   (COCO_BULLET_SPEED * (COCO_BULLET_LIFESPAN-1))
@@ -1414,6 +1470,8 @@ struct coco_mech_part coco_leg_parts[COCO_MAX_LEG_PARTS];
 #define COCO_GRAVITY_ACCELL 3
 #define COCO_FLYING_MAN_ACCELL 1
 #define COCO_BULLET_DAMAGE 1
+#define COCO_PLASMA_DAMAGE 1
+#define COCO_PLASMA_RADIUS_MAX 32
 #define COCO_BOMB_DAMAGE 4
 #define COCO_MISSILE_DAMAGE 12
 #define COCO_SHRAPNEL_DAMAGE 1
@@ -1624,6 +1682,33 @@ void coco_comp_key_press( struct coco_keyboard_pointer_state *kstate,
                           struct coco_comp *self,
                           coco_key key );
 
+/* maybe will become generic function someday */
+coco_sobject *
+coco_fire_plasma( coco_sobject *sobject, coco_sobject_cl *class,
+                  coco_sstate *sstate );
+
+
+/* dashboard.c */
+struct coco_dashboard_item {
+  char *name; /* not used by user */
+  enum { COCO_DASHBOARD_LEFT, COCO_DASHBOARD_RIGHT } pack;
+  void (* draw_static)( int x, void *handy );
+  void *static_handy;
+  void (* draw_dynamic)( int x, struct coco_cstate *cstate,
+                         void *handy1, void *handy2 );
+  void *dynamic_handy1;
+  void *dynamic_handy2;
+};
+
+void foo( coco_sobject_cl *cl );
+
+void coco_draw_dashboard( struct coco_cstate *cstate );
+int coco_copter_dashboard_items( coco_sobject_cl *cl,
+                                 struct coco_dashboard_item **di_return );
+int coco_mech_dashboard_items( coco_sobject_cl *cl,
+                               struct coco_dashboard_item **di_return );
+
+
 /* comp.c */
 
 void
@@ -1692,7 +1777,6 @@ extern struct coco_tutorial_info coco_tutorial_infos[COCO_TUTORIAL_INFO_SIZE];
 /* late server.c */
 
 extern struct coco_tutorial_info *coco_tutorial;
-
 
 
 /* main.c */

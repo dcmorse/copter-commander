@@ -92,7 +92,9 @@ coco_tiff_load( char *filename, uint32 *w, uint32 *h,
 
 void
 coco_write_raster_header( FILE *s, uint32 *pixels, uint32 w, uint32 h, 
-                          enum coco_raster_format fmt, char *name )
+                          enum coco_raster_format fmt, 
+                          enum coco_raster_texmode texmode, 
+                          char *name )
 {
   char *upname = coco_strup( name );
   
@@ -108,6 +110,7 @@ coco_write_raster_header( FILE *s, uint32 *pixels, uint32 w, uint32 h,
 void
 coco_write_raster_source( FILE *s, uint32 *p, uint32 w, uint32 h,
                           enum coco_raster_format fmt,
+                          enum coco_raster_texmode texmode,
                           unsigned char trans_r,
                           unsigned char trans_g,
                           unsigned char trans_b,
@@ -119,6 +122,7 @@ coco_write_raster_source( FILE *s, uint32 *p, uint32 w, uint32 h,
   int bitmap = fmt==COCO_BITMAP;
   char *upname = coco_strup( cname );
   char *fmtstring = NULL;
+  char *texmodestring = NULL;
 
   switch (fmt) {
   case COCO_RGBA_8:       fmtstring="COCO_RGBA_8";       break;
@@ -128,6 +132,16 @@ coco_write_raster_source( FILE *s, uint32 *p, uint32 w, uint32 h,
   if (!fmtstring)
     {
       fprintf( stderr, "Unhandled raster format in %s:%d\n", 
+               __FILE__, __LINE__ );
+      exit( 1 );
+    }
+  switch (texmode) {
+  case COCO_MULTIPLY: texmodestring="COCO_MULTIPLY"; break;
+  case COCO_REPLACE:  texmodestring="COCO_REPLACE";  break;
+  };
+  if (!texmodestring)
+    {
+      fprintf( stderr, "Unhandled texture mode in %s:%d\n", 
                __FILE__, __LINE__ );
       exit( 1 );
     }
@@ -205,7 +219,7 @@ coco_write_raster_source( FILE *s, uint32 *p, uint32 w, uint32 h,
   fprintf( s, "struct coco_raster coco_%s_raster = {\n", cname );
   fprintf( s, "  COCO_%s_RASTER_W,\n", upname );
   fprintf( s, "  COCO_%s_RASTER_H,\n", upname );
-  fprintf( s, "  %s, 0, coco_pixels\n", fmtstring );
+  fprintf( s, "  %s, %s, 0, coco_pixels\n", fmtstring, texmodestring );
   fprintf( s, "};\n" );
   free( upname );
 }
@@ -242,6 +256,7 @@ coco_basename( char *path )
 int
 coco_tiff_compile( char *infile, char *outh, char *outc, char *cname,
                    enum coco_raster_format fmt, 
+                   enum coco_raster_texmode texmode, 
                    unsigned char trans_r,
                    unsigned char trans_g,
                    unsigned char trans_b,
@@ -259,13 +274,13 @@ coco_tiff_compile( char *infile, char *outh, char *outc, char *cname,
   if (log_file) { fprintf( log_file, "." ); fflush( log_file ) ; }
   f = fopen( outh, "w" );
   COCO_FAIL_ON_FAIL( f, "Couldn't open output header file" );
-  coco_write_raster_header( f, pixels, w, h, fmt, cname );
+  coco_write_raster_header( f, pixels, w, h, fmt, texmode, cname );
   COCO_FAIL_ON_FAIL( 0==fclose( f ), "Couldn't close output header file" );
   f = fopen( outc, "w" );
   COCO_FAIL_ON_FAIL( f, "Couldn't open output src file" );
   bname = coco_basename( outh );
-  COCO_FAIL_ON_FAIL( bname, "Couldn't malloc" )
-  coco_write_raster_source( f, pixels, w, h, fmt, 
+  COCO_FAIL_ON_FAIL( bname, "Couldn't malloc" );
+  coco_write_raster_source( f, pixels, w, h, fmt, texmode,
                             trans_r, trans_g, trans_b, trans_a, cname, bname );
   free( bname );
   COCO_FAIL_ON_FAIL( 0==fclose( f ), "Couldn't close src header file" );
@@ -382,6 +397,7 @@ coco_tiff_is_black_coded( char *fname )
 int 
 coco_tiff_compile_dir( char *indir, char *outdir, 
                        enum coco_raster_format fmt, 
+                       enum coco_raster_texmode texmode,
                        FILE *rasters_h )
 {
   DIR *dir;
@@ -406,7 +422,7 @@ coco_tiff_compile_dir( char *indir, char *outdir,
             break;
           if (!(cname && outh && outc)) 
             break;;
-          coco_tiff_compile( pname, outh, outc, cname, fmt, 
+          coco_tiff_compile( pname, outh, outc, cname, fmt, texmode,
                              0, 0, 0, 
                              coco_tiff_is_black_coded( pname ) ? 255 : 0,
                              &error_descrip );
@@ -429,10 +445,12 @@ coco_tiff_compile_dir( char *indir, char *outdir,
 int 
 coco_tiff_compile_system( char *indir, char *outdir )
 {
-  char *subdirs[3]
-    = { "rgba-8", "rgba-8-blend", "bitmap" };
-  enum coco_raster_format formats[3]
-    = { COCO_RGBA_8, COCO_RGBA_8_BLEND, COCO_BITMAP };
+  char *subdirs[4]
+    = { "rgba-8", "rgba-8-blend", "rgba-8-blend-multiply", "bitmap" };
+  enum coco_raster_format formats[4]
+    = { COCO_RGBA_8, COCO_RGBA_8_BLEND, COCO_RGBA_8_BLEND, COCO_BITMAP };
+  enum coco_raster_texmode texmodes[4]
+    = { COCO_REPLACE, COCO_REPLACE, COCO_MULTIPLY, COCO_REPLACE };
   int i;
   char *rasters_h = coco_directory_plus_file( outdir, "rasters.h", 0 );
   FILE *rasters_h_fd;
@@ -442,11 +460,11 @@ coco_tiff_compile_system( char *indir, char *outdir )
   rasters_h_fd = fopen( rasters_h, "w" );
   if (NULL==rasters_h) return 0;
   if (log_file) fprintf( log_file, "Compiling \".tiffs\" to \".c\"s" );
-  for (i=0; i<3; i++)
+  for (i=0; i<4; i++)
     {
       char *subindir = coco_directory_plus_file( indir, subdirs[i], 0 );
       if (!subindir) return 0;
-      if (!coco_tiff_compile_dir( subindir, outdir, formats[i], 
+      if (!coco_tiff_compile_dir( subindir, outdir, formats[i], texmodes[i],
                                   rasters_h_fd ))
         fprintf( stderr, "problems with directory \"%s\"\n", subindir );
       free( subindir );

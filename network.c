@@ -395,6 +395,7 @@ coco_cstate_serial_header_hton( struct coco_cstate_serial_header *str )
   str->dashinfo.bombs         = COCO_U32_HTON( str->dashinfo.bombs );
   str->dashinfo.missiles      = COCO_U32_HTON( str->dashinfo.missiles );
   str->dashinfo.rockets       = COCO_U32_HTON( str->dashinfo.rockets );
+  str->dashinfo.plasma        = COCO_U32_HTON( str->dashinfo.plasma );
   str->dashinfo.paratroopers  = COCO_U32_HTON( str->dashinfo.paratroopers );
   str->dashinfo.engitroopers  = COCO_U32_HTON( str->dashinfo.engitroopers );
   str->dashinfo.copters       = COCO_U32_HTON( str->dashinfo.copters );
@@ -419,6 +420,7 @@ coco_cstate_serial_header_ntoh( struct coco_cstate_serial_header *str )
   str->dashinfo.bombs         = COCO_U32_NTOH( str->dashinfo.bombs );
   str->dashinfo.missiles      = COCO_U32_NTOH( str->dashinfo.missiles );
   str->dashinfo.rockets       = COCO_U32_NTOH( str->dashinfo.rockets );
+  str->dashinfo.plasma        = COCO_U32_NTOH( str->dashinfo.plasma );
   str->dashinfo.paratroopers  = COCO_U32_NTOH( str->dashinfo.paratroopers );
   str->dashinfo.engitroopers  = COCO_U32_NTOH( str->dashinfo.engitroopers );
   str->dashinfo.copters       = COCO_U32_NTOH( str->dashinfo.copters );

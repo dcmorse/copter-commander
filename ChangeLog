@@ -1,3 +1,22 @@
+2001-05-29  David Morse  <dm@bomberlan.net>
+
+	* sobject.lisp (mech): Lots of work.
+	(plasma): Lots of work.
+
+2001-05-28  David Morse  <dm@bomberlan.net>
+
+	* dashboard.c: file created to handle dashboards with items that
+	fluctuate depending on the camera class.
+
+2001-05-27  David Morse  <dm@bomberlan.net>
+
+	* comp.c (coco_comp_think): mechs are something to shoot at.
+
+2001-05-26  David Morse  <dm@bomberlan.net>
+
+	* client.c (coco_bullet_draw): increase apparent size of infantry
+	bullets slightly.
+
 2001-05-23  David Morse  <dm@bomberlan.net>
 
 	* client.c (coco_draw_dashboard): helicopter icon new depicts type

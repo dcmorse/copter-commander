@@ -1942,8 +1942,47 @@ coco_building_hostile_collision( coco_sobject *building,
 {
   if (coco_sobject_subtype_p( COCO_SOBJECT_CL( obj2 ), COCO_BUILDING_CLASS ))
     *stat1 = *stat2 = COCO_FALSE;
+  /* call-next-method */
   else coco_hostile_collision( building, building_cl->super, obj2, sstate,
                                stat1, stat2 );
+}
+
+#define COCO_PLASMA_DISINTEGRATE( plasma ) \
+  { COCO_PLASMA_COHERENT( plasma ) = COCO_FALSE; \
+    COCO_SOBJECT_RASTER_INDEX( plasma ) = 0; }
+
+
+void
+coco_plasma_hostile_collision( coco_sobject *plasma,
+                               coco_sobject_cl *plasma_cl,
+                               coco_sobject *obj2, 
+                               coco_sstate *sstate,
+                               coco_bool *stat1, coco_bool *stat2 )
+{
+  *stat1 = *stat2 = COCO_FALSE;
+
+  /* call-next-method */
+  coco_hostile_collision( plasma, plasma_cl->super, obj2, sstate,
+                          stat1, stat2 );
+  if (!*stat1)
+    {
+      COCO_PLASMA_DISINTEGRATE( plasma );
+      COCO_SOBJECT_DX( plasma ) >>= 1;
+      COCO_SOBJECT_DY( plasma ) >>= 1;
+    }
+}
+
+void
+coco_plasma_ground_collide( coco_sobject *sobject, coco_sobject_cl *cla,
+                            coco_sstate *sstate )
+{
+  coco_gnum y = COCO_SOBJECT_Y( sobject );
+  coco_gnum cen = COCO_GROUND_Y - COCO_PLASMA_RADIUS( sobject );
+  if (cen>=y)
+    {
+      COCO_SOBJECT_Y( sobject ) = cen;
+      COCO_SOBJECT_DY( sobject ) = COCO_MAX( 0, COCO_SOBJECT_DY( sobject ) );
+    }
 }
 
 
@@ -2059,6 +2098,29 @@ coco_bunker_update_state( coco_sobject *sobject,
   return coco_sobject_update_state( sobject, cl->super, sstate );
 }
 
+
+coco_bool
+coco_plasma_update_state( coco_sobject *sobject,
+                          coco_sobject_cl *cl,
+                          coco_sstate *sstate )
+{
+  coco_gnum h;
+  int dradius = COCO_PLASMA_COHERENT( sobject ) ? 2 : 5;
+  int sradius = dradius;
+  int radius = COCO_PLASMA_RADIUS( sobject ) + dradius;
+  if (radius > COCO_PLASMA_RADIUS_MAX) return COCO_FALSE;
+  COCO_PLASMA_RADIUS( sobject ) = radius;
+  COCO_SOBJECT_X( sobject ) -= sradius;
+  COCO_SOBJECT_Y( sobject ) -= sradius;
+  h = COCO_SOBJECT_H( sobject ) + (sradius<<1);
+  COCO_SOBJECT_W( sobject ) = h;
+  COCO_SOBJECT_H( sobject ) = h;
+  /* call-next-method */
+  return coco_sobject_update_state( sobject, cl->super, sstate );
+}
+
+
+
 coco_bool
 coco_balloon_factory_update_state( coco_sobject *sobject,
                                    coco_sobject_cl *cl,
@@ -2082,7 +2144,6 @@ coco_balloon_factory_update_state( coco_sobject *sobject,
                 + COCO_BALLOON_FACTORY_BALLOON_TAB;
               coco_gnum y = 1 + COCO_SOBJECT_H( sobject )
                 + COCO_SOBJECT_Y( sobject ) - bc->canonical_h;
-              coco_cookie( "making balloon at %d,%d\n", x, y );
               coco_init_balloon( b, bc, x, y, (rand()&1) + 1, COCO_NEUTRAL );
               COCO_SOBJECT_DY( b ) = 1;
               COCO_BALLOON_FACTORY_FRESH( b ) = COCO_TRUE;

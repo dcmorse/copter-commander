@@ -33,6 +33,11 @@ coco_mech_update_state( coco_sobject *sobject,
                         coco_sobject_cl *cl,
                         coco_sstate *sstate );
 
+coco_bool
+coco_plasma_update_state( coco_sobject *sobject,
+                          coco_sobject_cl *cl,
+                          coco_sstate *sstate );
+
 coco_bool coco_spark_update_state( coco_sobject *sobject, 
                                    coco_sobject_cl *cl, 
                                    coco_sstate *sstate );
@@ -213,6 +218,11 @@ void coco_copter_mech_delete( coco_sobject *sobject,
                               coco_sstate *sstate );
 
 
+void
+coco_plasma_to_cobject( coco_sobject *sobject, coco_sobject_cl *cl,
+                        coco_cobject *cobject, coco_gnum cam_left,
+                        coco_bool nbo );
+
 void 
 coco_sndobject_to_cobject( coco_sobject *sobject, coco_sobject_cl *cl,
                            coco_cobject *cobject, coco_gnum cam_left,
@@ -378,6 +388,10 @@ void coco_fixup_ground_collide( coco_sobject *sobject, coco_sobject_cl *cla,
                                 coco_sstate *sstate );
 
 
+void coco_plasma_ground_collide( coco_sobject *sobject, coco_sobject_cl *cla,
+                                 coco_sstate *sstate );
+
+
 void coco_every_sobject_ground_collide( coco_sobject *sobject,
                                         coco_sobject_cl *cla,
                                         coco_sstate *sstate );
@@ -389,6 +403,13 @@ void coco_every_sobject_hostile_collision( coco_sobject *obj1,
                                            coco_sstate *sstate,
                                            coco_bool *stat1,
                                            coco_bool *stat2 );
+
+void coco_plasma_hostile_collision( coco_sobject *obj1,
+                                    coco_sobject_cl *obj1cl,
+                                    coco_sobject *obj2, 
+                                    coco_sstate *sstate,
+                                    coco_bool *stat1,
+                                    coco_bool *stat2 );
 
 void
 coco_building_hostile_collision( coco_sobject *building,
@@ -589,6 +610,8 @@ void coco_cobject_y_ntoh( coco_cobject *cobject );
 void coco_copter_draw( coco_cobject *cobject, coco_sobject_cl *cla );
 
 void coco_bullet_draw( coco_cobject *cobject, coco_sobject_cl *cla );
+
+void coco_plasma_draw( coco_cobject *cobject, coco_sobject_cl *cla );
 
 void coco_cobject_inviso_draw( coco_cobject *cobject, coco_sobject_cl *cla );
 

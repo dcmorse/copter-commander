@@ -66,6 +66,13 @@ coco_cobra_center_of_mass[COCO_COPTER_RASTER_COUNT] = {
   COCO_MAKE_MINI_POINT( 65, 12 ),
 };
 
+struct coco_raster *coco_plasma_rasters[COCO_PLASMA_RASTER_COUNT] = {
+  &coco_plasma_yellow_raster,
+  &coco_plasma_pink_raster,
+  &coco_plasma_green_raster,
+};
+
+
 struct coco_raster *coco_cobra_rasters[COCO_COPTER_RASTER_COUNT] = {
   &coco_cobra_green_w_raster,
   &coco_cobra_green_e_raster,
@@ -582,10 +589,10 @@ struct coco_mech_part coco_torso_parts[COCO_MAX_TORSO_PARTS] = {
 
 struct coco_mech_part coco_leg_parts[COCO_MAX_LEG_PARTS] = {
   { &coco_legs_idle_0_raster,  0, -1, 16 },
-  { &coco_legs_idle_1_raster,  0, -1, 16 },
-  { &coco_legs_idle_2_raster,  0, -1, 16 },
-  { &coco_legs_idle_3_raster,  0, -1, 15 },
-  { &coco_legs_idle_4_raster,  0, -1, 15 },
+  { &coco_legs_idle_0_raster,  0, -1, 16 },
+  { &coco_legs_idle_0_raster,  0, -1, 16 },
+  { &coco_legs_idle_5_raster,  0, -1, 15 },
+  { &coco_legs_idle_5_raster,  0, -1, 15 },
   { &coco_legs_idle_5_raster,  0, -1, 15 },
   { &coco_legs_squat_0_raster, 0, -1, 19 },
   { &coco_legs_squat_1_raster, 0, -1, 17 },
@@ -602,10 +609,10 @@ struct coco_mech_part coco_leg_parts[COCO_MAX_LEG_PARTS] = {
   { &coco_legs_akimbo_raster,  0, -1, 15 },
   /* mirror that of above */
   { &coco_legs_left_idle_0_raster,  0, -1, 16 },
-  { &coco_legs_left_idle_1_raster,  0, -1, 16 },
-  { &coco_legs_left_idle_2_raster,  0, -1, 16 },
-  { &coco_legs_left_idle_3_raster,  0, -1, 15 },
-  { &coco_legs_left_idle_4_raster,  0, -1, 15 },
+  { &coco_legs_left_idle_0_raster,  0, -1, 16 },
+  { &coco_legs_left_idle_0_raster,  0, -1, 16 },
+  { &coco_legs_left_idle_5_raster,  0, -1, 15 },
+  { &coco_legs_left_idle_5_raster,  0, -1, 15 },
   { &coco_legs_left_idle_5_raster,  0, -1, 15 },
   { &coco_legs_left_squat_0_raster, 0, -1, 19 },
   { &coco_legs_left_squat_1_raster, 0, -1, 17 },

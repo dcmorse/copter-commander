@@ -62,7 +62,7 @@ void coco_call_message_notifications( int message_type,
 
 void coco_draw_window( void );
 
-static coco_u32 coco_draw_frame_number = 0; /* for strobing animations,
+coco_u32 coco_draw_frame_number = 0; /* for strobing animations,
                                                goes up every redraw. */
 
 void coco_draw_ground( coco_gnum height );
@@ -201,6 +201,12 @@ coco_mech_guess_nationality( coco_cobject *cobject )
 }
 
 int
+coco_raster_guess_nationality( coco_cobject *cobject )
+{
+  return COCO_COBJECT_RASTER_INDEX( cobject );
+}
+
+int
 coco_copter_guess_nationality( coco_cobject *cobject )
 {
   return (COCO_COBJECT_RASTER_INDEX( cobject ) < 2)
@@ -260,27 +266,6 @@ coco_infantry_guess_nationality( coco_cobject *cobject )
 }
 
 
-/* _cstates_________ */
-
-struct coco_cstate {
-  void *raw_buffer;
-  coco_u32 raw_buffer_size;
-  coco_u32 time;
-  /* This just means accept ANY packet, regardless of times: */
-  coco_bool in_use; /* FALSE = accept any and set to TRUE */
-  coco_cobject *cobjects;
-  coco_u32 cobjects_length;
-  struct coco_cblip *cblips;
-  coco_u32 cblips_length;
-  coco_nationality game_over_nationality;
-  coco_gnum camera_x;
-  coco_gnum board_w;
-  unsigned char major_mission; /* 255 = none */
-  unsigned char minor_mission;  /* 255 = none */
-  coco_bool angle_on;
-  coco_angle angle; /* only use if angle_on */
-  struct coco_dashboard_info dashinfo;
-};
 
 
 struct coco_cstate *
@@ -488,7 +473,7 @@ coco_bullet_draw( coco_cobject *cobject, coco_sobject_cl *cla )
   if (1==thickness)
     {
       coco_draw_color( COCO_COLOR_SMALL_BULLET );
-      coco_draw_point( x, y );
+      coco_draw_line( x, y, x, y-1 );
     }
   else 
     {
@@ -496,6 +481,28 @@ coco_bullet_draw( coco_cobject *cobject, coco_sobject_cl *cla )
       coco_draw_big_point( x, y, thickness );
     }
 }
+
+void
+coco_plasma_draw( coco_cobject *cobject, coco_sobject_cl *cla )
+{
+  /* only tricky thing here is we draw the raster 
+     125% of the radius given, because the raster doesn't extend
+     out to the corners of the square, the user needs to think its
+     bigger than it is. */
+  unsigned char bits = cobject->plasma.bits;
+  coco_cnum x = COCO_COBJECT_X( cobject );
+  coco_cnum y = COCO_COBJECT_Y( cobject );
+  int radius = bits >> 1;
+  int dv = radius>>2; /* this is the 25% */
+  int vradius = dv + radius;
+  int coherent = bits & 1;
+  int vdia =  vradius + radius;
+  struct coco_raster *r = COCO_COBJECT_RASTER( cobject );
+  int a = 127 + (coherent<<7);
+  coco_draw_color( COCO_MAKE_COLOR( 255, 255, 255, a ) );
+  coco_draw_raster_texmap( x-dv, y-dv, x+vdia, y+vdia, r->w, r->h, r );
+}
+
 
 
 void
@@ -679,19 +686,21 @@ void
 coco_copter_draw( coco_cobject *cobject, coco_sobject_cl *cla )
 {
   coco_sobject_cl *cl = COCO_COBJECT_CL( cobject );
+  coco_gnum cw = cl->canonical_w;
+  coco_gnum ch = cl->canonical_h;
   coco_mini_point com = coco_cobject_com( cobject );
   coco_gnum comx = COCO_MINI_POINT_X( com );
   coco_gnum comy = COCO_MINI_POINT_Y( com );
   unsigned char ri = COCO_COBJECT_RASTER_INDEX( cobject );
   coco_angle angle_raw = COCO_COBJECT_ANGLE( cobject );
   coco_angle angle = (ri&1) ? angle_raw : ((angle_raw - (int) 128) & 255);
+
   coco_begin_rotated_view( COCO_COBJECT_X( cobject ) + comx,
                            COCO_COBJECT_Y( cobject ) + comy,
                            angle );
-  coco_draw_raster_rotate( -comx,
-                           -comy,
-                           cl->canonical_w,
-                           cl->canonical_h,
+  coco_draw_raster_texmap( -comx, -comy,
+                           cw-comx, ch-comy, 
+                           cw, ch,
                            COCO_COBJECT_RASTER( cobject ) );
   {
     static unsigned char rotor_scale[8] = { 2, 5, 7, 4, 0, 3, 6, 5 };
@@ -725,11 +734,11 @@ coco_mech_draw( coco_cobject *cobject, coco_sobject_cl *cla )
   unsigned char li = COCO_COBJECT_MECH_LEG_RASTER_INDEX( cobject );
   struct coco_mech_part *tp;
   struct coco_mech_part *lp;
-  coco_cookie( "ti=%d li=%d\n", ti, li );
-#ifdef COCO_DEBUG
-  assert( ti < COCO_MAX_TORSO_PARTS );
-  assert( li < COCO_MAX_LEG_PARTS );
-#endif
+
+  /* added safety */
+  ti = COCO_MIN( COCO_MAX_TORSO_PARTS-1, ti );
+  li = COCO_MIN( COCO_MAX_LEG_PARTS-1, li );
+
   lp = coco_leg_parts+li;
   coco_draw_raster( x+lp->dx, y+lp->dy, lp->r );
   tp = coco_torso_parts+ti;
@@ -769,9 +778,9 @@ coco_draw_game_over_message( coco_nationality nationality )
   cursor_y -= bye_h + 10;
 }
 
+#ifdef COCO_OBSOLETE_DASHBOARD
 #define COCO_DASHBOARD_ITEM_COUNT 9
 #define COCO_DASHBOARD_SPACING (COCO_OFFICIAL_WINDOW_W / COCO_DASHBOARD_ITEM_COUNT)
-#define COCO_DASHBOARD_BASELINE (5 + COCO_RADAR_Y + COCO_RADAR_H)
 #define COCO_DASHBOARD_TEXT_TAB 8 /* distance from end of icon to start of text */
 
 /* initialized by coco_draw_dashboard_static() and read by the
@@ -962,6 +971,8 @@ coco_draw_dashboard( struct coco_cstate *cstate, int cfps )
   }
 }
 
+#endif /* COCO_OBSOLETE_DASHBOARD */
+
 long coco_chat_cursor_last_blink = 0; /* second */
 
 void coco_draw_chat( long tv_sec )
@@ -1059,14 +1070,19 @@ coco_draw_mission_objective( struct coco_cstate *cstate )
 void 
 coco_cstate_draw( struct coco_cstate *cstate )
 {
-  static struct timeval now, delta, last = { 0, 0 };
+#ifdef COCO_OBSOLETE_DASHBOARD
+  static struct timeval, delta, last = { 0, 0 };
+#endif /* COCO_OBSOLETE_DASHBOARD */
+  struct timeval now;
   /*  struct timezone tz;*/
   int i;
   coco_znum z;
 
   gettimeofday( &now, NULL );
+#ifdef COCO_OBSOLETE_DASHBOARD
   coco_subtract_timevals( &delta, &now, &last );
   last = now;
+#endif /* COCO_OBSOLETE_DASHBOARD */
 
   /* coco_clear_window_color( COCO_COLOR_BACKGROUND );
    * coco_clear_window(); */
@@ -1090,7 +1106,11 @@ coco_cstate_draw( struct coco_cstate *cstate )
   coco_draw_line( 0, COCO_RADAR_Y-1, coco_real_window_w, COCO_RADAR_Y-1 );
   coco_draw_line( 0,                  COCO_RADAR_Y+COCO_RADAR_H, 
                   coco_real_window_w, COCO_RADAR_Y+COCO_RADAR_H );
+#ifdef COCO_OBSOLETE_DASHBOARD
   coco_draw_dashboard( cstate, (int)(1000000 / delta.tv_usec) );
+#else
+  coco_draw_dashboard( cstate );
+#endif /* COCO_OBSOLETE_DASHBOARD */
   coco_begin_point_drawing();
   for (i=cstate->cblips_length-1; i>=0; i--)
     {
@@ -1234,12 +1254,13 @@ static coco_bool coco_recording_movie = COCO_FALSE;
 static int coco_movie_number = 0;
 static int coco_movie_frame = 0;
 
+
+/* outter loop reads coco_pending_* too see if keys have been pressed.
+   see coco_client_loop().  Other events may be immediately dispatched. */
 void 
 coco_key_press( coco_key key, char *string_or_null, 
                 coco_key_state_ref keystate )
 {
-  /* coco_cookie( "coco_key_press enter, key = '%c', state=%d\n", (char) key,
-     coco_get_client_state() ); */
 
 
   /* global bindings */
@@ -1312,7 +1333,8 @@ coco_key_press( coco_key key, char *string_or_null,
             coco_in_game_chat_cursor--;
           }
         else if ((key >= COCO_LPOINTER) && (key <= COCO_5POINTER))
-          coco_write_client2server_packet_maybe();
+          /* was coco_write_client2server_packet_maybe(); */
+          ;/* now do nothing */
         else if (string_or_null)
           {
             char *cursor;
@@ -1471,7 +1493,7 @@ coco_key_press( coco_key key, char *string_or_null,
 
         }
       }
-    coco_write_client2server_packet_maybe();
+     coco_write_client2server_packet_maybe();
     break;
   }
 }
@@ -1479,7 +1501,7 @@ coco_key_press( coco_key key, char *string_or_null,
 void 
 coco_key_release( coco_key key, coco_key_state_ref keystate )
 {
-  coco_write_client2server_packet_maybe();
+  coco_write_client2server_packet_maybe(); 
 }
 
 void

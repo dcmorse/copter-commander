@@ -100,6 +100,7 @@ unsigned
 coco_raster_texture_id_cache_miss( struct coco_raster *raster )
 {
   GLuint id;
+  GLenum texmode_gl = GL_REPLACE;
 
   { /* check texture sizes correct. */
     static GLint maxtex = -1;
@@ -125,6 +126,12 @@ coco_raster_texture_id_cache_miss( struct coco_raster *raster )
     assert( (format == COCO_RGBA_8) || (format == COCO_RGBA_8_BLEND) );
   }
 
+  switch (raster->texmode) {
+  case COCO_MULTIPLY: texmode_gl = GL_MODULATE; break;
+  case COCO_REPLACE: texmode_gl = GL_REPLACE; break;
+  }
+
+
   glGenTextures( 1, &id );
   raster->texture_id = id;
 
@@ -133,7 +140,7 @@ coco_raster_texture_id_cache_miss( struct coco_raster *raster )
   glTexParameteri( GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP );
   glTexParameteri( GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR );
   glTexParameteri( GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR );
-  glTexEnvf( GL_TEXTURE_ENV, GL_TEXTURE_ENV_MODE, GL_REPLACE );
+  glTexEnvf( GL_TEXTURE_ENV, GL_TEXTURE_ENV_MODE, texmode_gl );
 
   glTexImage2D( GL_TEXTURE_2D, 0, GL_RGBA, 
                 raster->w,
@@ -187,12 +194,34 @@ coco_end_rotated_view( void )
   glPopMatrix();
 }
 
+void
+coco_begin_scaled_view( float xstretch, float ystretch )
+{
+
+  glPushMatrix();
+  if ((xstretch!=0.0) || (ystretch!=0.0))
+    glScalef( xstretch, ystretch, 1.0 );
+}
+
+void
+coco_end_scaled_view( void )
+{
+  glPopMatrix();
+}
+
+
 
 /* Like coco_draw_raster, but texture mapped, and therefore affected by
    coco_begin/end_rotated_view.  The center_x/y are transformed onto the
-   rectangle to be drawn in the local coordinate system */
+   rectangle to be drawn in the local coordinate system 
+   (x0, y0): bottom left corner to draw
+   (x1, y1): upper right corner, usually (x0+w,y0+h)
+   (w, h):   width and height of raster's pixels to read, since OpenGL
+             requires powers of 2 per side, this lets them be any size
+*/
 void
-coco_draw_raster_rotate( coco_gnum x, coco_gnum y,
+coco_draw_raster_texmap( coco_gnum x0, coco_gnum y0,
+                         coco_gnum x1, coco_gnum y1,
                          coco_gnum w, coco_gnum h,
                          struct coco_raster *raster )
 {
@@ -205,26 +234,28 @@ coco_draw_raster_rotate( coco_gnum x, coco_gnum y,
   glPolygonMode( GL_FRONT_AND_BACK, GL_FILL );
   id = COCO_RASTER_TEXTURE_ID( raster );
   glEnable( GL_TEXTURE_2D );
-  glBindTexture( GL_TEXTURE_2D, id );
+  glBindTexture( GL_TEXTURE_2D, id ); 
   glBegin( GL_QUADS );
   {
-    GLfloat s = (w>0) ? (((float) w) / raster->w) : 0.0;
-    GLfloat t = (h>0) ? (((float) h) / raster->h) : 0.0;
+    unsigned int rw = raster->w;
+    unsigned int rh = raster->h;
+    GLfloat s = (rw>0) ? (((float) w) / rw) : 0.0;
+    GLfloat t = (rh>0) ? (((float) h) / rh) : 0.0;
     glTexCoord2f( 0, 0 );
-    glVertex2i( x, y );
+    glVertex2i( x0, y0 );
     glTexCoord2f( s, 0 );
-    glVertex2i( w + x, y );
+    glVertex2i( x1, y0 );
     glTexCoord2f( s, t );
-    glVertex2i( w + x, h + y );
+    glVertex2i( x1, y1 );
     glTexCoord2f( 0, t );
-    glVertex2i( x, h + y );
+    glVertex2i( x0, y1 );
   }
   glEnd();
   glDisable( GL_TEXTURE_2D );
   if (do_blending)
     coco_end_alpha_blending();
 #ifdef COCO_DEBUG
-  coco_warn_gl_errors( "coco_draw_raster_rotate" );
+  coco_warn_gl_errors( "coco_draw_raster_texmap" );
 #endif /* COCO_DEBUG */
 }
 

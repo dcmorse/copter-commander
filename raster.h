@@ -21,11 +21,13 @@
 #define COCO_RASTER_H
 
 enum coco_raster_format {COCO_RGBA_8, COCO_RGBA_8_BLEND, COCO_BITMAP};
+enum coco_raster_texmode {COCO_MULTIPLY, COCO_REPLACE};
 
 struct coco_raster {
   unsigned int w;
   unsigned int h;
   enum coco_raster_format format;
+  enum coco_raster_texmode texmode;
   unsigned texture_id; /* accessed by COCO_RASTER_TEXTURE_ID( raster ) */
   unsigned char *pixels;
 };
