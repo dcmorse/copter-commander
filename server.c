@@ -94,7 +94,7 @@ coco_ensure_free_sobjects( coco_sstate *sstate, int free_count )
   coco_sobject *new_ptr;
   assert( coco_allocate_sobject_may_resize_p );
   { 
-    coco_sobject *  sobject  = sstate->sobjects;
+    coco_sobject *sobject  = sstate->sobjects;
     coco_sobject *end=   sobject  + sstate->sobject_size;
     for (; sobject < end; sobject++)
       if (!COCO_SOBJECT_IN_USE( sobject ))
@@ -2297,7 +2297,7 @@ coco_server_exec( void )
   level_error = coco_load_level_definition( coco_level_text, sstate );
   if (level_error)
     coco_fatal_printf( COCO_ERROR_BAD_LEVEL,
-                       "Problem loading level \"%s\"\n",
+                       "Problem loading level: %s\n",
                        level_error );
   coco_init_comps( sstate );
   coco_server_setup( &tcpfd, &out_udpfd, &in_udpfd, &in_udp_port );

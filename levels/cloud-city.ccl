@@ -2,7 +2,7 @@
 
 (define-coco-level cloud-city
     1 0                                 ; coco-version
-    1                                   ; level-version
+    2                                   ; level-version
     7000                                ; width
     ((ggpb (pillbox (- board-w (w pillbox)) good-guys 0 gghq))
      (nil  (aa-gun  (right-center aa-gun 150) good-guys))
@@ -26,15 +26,15 @@
 
      ;; left cluster
      (nil (hut (left-center hut 1750) neutral))
-     (nil (hut (left-center bunker 2100) neutral 2))
-     (nil (hut (left-center bunker 2500) neutral 2))
-     (nil (hut (left-center bunker 2800) neutral 2))
+     (nil (hut (left-center bunker 2100) neutral))
+     (nil (hut (left-center bunker 2500) neutral))
+     (nil (hut (left-center bunker 2800) neutral))
 
      ;; right cluster
      (nil (hut (right-center hut 1750) neutral))
-     (nil (hut (right-center bunker 2100) neutral 2))
-     (nil (hut (right-center bunker 2500) neutral 2))
-     (nil (hut (right-center bunker 2800) neutral 2))
+     (nil (hut (right-center bunker 2100) neutral))
+     (nil (hut (right-center bunker 2500) neutral))
+     (nil (hut (right-center bunker 2800) neutral))
 
      (nil (hut (right-center hut 1500) neutral))
      (nil (hut (left-center hut 1500)  neutral))

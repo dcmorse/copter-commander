@@ -1,5 +1,13 @@
 2001-05-18  David Morse  <dm@bomberlan.net>
 
+	* clsho.c (coco_help_message): fix typeo.
+
+	* levels/cloud-city.ccl (cloud-city): Huts got wrong number of
+	arguments.  This should fix bugs 425009 and 425010.
+
+	* ccl.c (coco_load_level_definition): Many level loading errors
+	were detected but (due to bug) not reported.
+
 	* Double bomb size.
 
 	* methods.c (coco_cloud_update_state): Make clouds more likely to

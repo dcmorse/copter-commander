@@ -498,9 +498,9 @@ coco_load_level_error( char *from, const char *fmt, ... )
   va_list ap;
   va_start(ap, fmt);
   if (from)
-    sprintf( buf,    "(while looking at \"%c%c%c\") ", 
-             from[0], from[1], from[2] );
-  else sprintf( buf, "(while looking at NULL) " );
+    sprintf( buf,    "looking at char %d \"%c%c%c\", ", 
+             from - coco_level_text, from[0], from[1], from[2] );
+  else buf[0] = '\0';
   vsprintf ( buf+strlen( buf ), fmt, ap );
   va_end( ap );
   return buf;
@@ -556,10 +556,10 @@ coco_map_level_text( char *filename, char **error_message )
    failure.  If the passed sstate_return is NULL, it means just check for
    syntax without actually building permanent sstate data structures.  */
 char *
-coco_load_level_definition( char *from, coco_sstate *sstate_return )
+coco_load_level_definition( char *from, coco_sstate *sstate )
 {
   char *level_name;
-  coco_bool syntax_check_only = sstate_return == NULL;
+  coco_bool syntax_check_only = sstate == NULL;
   int ident_size;
   char *macro_buf;
    from = coco_clear_whitespace( from );
@@ -598,9 +598,8 @@ coco_load_level_definition( char *from, coco_sstate *sstate_return )
         ? NULL : coco_malloc( ident_size * sizeof( char ) );
       from = coco_read_identifier( from, level_name );
     }
-  else coco_load_level_error( from, "missing level name" );
+  else return coco_load_level_error( from, "missing level name" );
   {
-    coco_sstate sstate;
     coco_lnum versions[2];
     coco_lnum lev_version, width;
     int i;
@@ -608,8 +607,7 @@ coco_load_level_definition( char *from, coco_sstate *sstate_return )
       {
         from = coco_read_lnum( from, NULL, versions + i );
         if (NULL==from)
-          return coco_load_level_error( from,
-                                        "No version numbers" );
+          return coco_load_level_error( from, "No version numbers" );
       }
     if (!coco_version_compatible_p( versions[0], versions[1], 
                                     COCO_LEVEL_FILE_FORMAT ))
@@ -628,7 +626,7 @@ coco_load_level_definition( char *from, coco_sstate *sstate_return )
     from = coco_clear_whitespace( from );
 
     if (!syntax_check_only)
-      coco_init_sstate( &sstate, width );
+      coco_init_sstate( sstate, width );
 
     if ('(' != *from)
       return coco_load_level_error( from, "Missing open paren in units list" );
@@ -702,7 +700,9 @@ coco_load_level_definition( char *from, coco_sstate *sstate_return )
             exit_while = COCO_TRUE;
             break;
           default:
-            coco_load_level_error( from, "unexpected char in middle of unit list." );
+            return
+              coco_load_level_error( from, "unexpected char in middle "
+                                     "of unit list." );
           }
           if ((exit_while)
               || (unit_count >= COCO_LEVEL_FILE_FORMAT_HACKING_MAX_UNITS))
@@ -775,7 +775,7 @@ coco_load_level_definition( char *from, coco_sstate *sstate_return )
                   coco_sobject *sobject
                     = syntax_check_only 
                     ? NULL
-                    : coco_sstate_allocate_sobject( &sstate );
+                    : coco_sstate_allocate_sobject( sstate );
                   coco_sobject_cl *cla;
                   coco_sobject *(* fn)
                     (coco_sobject *, coco_sobject_cl *, coco_lnum *);
@@ -786,26 +786,26 @@ coco_load_level_definition( char *from, coco_sstate *sstate_return )
                                            name_table[unt]
                                            ? name_table[unt] : "nil",
                                            unt, args[0] );
-
                   cla = coco_sobject_classes + args[0];
                   fn = cla->init_by_list_fn;
                   /* coco_cookie( "looking at class %s\n", cla->name ); */
                   if (!fn)
-                    coco_load_level_error( from, "unit %s (#%d) is of a class"
-                                           " %s which does not have an"
-                                           " init-fn.",
-                                           name_table[unt]
-                                           ? name_table[unt] : "nil",
-                                           unt,
-                                           cla->name );
+                    return
+                      coco_load_level_error( from, "unit %s (#%d) is of a"
+                                             " class %s which does not have an"
+                                             " init-fn.",
+                                             name_table[unt]
+                                             ? name_table[unt] : "nil",
+                                             unt,
+                                             cla->name );
                   if (nargs-1 != cla->init_by_list_count)
-                    coco_load_level_error( from, "unit %s (#%d) is of a class"
-                                           " %s which does not have an"
-                                           " init-fn.",
-                                           name_table[unt]
-                                           ? name_table[unt] : "nil",
-                                           unt,
-                                           cla->name );
+                    return 
+                      coco_load_level_error( from, "%s wants %d arguments to"
+                                             " instantiate, but the %dth"
+                                             " unit gave it %d.\n" ,
+                                             cla->name, 
+                                             cla->init_by_list_count, unt+1,
+                                             nargs-1 );
                   if (coco_sobject_subtype_p( cla, COCO_LANDING_PAD_CLASS ))
                     found_a_landing_pad = COCO_TRUE;
                   if (!syntax_check_only)
@@ -820,7 +820,8 @@ coco_load_level_definition( char *from, coco_sstate *sstate_return )
               exit_while = COCO_TRUE;
               break;
             default:
-              coco_load_level_error( from, "unexpected char in middle of unit list." );
+              return coco_load_level_error( from, "unexpected char "
+                                            "in middle of unit list." );
             }
             if ((exit_while)
                 || (unit_count >= COCO_LEVEL_FILE_FORMAT_HACKING_MAX_UNITS))
@@ -840,7 +841,7 @@ coco_load_level_definition( char *from, coco_sstate *sstate_return )
           coco_gnum max_pad_x = COCO_GNUM_MIN;
           int min_pad_idx = -1;
           int max_pad_idx = -1;
-          COCO_DO_SSTATE_OBJECTS( sobject, &sstate, {
+          COCO_DO_SSTATE_OBJECTS( sobject, sstate, {
             if (coco_sobject_subtype_p( COCO_SOBJECT_CL( sobject ), 
                                         COCO_LANDING_PAD_CLASS ))
               {
@@ -859,14 +860,12 @@ coco_load_level_definition( char *from, coco_sstate *sstate_return )
           });
           if (-1==min_pad_idx)
             return coco_string_malloc_copy( "Couldn't find any landing pads." );
-          else
+          else if (!syntax_check_only)
             {
-              sstate.teams[0].landing_pad_index = max_pad_idx;
-              sstate.teams[1].landing_pad_index = min_pad_idx;
+              sstate->teams[0].landing_pad_index = max_pad_idx;
+              sstate->teams[1].landing_pad_index = min_pad_idx;
             }
         }
-      if (!syntax_check_only)
-        *sstate_return = sstate;
       return NULL;
     }
   }
