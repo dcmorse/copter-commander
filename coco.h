@@ -644,6 +644,7 @@ struct coco_dashboard_info {
   coco_u32 copters;
   coco_u32 funds;
   coco_u32 fuel;
+  unsigned char kits;
   unsigned char server_fps;
   unsigned char fancy_class_index;
   coco_i32 camera_class_index; /* so wide a type for -1 */

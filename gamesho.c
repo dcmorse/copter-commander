@@ -538,6 +538,7 @@ const char *coco_minor_missions[] = {
   "Blow it up and you graduate from Boot with full honors!",
   "That armor's to strong for copters!  Order a Demolition `V'an instead.",
   "When a van reaches that crawler, we'll see just how thick that armor is...",
+  "Victory is ours !!!",
 };
 
 struct coco_tutorial_info coco_tutorial_infos[COCO_TUTORIAL_INFO_SIZE] =

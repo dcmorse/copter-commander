@@ -44,6 +44,7 @@ DEFINE_AMMO_MAX_READER( coco_max_missiles, max_missiles )
 DEFINE_AMMO_MAX_READER( coco_max_rockets,  max_rockets  )
 DEFINE_AMMO_MAX_READER( coco_max_plasma,   max_plasma   )
 DEFINE_AMMO_MAX_READER( coco_max_fuel,     max_fuel     )
+DEFINE_AMMO_MAX_READER( coco_max_kits,     max_kits     )
 /* DEFINE_AMMO_MAX_READER( coco_max_energy,   max_energy   ) not used */
 DEFINE_AMMO_MAX_READER( coco_max_internal_infantry,     
                         max_internal_infantry           )
@@ -57,6 +58,7 @@ DEFINE_AMMO_READER( coco_plasma,     plasma   )
 /* DEFINE_AMMO_READER( coco_energy,     fuel     ) not used */
 DEFINE_AMMO_READER( coco_funds,      funds    )
 DEFINE_AMMO_READER( coco_copters,    copters  )
+DEFINE_AMMO_READER( coco_kits,       kits     )
 
 
 #define COCO_DASHBOARD_ICON_TAB 44
@@ -133,6 +135,7 @@ coco_draw_dashboard_fuel( int x, struct coco_cstate *cstate,
   coco_i32 cla_idx = cstate->dashinfo.camera_class_index;
   coco_sobject_cl *cla = (cla_idx < 0) 
     ? NULL : (coco_sobject_classes + cla_idx);
+  int seconds, minutes;
 
   /* figure out draw color */
   if (cla
@@ -162,7 +165,9 @@ coco_draw_dashboard_fuel( int x, struct coco_cstate *cstate,
 
 
   /* draw boring old string */
-  sprintf( buf, "%d", (int) fuel / cstate->dashinfo.server_fps );
+  seconds = fuel / cstate->dashinfo.server_fps;
+  minutes = seconds / 60;
+  sprintf( buf, "%d:%02d", minutes, seconds % 60 );
   coco_draw_dashboard_string( x, buf );
 }
 
@@ -320,7 +325,9 @@ coco_dashboard_items( coco_sobject_cl *cl_or_null,
 
 
 
-#define COCO_DASHBOARD_COPTER_COUNT 6
+
+
+#define COCO_DASHBOARD_COPTER_COUNT 7
 
 int
 coco_copter_dashboard_items( coco_sobject_cl *cl,
@@ -347,6 +354,12 @@ coco_copter_dashboard_items( coco_sobject_cl *cl,
       (void *) coco_missiles,
       (void *) coco_max_missiles
     },
+    { "kits", COCO_DASHBOARD_LEFT,
+      coco_draw_dashboard_raster, (void *) &coco_kit_icon_raster,
+      coco_draw_dashboard_numeric,
+      (void *) coco_kits,
+      (void *) coco_max_kits
+    },
     { "bombs", COCO_DASHBOARD_LEFT,
       coco_draw_dashboard_raster, (void *) &coco_bomb_icon_raster,
       coco_draw_dashboard_numeric, 
@@ -360,17 +373,30 @@ coco_copter_dashboard_items( coco_sobject_cl *cl,
       (void *) coco_max_bullets
     }
   };
-  int i;
-  if (di_return)
-    for (i=0; i<COCO_DASHBOARD_COPTER_COUNT; i++)
-      {
-        int (* maxfn)( coco_sobject_cl * ) 
-          = (int (*)( coco_sobject_cl * )) items[i].dynamic_handy2;
-        assert( maxfn );
-        di_return[i] = (maxfn( cl ) != 0)
-          ? (items + i) : &coco_left_spacer_dashboard_item;
-      }
-  return COCO_DASHBOARD_COPTER_COUNT;
+  int i=0, j=0;
+  for (; i<COCO_DASHBOARD_COPTER_COUNT; i++)
+    {
+      int (* maxfn)( coco_sobject_cl * ) 
+        = (int (*)( coco_sobject_cl * )) items[i].dynamic_handy2;
+      assert( maxfn );
+      if (maxfn( cl ) != 0)
+        {
+          if (di_return)
+            di_return[j] = (items + i);
+          j++;
+        }
+      else if (!(0==strcmp( items[i].name, "missiles" )
+                 || (0==strcmp( items[i].name, "kits" ))))
+        { 
+          coco_cookie( "not skipping item %s\n", items[i].name );
+          if (di_return)
+            di_return[j] = (&coco_left_spacer_dashboard_item);
+          j++;
+        }
+      else coco_cookie( "skipping item %s\n", items[i].name );
+
+    }
+  return j;
 }
 
 #define COCO_DASHBOARD_MECH_COUNT 2

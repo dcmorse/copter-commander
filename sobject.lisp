@@ -120,6 +120,7 @@
    ("max_bullets" "0" "unsigned short"  :allocation :every-class)
    ("max_bombs"   "0" "unsigned char"  :allocation :every-class)
    ("max_rockets" "0" "unsigned char"  :allocation :every-class)
+   ("max_kits"    "0" "unsigned char"  :allocation :every-class)
    ("max_missiles" "0" "unsigned char"  :allocation :every-class)
    ("max_plasma"  "0" "unsigned short" :allocation :every-class)
    ("max_energy"   "0" "unsigned short" :allocation :every-class)
@@ -372,7 +373,10 @@
    ("h"           "COCO_SOBJECT_CANONICAL_H( inst )")
    ("airburst_sound_type" "COCO_SOUND_BIG_AIRBURST")
    ("gen_dashboard_items" "coco_copter_dashboard_items")
-   ("emits_smoke_when_damaged" "COCO_TRUE")))
+   ("emits_smoke_when_damaged" "COCO_TRUE")
+   ("kits"        "COCO_SOBJECT_MAX_KITS( inst )" "unsigned char");
+   )
+  :init-by-list-fn :automatic)
 
 (c-define-method "emit_smoke" "copter" "coco_copter_emit_smoke")
 
@@ -406,7 +410,7 @@
    ("max_missiles"      "2")
    ("max_rockets"      "10")
    ("max_internal_infantry" "5")
-   ("max_fuel"     "200*COCO_IDEAL_FRAMES_PER_SECOND")
+   ("max_fuel"     "120*COCO_IDEAL_FRAMES_PER_SECOND")
    ("canonical_w"  "100")
    ("canonical_h"  "30")
    ("collision_rectangle" "COCO_MAKE_MINI_RECTANGLE( 2, 0, 62, 29 )")
@@ -417,8 +421,8 @@
    ("rotor_radius" "56")
    ("refund"       "4")
    ("cost"         "20")
-   ("dashboard_icon" "&coco_cobra_icon_raster")
-))
+   ("dashboard_icon" "&coco_cobra_icon_raster"))
+  :init-by-list-fn :virtual)
 
 (c-define-class "bubble_copter" ("copter")
   (("max_bullets"      "80")
@@ -426,7 +430,7 @@
    ("max_missiles"      "0")
    ("max_rockets"      "0")
    ("max_internal_infantry" "4")
-   ("max_fuel"     "160*COCO_IDEAL_FRAMES_PER_SECOND")
+   ("max_fuel"     "60*COCO_IDEAL_FRAMES_PER_SECOND")
    ("dx_max"       "COCO_COPTER_DX_MAX-2")
    ("dy_max"       "COCO_COPTER_DY_MAX-1")
    ("canonical_w"  "84")
@@ -440,14 +444,14 @@
    ("refund"       "1")
    ("cost"         "5")
    ("health_max"   "3")
-   ("x_force"      "2")
-))
+   ("x_force"      "2"))
+  :init-by-list-fn :virtual)
 
 (c-define-class "cargo_copter" ("copter")
   (("max_bullets"      "80")
-   ("max_bombs"        "0")
+   ("max_bombs"        "12")
    ("max_missiles"     "0")
-   ("max_rockets"      "36")
+   ("max_rockets"      "12")
    ("max_internal_infantry" "12")
    ("max_fuel"     "300*COCO_IDEAL_FRAMES_PER_SECOND")
    ("dx_max"       "15")
@@ -465,7 +469,9 @@
    ("cost"         "10")
    ("health_max"   "5")
    ("x_force"      "2")
-   ("dashboard_icon" "&coco_cargo_copter_icon_raster")))
+   ("dashboard_icon" "&coco_cargo_copter_icon_raster")
+   ("max_kits"     "1"))
+  :init-by-list-fn :automatic)
 
 (c-define-class "mech" ("camera")
   (("energy"       "COCO_SOBJECT_MAX_ENERGY( inst )" "coco_u16")
@@ -512,7 +518,8 @@
     ("COCO_BIT_VEC_VAR( "
      ", COCO_MECH_BUFFERED_BUTTONS_HACK*COCO_MECH_BUFFERED_TURNS_HACK )"))
    ("gen_dashboard_items" "coco_mech_dashboard_items")
-   ("emits_smoke_when_damaged" "COCO_TRUE")))
+   ("emits_smoke_when_damaged" "COCO_TRUE"))
+  :init-by-list-fn :automatic)
 
 (c-define-method "hostile_collision" "mech" 
                  "coco_mech_hostile_collision")

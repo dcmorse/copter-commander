@@ -822,200 +822,6 @@ coco_draw_game_over_message( coco_nationality nationality )
   cursor_y -= bye_h + 10;
 }
 
-#ifdef COCO_OBSOLETE_DASHBOARD
-#define COCO_DASHBOARD_ITEM_COUNT 9
-#define COCO_DASHBOARD_SPACING (COCO_OFFICIAL_WINDOW_W / COCO_DASHBOARD_ITEM_COUNT)
-#define COCO_DASHBOARD_TEXT_TAB 8 /* distance from end of icon to start of text */
-
-/* initialized by coco_draw_dashboard_static() and read by the
-   coco_draw_dashboard*() functions. */
-static coco_gnum coco_max_icon_width = -1;
-
-void
-coco_draw_dashboard_static()
-{
-  static GLuint display_list = 0;
-  if (display_list)
-    glCallList( display_list );
-  else
-    {
-      static struct coco_raster *rasters[COCO_DASHBOARD_ITEM_COUNT-1] = 
-      {
-        &coco_gun_icon_raster,
-        &coco_bomb_icon_raster,
-        &coco_missile_icon_raster,
-        &coco_rocket_icon_raster,
-        &coco_man_icon_raster,
-        NULL, /* &coco_copter_icon_raster, no longer constant */
-        &coco_money_icon_raster,
-        &coco_fuel_icon_raster,
-      };
-      char *fps = "FPS:";
-      static coco_gnum fps_width;
-      struct coco_font *font = &coco_default_font;
-      int i;
-      coco_gnum y = COCO_DASHBOARD_BASELINE;
-      coco_gnum x;
-
-      /* we're gonna right-justify the icons, so have to know the max width */
-      if (coco_max_icon_width<0)
-        for (i=0; i<COCO_DASHBOARD_ITEM_COUNT; i++)
-          {
-            coco_gnum w;
-            if (i == (COCO_DASHBOARD_ITEM_COUNT-1))
-              {
-                coco_gnum h, a;
-                coco_font_string_dimensions( fps, -1, font, &w, &h, &a );
-                fps_width = w;
-              }
-            else w = rasters[i] ? rasters[i]->w : 0;
-            if (w>coco_max_icon_width)
-              coco_max_icon_width = w;
-          }
-      display_list = glGenLists( 1 );
-      if (0==display_list)
-        coco_fatal_printf( COCO_ERROR_DISPLAY_LISTS,
-                           "Couldn't allocate display list for dashboard.\n" );
-      glNewList( display_list, GL_COMPILE_AND_EXECUTE );
-      for (i=0, x=coco_max_icon_width;
-           i<COCO_DASHBOARD_ITEM_COUNT;
-           i++, x+=COCO_DASHBOARD_SPACING)
-        {
-          if (i == (COCO_DASHBOARD_ITEM_COUNT-1))
-            {
-              coco_draw_color( COCO_COLOR_DASHBOARD_FG );
-              coco_draw_string( x-fps_width, y, fps, -1, font, COCO_BASELINE );
-            }
-          else
-            {
-              struct coco_raster *raster = rasters[i];
-              if (raster) coco_draw_raster( x-raster->w, y, raster );
-            }
-        }
-      glEndList();
-    }
-}  
-
-void
-coco_draw_dashboard( struct coco_cstate *cstate, int cfps )
-{
-  struct coco_dashboard_info *dashinfo = &(cstate->dashinfo);
-  int i;
-  coco_gnum x;
-  coco_gnum y = COCO_DASHBOARD_BASELINE;
-  int cla_idx = dashinfo->camera_class_index;
-  coco_sobject_cl *cla
-    = (cla_idx >= 0) ? (coco_sobject_classes+cla_idx) : NULL;
-
-  int sfps = dashinfo->server_fps;
-
-  coco_draw_dashboard_static();
-  for (i=0, x=coco_max_icon_width+COCO_DASHBOARD_TEXT_TAB;
-       i<COCO_DASHBOARD_ITEM_COUNT; 
-       i++, x+=COCO_DASHBOARD_SPACING)
-    {
-      char buf[16];
-      int val, maxval;
-      switch (i) {
-      case 0:
-        val = dashinfo->bullets;
-        maxval = cla ? cla->max_bullets : -1;
-        break;
-      case 1:
-        val = dashinfo->bombs;
-        maxval = cla ? cla->max_bombs : -1;
-        break;
-      case 2:
-        val = dashinfo->missiles;
-        maxval = cla ? cla->max_missiles : -1;
-        break;
-      case 3:
-        val = dashinfo->rockets;
-        maxval = cla ? cla->max_rockets : -1;
-        break;
-      case 4:
-        val = dashinfo->paratroopers;
-        maxval = cla ? cla->max_internal_infantry : -1;
-        break;
-      case 5:
-        val = dashinfo->copters;
-        maxval = -1;
-        break;
-      case 6:
-        val = dashinfo->funds;
-        maxval = -1;
-        break;
-      case 7:
-        val = dashinfo->fuel / sfps;
-        maxval = cla ? (cla->max_fuel / sfps) : 0;
-        break;
-      case 8:
-        val = cfps;
-        maxval = sfps;
-        break;
-      default:
-        val = maxval = 0;
-      }
-      if (8==i)
-        { /* FPS guage */
-          sprintf( buf, "%2d/%d", val, maxval );
-          coco_draw_color( COCO_COLOR_DASHBOARD_FG );
-        }
-      else if ((4==i)&&(dashinfo->engitroopers > 0))
-        { /* paratrooper gauge */
-          coco_u32 engitroopers = dashinfo->engitroopers;
-          coco_draw_color( COCO_COLOR_DASHBOARD_FULL );
-          sprintf( buf, "%d+%d", val, engitroopers );
-        }
-      else 
-        {
-          sprintf( buf, "%d", val );
-          coco_draw_color( ((maxval>=0)&&(val>=maxval))
-                           ? COCO_COLOR_DASHBOARD_FULL 
-                           : COCO_COLOR_DASHBOARD_FG );
-        }
-      if (7==i) /* fuel guage */
-        {
-          if (cla 
-              && coco_sobject_subtype_p( cla, COCO_COPTER_CLASS )
-              && ((cstate->board_w<<1) >= (cla->dx_max * dashinfo->fuel)))
-            {
-              coco_draw_color( ((cstate->board_w
-                                 >= (cla->dx_max * dashinfo->fuel))
-                                && ((coco_draw_frame_number&6)>1))
-                               ? COCO_COLOR_RED
-                               : COCO_COLOR_YELLOW );
-            }
-          {
-            /* draw needle onto fuel guage */
-            double angle = (cla && (cla->max_fuel>0))
-              ? COCO_PI * (1.0 - (((double) dashinfo->fuel) 
-                                  / ((double) cla->max_fuel)))
-              : COCO_PI;
-            float length = COCO_FUEL_ICON_RASTER_H - 2;
-            coco_gnum x0 = x - COCO_DASHBOARD_TEXT_TAB 
-              - 1 /* 1=opengl rasterization magic/fudge */
-              - (COCO_FUEL_ICON_RASTER_W>>1);
-            coco_gnum y0 = y + 4;/* 4=height of dot above bottom of raster */
-            coco_draw_line( x0,
-                            y0, 
-                            x0 + length*cos( angle ),
-                            y0 + length*sin( angle ) );
-          }
-        }
-      coco_draw_string( x, y, buf, -1, &coco_default_font, COCO_BASELINE );
-    }
-  {
-    int fcla_idx = dashinfo->fancy_class_index;
-    struct coco_raster *r = coco_sobject_classes[fcla_idx].dashboard_icon;
-    int copter_x;
-    assert( r );
-    copter_x = coco_max_icon_width + (5 * COCO_DASHBOARD_SPACING) - r->w;
-    coco_draw_raster( copter_x, COCO_DASHBOARD_BASELINE, r );
-  }
-}
-
-#endif /* COCO_OBSOLETE_DASHBOARD */
 
 long coco_chat_cursor_last_blink = 0; /* second */
 
@@ -1114,19 +920,12 @@ coco_draw_mission_objective( struct coco_cstate *cstate )
 void 
 coco_cstate_draw( struct coco_cstate *cstate )
 {
-#ifdef COCO_OBSOLETE_DASHBOARD
-  static struct timeval, delta, last = { 0, 0 };
-#endif /* COCO_OBSOLETE_DASHBOARD */
   struct timeval now;
   /*  struct timezone tz;*/
   int i;
   coco_znum z;
 
   gettimeofday( &now, NULL );
-#ifdef COCO_OBSOLETE_DASHBOARD
-  coco_subtract_timevals( &delta, &now, &last );
-  last = now;
-#endif /* COCO_OBSOLETE_DASHBOARD */
 
   /* coco_clear_window_color( COCO_COLOR_BACKGROUND );
    * coco_clear_window(); */
@@ -1150,11 +949,7 @@ coco_cstate_draw( struct coco_cstate *cstate )
   coco_draw_line( 0, COCO_RADAR_Y-1, coco_real_window_w, COCO_RADAR_Y-1 );
   coco_draw_line( 0,                  COCO_RADAR_Y+COCO_RADAR_H, 
                   coco_real_window_w, COCO_RADAR_Y+COCO_RADAR_H );
-#ifdef COCO_OBSOLETE_DASHBOARD
-  coco_draw_dashboard( cstate, (int)(1000000 / delta.tv_usec) );
-#else
   coco_draw_dashboard( cstate );
-#endif /* COCO_OBSOLETE_DASHBOARD */
   coco_begin_point_drawing();
   for (i=cstate->cblips_length-1; i>=0; i--)
     {

@@ -1,3 +1,14 @@
+2001-06-06  David Morse  <dm@bomberlan.net>
+
+	* sobject.lisp (cargo_copter): introduce repair kits.
+
+	* dashboard.c (coco_draw_dashboard_fuel): read in minutes:seconds
+
+2001-06-05  David Morse  <dm@bomberlan.net>
+
+	* methods.c (coco_firetruck_launch_missile): fix bug #425012 -
+	Missile trucks don't launch.
+
 2001-06-04  David Morse  <dm@bomberlan.net>
 
 	* server.c (coco_update_boot_camp): more work.

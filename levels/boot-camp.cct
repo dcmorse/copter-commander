@@ -3,19 +3,23 @@
 (define-coco-level boot-camp
     1 1                                 ; coco-version
     1                                   ; level-version
-    4000                                ; width
+    2500                                ; width
     ((ggpb (pillbox (- board-w (w pillbox)) good-guys 2 gghq))
-     (gghq (headquarters (right-center headquarters 300) good-guys ggpb))
-     (gglp (landing-pad (right-center headquarters 500)))
+     (gghq (headquarters (right-center headquarters 500) good-guys ggpb))
+     (gglp (landing-pad (right-center headquarters 300)))
         
      (bbpb (pillbox 0 bad-guys 0 bbhq))      
+     ;; hq position is reset by the tutorial.
      (bbhq (headquarters (left-center headquarters 300) bad-guys bbpb))
      ;;(bblp (landing-pad (left-center landing-pad 500)))
 
      (nil  (traffic-sign (left-center traffic-sign -300) 0))
      (nil  (traffic-sign (right-center traffic-sign -300) 0))
 
-     (checkpoint-charlie (bunker (- board-w 1200) bad-guys 0))
+     (checkpoint-charlie (bunker (+ (/ board-w 2) 100) bad-guys 0))
+
+     (nil  (traffic-sign (left-center traffic-sign 543) 1))
+     (nil  (traffic-sign (right-center traffic-sign 700) 2))
 
      ;; clouds
      (nil (cloud (+ 0000 (random 1000)) (+ balloon-y-min (random (- board-h balloon-y-min 150)))))

@@ -431,7 +431,7 @@ coco_firetruck_update_state( coco_sobject *sobject,
                 ||coco_sobject_subtype_p( COCO_SOBJECT_CL( target ),
                                           COCO_MECH_CLASS )))
           coco_launch_missile( sobject, COCO_SOBJECT_CL( sobject ), 
-                              sstate, target );
+                               sstate, target );
       });
     }
   else if ((1==ri)||(3==ri))
@@ -1260,11 +1260,8 @@ coco_rocket_kaboom( coco_sobject *sobject,
         }
       coco_make_snd( COCO_SOUND_ROCKET_HIT, sstate, x, COCO_GROUND_Y );
     }
-
-  coco_cookie( "calling next...\n" );
   /* call-next-method */
   coco_kaboom( sobject, cl->super, sstate );
-  coco_cookie( "calling next DONE\n" );
 }
 
 
@@ -1568,6 +1565,7 @@ coco_firetruck_launch_missile( coco_sobject *sobject, coco_sobject_cl *cla,
           COCO_SOBJECT_DX( sobject ) *= -1;
           COCO_FIRETRUCK_SMOKE_COUNTDOWN( sobject ) = 5;
           coco_sobject_set_raster_index( sobject, ri + 1 );
+          COCO_SOBJECT_FACING( sobject ) *= -1;
           for (i=0; i<COCO_SMOKE_RASTER_COUNT; i++)
             {
               coco_sobject *smoke = coco_sstate_allocate_sobject( sstate );

@@ -1507,6 +1507,40 @@ coco_button_maybe_launch_missile( coco_sobject *copter, coco_sstate *sstate )
 }
 
 
+coco_sobject *
+coco_cargo_copter_maybe_use_kit( coco_sobject *sobject, 
+                                 coco_sstate *sstate,
+                                 coco_sobject_cl *kit_class )
+{
+  coco_gnum kits = 0;
+  coco_sobject *gun = NULL;
+  if (COCO_COPTER_LANDED_P( sobject ) 
+      && (!COCO_COPTER_LANDED_ON_PAD_P( sobject ))
+      && (kits = COCO_COPTER_KITS( sobject ))
+      && (gun  = coco_sstate_allocate_sobject( sstate )))
+    {
+      coco_gnum x = COCO_MINI_POINT_X( coco_sobject_com( sobject ) )
+        + COCO_SOBJECT_X( sobject )
+        - (kit_class->canonical_w>>1);
+      if (kit_class == COCO_GUN_RUBBLE_CLASS)
+        coco_init_gun_rubble( gun, kit_class, x,
+                              COCO_AA_GUN_CLASS_INDEX );
+      else if (kit_class == COCO_HUT_CLASS)
+        coco_init_hut( gun, kit_class, x,
+                       COCO_SOBJECT_NATIONALITY( sobject ) );
+      else
+        coco_fatal_printf( COCO_ERROR_COCO_IMPLEMENTAION_PROBLEM,
+                           "Bad class index to "
+                           "coco_cargo_copter_maybe_use_kit: \"%s\" %d\n",
+                           kit_class->name, kit_class->cl_index );
+      COCO_COPTER_KITS( sobject ) = kits - 1;
+      return gun;
+    }
+  else 
+    return NULL;
+}
+
+
 
 coco_bool 
 coco_copter_update_state( coco_sobject *sobject, 
@@ -1516,6 +1550,7 @@ coco_copter_update_state( coco_sobject *sobject,
   signed char camera_index = COCO_SOBJECT_CAMERA_INDEX( sobject );
   signed char comp_index = COCO_SOBJECT_COMP_INDEX( sobject );
   struct coco_keyboard_pointer_state *input;
+
   if (COCO_COPTER_MISSILE_COOLDOWN( sobject )
       && (sstate->time == COCO_COPTER_MISSILE_COOLDOWN_TIME( sobject )))
     COCO_COPTER_MISSILE_COOLDOWN( sobject ) = COCO_FALSE;
@@ -1553,6 +1588,16 @@ coco_copter_update_state( coco_sobject *sobject,
                                sstate );
       if (coco_get_bit( input->key_state, COCO_CHAR_TO_KEY( 'x' ) ))
         coco_button_maybe_launch_missile( sobject, sstate );
+    }
+  else if (coco_sobject_subtype_p( COCO_SOBJECT_CL( sobject ),
+                                      COCO_CARGO_COPTER_CLASS ))
+    {
+      if (coco_get_bit( input->key_state, COCO_CHAR_TO_KEY( 'x' ) ))
+        coco_cargo_copter_maybe_use_kit( sobject, sstate, 
+                                         COCO_GUN_RUBBLE_CLASS );
+      if (coco_get_bit( input->key_state, COCO_CHAR_TO_KEY( 'c' ) ))
+        coco_cargo_copter_maybe_use_kit( sobject, sstate,
+                                         COCO_HUT_CLASS );
     }
   {
     coco_bool landed_p = COCO_COPTER_LANDED_P( sobject );
@@ -2199,6 +2244,37 @@ coco_update_tutorial( coco_sstate *sstate )
 }
 
 
+#define COCO_PLAYABLE_MAX_ARGS 5
+
+void
+coco_initialize_playable_sobject( coco_sobject *sobject, 
+                                  coco_sobject_cl *cla,
+                                  int p_or_c_index, coco_bool is_comp,
+                                  coco_facing face, coco_gnum x, coco_gnum y,
+                                  coco_nationality nat )
+{
+  coco_sobject *(* fn)
+    (coco_sobject *, coco_sobject_cl *, coco_lnum *);
+  coco_lnum fn_args[COCO_PLAYABLE_MAX_ARGS];
+  assert( COCO_PLAYABLE_MAX_ARGS == cla->init_by_list_count );
+  fn = cla->init_by_list_fn;
+  fn_args[0] = is_comp ? -1 : p_or_c_index;
+  fn_args[1] = face;
+  fn_args[2] = x;
+  fn_args[3] = y;
+  fn_args[4] = nat;
+  fn( sobject, cla, fn_args );
+  if (is_comp)
+    COCO_SOBJECT_COMP_INDEX( sobject ) = p_or_c_index;
+  assert( COCO_SOBJECT_FACING( sobject ) == face );
+  assert( COCO_SOBJECT_CL( sobject ) == cla );
+  assert( COCO_SOBJECT_X( sobject ) == x );
+  assert( COCO_SOBJECT_Y( sobject ) == y );
+  assert( COCO_SOBJECT_NATIONALITY( sobject ) == nat );
+}
+
+#undef COCO_PLAYABLE_MAX_ARGS
+
 /* returns true if the game is over */
 coco_bool
 coco_sstate_update( coco_sstate *sstate )
@@ -2319,13 +2395,8 @@ coco_sstate_update( coco_sstate *sstate )
           face = (COCO_GOOD_GUYS==nat)?-1:1;
           newcop = coco_sstate_allocate_sobject( sstate );
           assert( newcop );
-          if (coco_sobject_subtype_p( fcc, COCO_COPTER_CLASS ))
-            newcop = coco_init_copter( newcop, fcc, i, face, x, y, nat );
-          else if (coco_sobject_subtype_p( fcc, COCO_MECH_CLASS ))
-            newcop = coco_init_mech( newcop, fcc, i, face, x, y, nat );
-          else coco_fatal_printf( COCO_ERROR_COCO_IMPLEMENTAION_PROBLEM,
-                                  "Trying to respawn as"
-                                  " unknown camera type.\n" );
+          coco_initialize_playable_sobject( newcop, fcc, i, COCO_FALSE,
+                                            face, x, y, nat );
           sstate->camera_indicies[i] 
             = COCO_SOBJECT_INDEX( newcop );
         }
@@ -2368,10 +2439,9 @@ coco_sstate_update( coco_sstate *sstate )
                 COCO_U32_ADD_MODULAR( sstate->time );
               coco_warn_printf( "not enough memory to respawn comp\n" );
             }
-          coco_init_copter( copter, fcc,
-                            -1, (COCO_GOOD_GUYS==nat)?-1:1, 
-                            x, y, nat );
-          COCO_SOBJECT_COMP_INDEX( copter ) = i;
+          coco_initialize_playable_sobject( copter, fcc, i, COCO_TRUE,
+                                            (COCO_GOOD_GUYS==nat)?-1:1,
+                                            x, y, nat );
         }
   }
   COCO_DO_SSTATE_OBJECTS( sobject, sstate, {
@@ -3390,7 +3460,7 @@ coco_update_boot_camp( coco_sstate *sstate,
     break;
   case 3:
     switch (minor_mission) {
-    case 11:
+    case 11: /* shoot the HQ */
       {
         coco_sobject *hq = coco_find_sobject( sstate, COCO_HEADQUARTERS_CLASS,
                                               COCO_TRUE, 1, enat );
@@ -3403,11 +3473,34 @@ coco_update_boot_camp( coco_sstate *sstate,
           minor_mission = 12;
       }
       break;
+    case 12:
+    case 13:
+    case 14:
+      {
+        coco_sobject *van = coco_find_sobject( sstate, COCO_DEMO_VAN_CLASS,
+                                               COCO_TRUE, 1, nat );
+        if (!coco_find_sobject( sstate, COCO_HEADQUARTERS_CLASS,
+                                COCO_TRUE, 1, enat ))
+          minor_mission = 14;
+        else if (!van)
+          minor_mission = 12;
+        else
+          minor_mission = 13;
+      }
     }
     break;
   default:
     break;
   }
+
+  /* hold HQ back */
+  if (major_mission != 3)
+    {
+      coco_sobject *hq = coco_find_sobject( sstate, COCO_HEADQUARTERS_CLASS,
+                                            COCO_TRUE, 1, enat );
+      if (hq)
+        COCO_SOBJECT_X( hq ) = 100;
+    }
 
   {
     struct coco_tutorial_objectives to;
@@ -3456,6 +3549,7 @@ coco_write_cstate_serial_header( struct coco_cstate_serial_header *str,
       str->dashinfo.paratroopers = COCO_COPTER_PARATROOPERS( cam_object_or_null );
       str->dashinfo.engitroopers = COCO_COPTER_ENGITROOPERS( cam_object_or_null );
       str->dashinfo.fuel         = COCO_COPTER_FUEL( cam_object_or_null );
+      str->dashinfo.kits         = COCO_COPTER_KITS( cam_object_or_null );
     }
   else if (cam_object_or_null
            && coco_sobject_subtype_p( COCO_SOBJECT_CL( cam_object_or_null ),
@@ -3469,11 +3563,12 @@ coco_write_cstate_serial_header( struct coco_cstate_serial_header *str,
       str->dashinfo.paratroopers = 0;
       str->dashinfo.engitroopers = 0;
       str->dashinfo.fuel         = COCO_MECH_ENERGY( cam_object_or_null );
+      str->dashinfo.kits         = 0;
     }
   else
     str->dashinfo.bullets = str->dashinfo.bombs = str->dashinfo.missiles
       = str->dashinfo.rockets = str->dashinfo.paratroopers
-      = str->dashinfo.fuel = 0;
+      = str->dashinfo.fuel = str->dashinfo.kits = 0;
   str->dashinfo.copters = coco_players[player_index].copters;
   str->dashinfo.funds   = coco_players[player_index].funds;
   str->dashinfo.server_fps = COCO_IDEAL_FRAMES_PER_SECOND;
