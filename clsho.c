@@ -142,7 +142,9 @@ coco_help_message()
           "  --list-levels           Show built in levels.\n"
           "\n"
           "Client Options:\n"
-          "  -s HOST, --server=HOST  Search HOST for games (default %s).\n%s",
+          "  -s HOST, --server=HOST  Search HOST for games (default %s).\n"
+          "  --name=NICKNAME         Set nickname (default is username).\n"
+          "%s",
           /* split here otherwise
              string length is greater than the minimum length `509' ISO
              C89 is required to support */
@@ -153,6 +155,8 @@ coco_help_message()
           "  --gnome-options         send further options to gnome (--coco-options terminated)\n"
           "\n"
           "Server Options:\n"
+          "  --left-comps=NUM        Number of computer players on left.\n"
+          "  --right-comps=NUM       Number of computer players on right.\n"
           "  --log=FILE              Route diagnostics to a file (default stdout).\n"
           "  -q, --quiet             Do not produce diagnostics.\n"
           "  --level=FILE            Load level from file.\n" );
@@ -197,4 +201,33 @@ coco_list_levels_message( void )
                        "Looking for built in levels in %s: %s\n",
                        coco_level_directory, coco_errno_string( success ) );
   else exit( 0 );
+}
+
+static char nickname[COCO_PLAYER_NAME_MAX] = "";
+
+void
+coco_set_nickname( char *value )
+{
+  size_t len = strlen( value ) + 1;
+  if (len >= COCO_PLAYER_NAME_MAX)
+    { 
+      memcpy( nickname, value, COCO_PLAYER_NAME_MAX );
+      nickname[COCO_PLAYER_NAME_MAX-1] = '\0';
+    }
+  else memcpy( nickname, value, len );
+}
+
+/* return statically allocated username, no longer than
+   COCO_PLAYER_NAME_MAX, including NULL */
+char *
+coco_nickname( void )
+{
+  if ('\0' == nickname[0])
+    { /* nobody set nickname, try to guess */
+      char *env = getenv( "USER" );
+      if (NULL==env)
+        env = "Anonymous Coward";
+      coco_set_nickname( env );
+    }
+  return nickname;
 }

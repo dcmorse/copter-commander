@@ -52,6 +52,8 @@ coco_make_hut_and_friends( coco_sstate *sstate, coco_gnum x,
 
 static coco_bool coco_send_everyone_game_message( void );
 
+static coco_bool coco_send_everyone_votestate_message( coco_sstate *sstate );
+
 static coco_sstate the_coco_sstate = { COCO_FALSE, NULL, 0, 0, 0 };
 
 /* reader for sstates, called by toplevel functions */
@@ -505,40 +507,19 @@ coco_send_play_and_mark_thusly( int player_index )
 
 struct coco_comp coco_comps[COCO_MAX_COMPS];
 
-void
-coco_init_comps( void )
-{
-  int i;
-  for (i=0; i<COCO_MAX_COMPS; i++)
-    {
-      coco_comps[i].in_use = COCO_FALSE;
-      coco_comps[i].index = i;
-      coco_comps[i].cruise_altitude = COCO_VIEWABLE_H;
-      coco_comps[i].overgun = 5;
-      coco_comps[i].refuelling = COCO_FALSE;
-    }
-}
 
 
 void
 coco_add_comp( coco_nationality nat, coco_sstate *sstate )
 {
   static char *comp_names[] = {
-    "Pik Pocket",
-    "BioBear",
     "Cyber Chicken",
     "Damage Jackal",
     "Armor Fiend",
-    "Magna Mauler",
     "HotPoker",
-    "The Road Warrior",
     "Mr Funky",
-    "HammerTime",
     "Beastly Thing",
-    "WitchDoctor",
-    "Count Chocula",
-    "Funky Monkey",
-    "Krusty",
+    "Punky Monkey",
   };
   coco_bool found = COCO_FALSE;
   int i; 
@@ -563,6 +544,25 @@ coco_add_comp( coco_nationality nat, coco_sstate *sstate )
 }
 
 void
+coco_init_comps( coco_sstate *sstate )
+{
+  int i;
+  for (i=0; i<COCO_MAX_COMPS; i++)
+    {
+      coco_comps[i].in_use = COCO_FALSE;
+      coco_comps[i].index = i;
+      coco_comps[i].cruise_altitude = COCO_VIEWABLE_H;
+      coco_comps[i].overgun = 5;
+      coco_comps[i].refuelling = COCO_FALSE;
+    }
+  for (i=0; i<coco_command_line_left_comps; i++)
+    coco_add_comp( COCO_BAD_GUYS, sstate );
+  for (i=0; i<coco_command_line_right_comps; i++)
+    coco_add_comp( COCO_GOOD_GUYS, sstate );
+}
+
+
+void
 coco_handle_nominate_message( struct coco_message_nominate *msg, 
                               coco_sstate *sstate, int player_idx )
 {
@@ -573,7 +573,9 @@ coco_handle_nominate_message( struct coco_message_nominate *msg,
       /* new nomination */
       int i;
 
-      cursor = ++(sstate->nominations_cursor);
+      cursor = (1 + sstate->nominations_cursor) % COCO_MAX_NOMINATIONS;
+      sstate->nominations_cursor = cursor;
+
       status = sstate->nominations + cursor;
 
       status->action_code = msg->action_code;
@@ -641,22 +643,25 @@ coco_handle_nominate_message( struct coco_message_nominate *msg,
                      passing ? "PASS" : "FAIL" );
       }
     if (passing)
-      switch (code) {
-      case COCO_NOMINATE_ADD_GOOD_GUY_COMP:
-      case COCO_NOMINATE_ADD_BAD_GUY_COMP:
-        { 
-          coco_nationality nat = (code==COCO_NOMINATE_ADD_GOOD_GUY_COMP)
-            ? COCO_GOOD_GUYS : COCO_BAD_GUYS;
-          coco_add_comp( nat, sstate );
+      {
+        switch (code) {
+        case COCO_NOMINATE_ADD_GOOD_GUY_COMP:
+        case COCO_NOMINATE_ADD_BAD_GUY_COMP:
+          { 
+            coco_nationality nat = (code==COCO_NOMINATE_ADD_GOOD_GUY_COMP)
+              ? COCO_GOOD_GUYS : COCO_BAD_GUYS;
+            coco_add_comp( nat, sstate );
+          }
+          break;
+        case COCO_NOMINATE_BOOT_COMP:
+          coco_warn_printf( "Comp booting is not implemented.\n" );
+          break;
+        default:
+          coco_warn_printf( "Unrecognised code in "
+                            "coco_handle_nominate_message: %d.\n", code );
+          break;
         }
-        break;
-      case COCO_NOMINATE_BOOT_COMP:
-        coco_warn_printf( "Comp booting is not implemented.\n" );
-        break;
-      default:
-        coco_warn_printf( "Unrecognised code in "
-                          "coco_handle_nominate_message: %d.\n", code );
-        break;
+        status->action_code = COCO_NOMINATE_NOT_IN_USE;
       }
   }
 }
@@ -670,6 +675,7 @@ coco_handle_server_message( int player_index )
   struct coco_stream *str;
   union coco_message message;
   int need_game_refresh = 0;
+  int need_votestate_refresh = 0;
   player = coco_players + player_index;
   str = coco_streams + player_index;
   while (1)
@@ -719,9 +725,13 @@ coco_handle_server_message( int player_index )
         }
         break;
       case COCO_MESSAGE_NOMINATE:
-        coco_handle_nominate_message( &(message.nominate), coco_get_sstate(),
-                                      player_index );
-        break;
+        {
+          coco_sstate *sstate = coco_get_sstate();
+          coco_handle_nominate_message( &(message.nominate), sstate,
+                                        player_index );
+          need_votestate_refresh = 1;
+          break;
+        }
       case COCO_MESSAGE_CHAT:
         {
           unsigned int players;
@@ -756,9 +766,14 @@ coco_handle_server_message( int player_index )
         break;
       }
     }
-  if (need_game_refresh)
-    return coco_send_everyone_game_message();
-  return COCO_TRUE; 
+  {
+    coco_bool ok = COCO_TRUE;
+    if (ok && need_votestate_refresh)
+      ok = coco_send_everyone_votestate_message( coco_get_sstate() );
+    if (ok && need_game_refresh)
+      ok = coco_send_everyone_game_message();
+    return ok; 
+  }
 }
 
 
@@ -777,6 +792,36 @@ coco_send_everyone_game_message( void )
         up = up && coco_handle_player_quit( i );
   return up;
 }
+
+/* returns true iff server should be kept up */
+coco_bool
+coco_send_everyone_votestate_message( coco_sstate *sstate )
+{
+  coco_bool up = COCO_TRUE;
+  int i;
+  union coco_message msg;
+  msg.every.type = COCO_MESSAGE_VOTESTATE;
+
+  for (i=0; i<COCO_MAX_NOMINATIONS; i++)
+    {
+      int j;
+      coco_u32 vec = 0;
+      msg.votestate.nominations[i].action_code
+        = sstate->nominations[i].action_code;
+      msg.votestate.nominations[i].act_object
+        = sstate->nominations[i].act_object;
+      for (j=0; j<COCO_MAX_PLAYERS; j++)
+        if (sstate->nominations[i].votes[j])
+          vec += 1<<j;
+      msg.votestate.nominations[i].votes = COCO_U32_HTON( vec );
+    }
+  for (i=0;i<COCO_MAX_PLAYERS;i++)
+    if (coco_players[i].in_use)
+      if (!coco_write_message( coco_streams + i, &msg ))
+        up = up && coco_handle_player_quit( i );
+  return up;
+}
+
 
 /* COLLISION OVERHAUL
 coco_bool
@@ -2167,7 +2212,7 @@ coco_server_exec( void )
     coco_fatal_printf( COCO_ERROR_BAD_LEVEL,
                        "Problem loading level \"%s\"\n",
                        level_error );
-  coco_init_comps();
+  coco_init_comps( coco_get_sstate() );
   coco_server_setup( &tcpfd, &out_udpfd, &in_udpfd, &in_udp_port );
   coco_server_loop( tcpfd, out_udpfd, in_udpfd, in_udp_port );
 }

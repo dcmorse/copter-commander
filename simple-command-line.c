@@ -71,6 +71,8 @@ int coco_process_shared_arguments( int idx, int argc, char **argv )
   return idx;
 }
 
+unsigned long coco_command_line_left_comps = 0;
+unsigned long coco_command_line_right_comps = 0;
 
 /* Returns true if the main program should run */
 coco_bool coco_process_server_arguments( int argc, char **argv )
@@ -97,6 +99,20 @@ coco_bool coco_process_server_arguments( int argc, char **argv )
         }
       else if (0==strncmp( "--log=", argv[i], 10 ))
         log_file_name = argv[i] + 10;
+      else if ((0==strcmp( "--left-comps", argv[i] )))
+        {
+          i++;
+          if (i<argc)
+            coco_command_line_left_comps = strtoul( argv[i], NULL, 10 );
+          else coco_fatal_printf( COCO_ERROR_BAD_COMMAND_LINE,
+                                   "Missing argument to \"%s\" option.\n",
+                                   argv[i-1] );
+        }
+      else if (0==strncmp( "--left-comps=", argv[i], 13 ))
+        {
+          coco_command_line_left_comps = strtoul( argv[i] + 13, NULL, 10 );
+          
+        }
       else if ((0==strcmp( "-q", argv[i] )) || 
                (0==strcmp( "--quiet", argv[i] )))
         log_file_name = "/dev/null";
@@ -130,7 +146,8 @@ coco_bool coco_process_server_arguments( int argc, char **argv )
 
 
 /* Returns true if the main program should run */
-coco_bool coco_process_client_arguments( int argc, char **argv )
+coco_bool 
+coco_process_client_arguments( int argc, char **argv )
 {
   int i, j;
   int gnome_arg_start = -1;
@@ -159,6 +176,19 @@ coco_bool coco_process_client_arguments( int argc, char **argv )
         {
           coco_server = argv[i] + 9;
           coco_server_specified_p = COCO_TRUE;
+        }
+      else if (0==strncmp( "--name=", argv[i], 7 ))
+        {
+          coco_set_nickname( argv[i] + 7 );
+        }
+      else if ((0==strcmp( "--name", argv[i] )))
+        {
+          i++;
+          if (i<argc)
+            coco_set_nickname( argv[i] );
+          else coco_fatal_printf( COCO_ERROR_BAD_COMMAND_LINE,
+                                  "Missing argument to \"%s\" option.\n",
+                                  argv[i-1] );
         }
       else if (0==strcmp( "--single-buffer", argv[i] ))
         coco_command_line_inhibit_double_buffer = COCO_TRUE;

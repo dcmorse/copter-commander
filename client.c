@@ -46,6 +46,10 @@ coco_gnum coco_real_window_w = COCO_OFFICIAL_WINDOW_W;
 coco_gnum coco_real_window_h = COCO_OFFICIAL_WINDOW_H;
 
 /* ________________________________________________________________ */
+static coco_bool coco_old_votestate_initialized = COCO_FALSE;
+static struct coco_message_votestate coco_old_votestate;
+
+/* ________________________________________________________________ */
 
 /* only referenceable if coco_have_game_message. */
 char coco_game_status_string[COCO_GAME_STATUS_SIZE];
@@ -125,6 +129,8 @@ static coco_bool coco_censor_keys = COCO_FALSE;
 
 void coco_note_talk( void *null, union coco_message *message );
 void coco_draw_talk( long tv_sec_now );
+
+void coco_note_votestate( void *null, union coco_message *message );
 
 /* _cobject        _____________________________________________________ */
 
@@ -461,11 +467,16 @@ coco_bullet_draw( coco_cobject *cobject, coco_sobject_cl *cla )
   coco_gnum x = COCO_COBJECT_X( cobject );
   coco_gnum y = COCO_COBJECT_Y( cobject );
   unsigned char thickness = COCO_COBJECT_CL( cobject )->thickness;
-  coco_draw_color( COCO_COLOR_BULLET );
   if (1==thickness)
-    coco_draw_point( x, y );
+    {
+      coco_draw_color( COCO_COLOR_SMALL_BULLET );
+      coco_draw_point( x, y );
+    }
   else 
-    coco_draw_big_point( x, y, thickness );
+    {
+      coco_draw_color( COCO_COLOR_BULLET );
+      coco_draw_big_point( x, y, thickness );
+    }
 }
 
 
@@ -931,11 +942,19 @@ coco_cstate_draw( struct coco_cstate *cstate )
   /*  struct timezone tz;*/
   int i;
   coco_znum z;
+
+  gettimeofday( &now, NULL );
+  coco_subtract_timevals( &delta, &now, &last );
+  last = now;
+
   coco_clear_window_color( COCO_COLOR_BACKGROUND );
   coco_clear_window();
   if (coco_draw_background_before_everything_else)
     coco_draw_background( 0, 0, COCO_FALSE );
   coco_draw_ground( COCO_GROUND_Y );
+
+  /* coco_draw_votestate( now.tv_sec ); */
+
   coco_draw_color( COCO_COLOR_FONT );
   grabbed = coco_get_pointer_grabbed_flag();
   /*
@@ -961,9 +980,6 @@ coco_cstate_draw( struct coco_cstate *cstate )
   coco_draw_line( 0, COCO_RADAR_Y-1, coco_real_window_w, COCO_RADAR_Y-1 );
   coco_draw_line( 0,                  COCO_RADAR_Y+COCO_RADAR_H, 
                   coco_real_window_w, COCO_RADAR_Y+COCO_RADAR_H );
-  gettimeofday( &now, NULL );
-  coco_subtract_timevals( &delta, &now, &last );
-  last = now;
   coco_draw_dashboard( cstate, (int)(1000000 / delta.tv_usec) );
   coco_begin_point_drawing();
   for (i=cstate->cblips_length-1; i>=0; i--)
@@ -1247,6 +1263,41 @@ coco_key_press( coco_key key, char *string_or_null,
               coco_display_notice( notice );
             }
           return;
+        case '0': /* voting on something */
+        case '1':
+        case '2':
+        case '3':
+        case '4':
+        case '5':
+        case '6':
+        case '7':
+        case '8':
+        case '9':
+          {
+            struct coco_stream *str = coco_get_server_message_stream();
+            if ((str != NULL) && coco_old_votestate_initialized)
+              {
+                union coco_message msg;
+                int serial = key - '0';
+                msg.every.type = COCO_MESSAGE_NOMINATE;
+                msg.nominate.serial = serial;
+                if (!coco_old_votestate_initialized) 
+                  {
+                    coco_warn_printf( "Attempt to vote but "
+                                      "no votestate yet saved.\n" );
+                    return;
+                  }
+                msg.nominate.action_code
+                  = coco_old_votestate.nominations[serial].action_code;
+                msg.nominate.act_object
+                  = coco_old_votestate.nominations[serial].act_object;
+                msg.nominate.vote
+                  = !(((coco_old_votestate.nominations[serial].votes)
+                       >> coco_my_player_id) & 1);
+                coco_write_message( str, &msg );
+              }
+          }
+          return;
         case '[': /* add grey comp */
         case ']': /* add green comp */
           if (coco_get_bit( keystate, COCO_KEY_CONTROL ))
@@ -1394,9 +1445,6 @@ coco_draw_window( void )
     coco_play_intro_movie_frame( COCO_FALSE, COCO_FALSE );
     break;
   case COCO_CLIENT_CHOOSE_SERVER_DIALOG:
-#ifdef COCO_WIDGET_INSANITY
-    coco_draw_widget_world();
-#endif
     break;
   case COCO_CLIENT_CHATROOM_DIALOG:
     coco_draw_color( COCO_COLOR_BROWN );
@@ -1776,6 +1824,7 @@ coco_cobject_y_ntoh( coco_cobject *cobject )
 
 
 static coco_notification_id coco_in_game_talk_notify = -1;
+static coco_notification_id coco_in_game_vote_notify = -1;
 
 void 
 coco_handle_client_message( struct coco_stream *str, 
@@ -1812,12 +1861,16 @@ coco_handle_client_message( struct coco_stream *str,
       case COCO_MESSAGE_TALK:
         coco_call_message_notifications( COCO_MESSAGE_TALK, &message );
         break;
+      case COCO_MESSAGE_VOTESTATE:
+        coco_call_message_notifications( COCO_MESSAGE_VOTESTATE, &message );
+        break;
       case COCO_MESSAGE_GAME:
         coco_cookie( "Got game.  You are id %d\n", 
                      (int) message.game.your_player_id );
         if (!coco_have_game_message)
           coco_initialize_cstate( coco_get_cstate() );
         coco_have_game_message = COCO_TRUE;
+        coco_old_votestate_initialized = COCO_FALSE;
         coco_my_player_id = message.game.your_player_id;
         coco_cookie( "Game status is \"%s\"\n", 
                      message.game.game_status_string );
@@ -1857,6 +1910,9 @@ coco_handle_client_message( struct coco_stream *str,
         if (coco_in_game_talk_notify < 0)
           coco_in_game_talk_notify 
             = coco_add_message_notification( COCO_MESSAGE_TALK, coco_note_talk, NULL );
+        if (coco_in_game_vote_notify < 0)
+          coco_in_game_vote_notify
+            = coco_add_message_notification( COCO_MESSAGE_VOTESTATE, coco_note_votestate, NULL );
         coco_have_play_message = COCO_TRUE;
         coco_grab_pointer();
         assert( coco_have_port_message );
@@ -2058,19 +2114,19 @@ coco_client_loop( void )
             ( udpfd, coco_get_keyboard_pointer_state() );
         }
       /*
-      gettimeofday( &donetime, &tz );
-      coco_subtract_timevals( &donetime, &donetime, &xtime );
-      coco_subtract_timevals( &xtime, &xtime, &swaptime );
-      coco_subtract_timevals( &swaptime, &swaptime, &drawtime );
-      coco_subtract_timevals( &drawtime, &drawtime, &pactime );
-      coco_subtract_timevals( &pactime, &pactime, &seltime );
-      coco_cookie( "pactime %6d drawtime %6d swaptime %6d "
-                   "xtime %6d donetime %6d\n",
-                   pactime.tv_usec, drawtime.tv_usec, swaptime.tv_usec,
-                   xtime.tv_usec, donetime.tv_usec);
-      coco_cookie( "drawtime %4d %6d   pactime %4d %6d\n",
-                   drawtime.tv_sec, drawtime.tv_usec, pactime.tv_sec,
-                   pactime.tv_usec ); */
+        gettimeofday( &donetime, &tz );
+        coco_subtract_timevals( &donetime, &donetime, &xtime );
+        coco_subtract_timevals( &xtime, &xtime, &swaptime );
+        coco_subtract_timevals( &swaptime, &swaptime, &drawtime );
+        coco_subtract_timevals( &drawtime, &drawtime, &pactime );
+        coco_subtract_timevals( &pactime, &pactime, &seltime );
+        coco_cookie( "pactime %6d drawtime %6d swaptime %6d "
+        "xtime %6d donetime %6d\n",
+        pactime.tv_usec, drawtime.tv_usec, swaptime.tv_usec,
+        xtime.tv_usec, donetime.tv_usec);
+        coco_cookie( "drawtime %4d %6d   pactime %4d %6d\n",
+        drawtime.tv_sec, drawtime.tv_usec, pactime.tv_sec,
+        pactime.tv_usec ); */
     }
   coco_set_inhibit_refresh( refresh_ok );
 }
@@ -2153,18 +2209,8 @@ coco_client_connect_to_server( enum coco_network_error *err_return,
                                         (coco_msg_ptr) &coco_my_version );
     /* player name */
     { 
-      char *env;
-      int envlen;
       struct coco_message_name name = { COCO_MESSAGE_NAME };
-      env = getenv( "USER" );
-      if (NULL==env) env = "Anonymous Coward";
-      envlen = strlen( env ) + 1;
-      if (envlen >= COCO_PLAYER_NAME_MAX)
-        { 
-          memcpy( name.name, env, COCO_PLAYER_NAME_MAX);
-          name.name[COCO_PLAYER_NAME_MAX-1] = '\0';
-        }
-      else memcpy( name.name, env, envlen );
+      strcpy( name.name, coco_nickname() );
       write_success 
         &= coco_write_message( &coco_server_stream, (coco_msg_ptr) &name );
     }
@@ -2207,11 +2253,63 @@ coco_load_sound_palette( char **sound_names,
 }
 
 
+void
+coco_display_player_flux( void *null, union coco_message *message )
+{
+  static coco_bool have_previous = COCO_FALSE;
+  static struct coco_message_game previous;
+  if (!have_previous)
+    have_previous = COCO_TRUE;
+  else
+    {
+      int i;
+      for (i=0; i<COCO_MAX_PLAYERS; i++)
+        {
+          coco_nationality msg_nat = message->game.nationalities[i];
+          coco_nationality prev_nat = previous.nationalities[i];
+          int my_id = message->game.your_player_id;
+          if ((msg_nat != prev_nat)
+              || ((msg_nat != COCO_NEUTRAL)
+                  && strcmp( message->game.names[i], previous.names[i] )))
+            {
+              if ((msg_nat != COCO_NEUTRAL) && (my_id != i))
+                {
+                  char buf[400];
+                  char *sidestr;
+
+                  if (coco_get_client_state() != COCO_CLIENT_PLAY)
+                    sidestr = " the game";
+                  else if (message->game.nationalities[i]
+                           == (message->game.nationalities[my_id]))
+                    sidestr = " your side";
+                  else sidestr = " the enemy";
+                  
+                  sprintf( buf, "%s has joined%s.",
+                           message->game.names[i], sidestr);
+                  coco_display_notice( buf );
+                }
+              if (((msg_nat==COCO_NEUTRAL)
+                   || strcmp( message->game.names[i], previous.names[i] ))
+                  && (previous.names[i][0] != '\0'))
+                {
+                  char buf[400];
+                  sprintf( buf, "%s has left the game.", previous.names[i] );
+                  coco_display_notice( buf );
+                }
+            }
+        }
+    }
+  previous = message->game;
+}
+
+
 static coco_sound_type coco_game_sounds_size_loaded = 0; /* <= COCO_GAME_SOUNDS_SIZE */
 
 void 
 coco_client_exec( void )
 {
+  coco_add_message_notification( COCO_MESSAGE_GAME, coco_display_player_flux,
+                                 NULL );
   coco_init_sound_system();
   coco_game_sounds_size_loaded
     = coco_load_sound_palette( coco_game_sound_names, 
@@ -2221,23 +2319,88 @@ coco_client_exec( void )
   coco_make_window();
   coco_set_client_state( COCO_CLIENT_DEMO );
   coco_play_intro_movie();
-#ifdef COCO_WIDGET_INSANITY
-  coco_set_client_state( COCO_CLIENT_CHOOSE_SERVER_DIALOG );
-  {
-    coco_widget *wizard = coco_make_wizard_widget();
-    coco_set_wizard_widget_buttons( wizard,
-                                    COCO_WIZBUT_X
-                                    | COCO_WIZBUT_HELP 
-                                    | COCO_WIZBUT_BACK 
-                                    | COCO_WIZBUT_FORWARD );
-    coco_set_root_widget( wizard );
-  }
-#endif
   coco_client_loop();
 }
 
 
 
+
+/*
+
+void
+coco_draw_votestate( long tv_sec_now )
+{
+  coco_draw_color( COCO_COLOR_VOTESTATE );
+  
+  if (!coco_current_votestate_valid)
+    return;
+  else if (tv_sec_now > coco_current_votestate_expire)
+    {
+      coco_current_votestate_valid = COCO_FALSE;
+      return;
+    }
+  else
+    {
+      struct coco_font *font = &coco_fixed_font;
+      int i, y, h;
+      coco_bool interesting = COCO_FALSE;
+
+      for (i=0; i<COCO_MAX_NOMINATIONS; i++)
+        if (coco_current_votestate.nominations[i].action_code
+            != COCO_NOMINATE_NOT_IN_USE)
+          {
+            interesting = COCO_TRUE;
+            break;
+          }
+
+      if (!interesting) return;
+
+      coco_draw_color( COCO_COLOR_VOTESTATE );
+
+      y = COCO_VIEWABLE_H - 200;
+      h = COCO_FONT_INTERLINE_SPACING( font );
+
+      {
+        int plr;
+        char str[400];
+        sprintf( str, "VOTE ACTION           " );
+
+        for (plr=0; plr<COCO_MAX_PLAYERS; plr++)
+          sprintf( str + strlen( str ), " %3s", 
+                   coco_players[i].in_use ? coco_players[i].name : "" );
+        coco_draw_string( 200, y, str, -1, font, COCO_BASELINE );
+        y -= h;
+      }
+
+
+      for (i=0; i<COCO_MAX_NOMINATIONS; i++)
+        {
+          int code;
+            
+          code = coco_current_votestate.nominations[i].action_code;
+          if (code != COCO_NOMINATE_NOT_IN_USE)
+            {
+              int plr;
+              char str[400];
+              sprintf( str, "%3d  %14s  %s ", i, 
+                       coco_nominate_action_descriptions[code], "" );
+              for (plr=0; plr<COCO_MAX_PLAYERS; plr++)
+                sprintf( str + strlen( str ), " %3s", 
+                         ((coco_players[i].in_use
+                           ? ((1 & (coco_current_votestate
+                                    .nominations[i].votes >> plr))
+                              ? "yea" : "no")
+                           : "")));
+              coco_cookie( "string = %s\n" );
+              coco_draw_string( 200, y, str, -1, font, COCO_BASELINE );
+              y -= h;
+            }
+        }
+    }
+
+}
+
+*/
 
 #define COCO_TALK_DISPLAY_SIZE 4
 char coco_talk_display_talk_buffer[COCO_TALK_DISPLAY_SIZE][COCO_CHAT_MAX];
@@ -2260,6 +2423,52 @@ coco_note_talk( void *null, union coco_message *message )
   coco_talk_display_ptr = ((ptr + 1) >= COCO_TALK_DISPLAY_SIZE) ? 0 : (ptr + 1);
   coco_talk_display_count = COCO_MAX( coco_talk_display_count, COCO_TALK_DISPLAY_SIZE );
 }
+
+
+
+void
+coco_note_votestate( void *null, union coco_message *message )
+{
+  int nom;
+  int myid = coco_my_player_id;
+  for (nom=0; nom<COCO_MAX_NOMINATIONS; nom++)
+    {
+      coco_u32 new_votes = message->votestate.nominations[nom].votes;
+      coco_u32 old_votes = coco_old_votestate.nominations[nom].votes;
+      new_votes = COCO_U32_NTOH( new_votes );
+      old_votes = COCO_U32_NTOH( old_votes );
+      if ((message->votestate.nominations[nom].action_code
+           != COCO_NOMINATE_NOT_IN_USE)
+          && ((!coco_old_votestate_initialized)
+              || (message->votestate.nominations[nom].action_code
+                  != coco_old_votestate.nominations[nom].action_code)
+              || (message->votestate.nominations[nom].act_object
+                  != coco_old_votestate.nominations[nom].act_object)
+              || (((new_votes>>myid)&1) != ((old_votes>>myid)&1))))
+        {
+          coco_bool voted_for = (new_votes>>myid)&1;
+          int code = message->votestate.nominations[nom].action_code;
+          char str[400];
+          char obj[40] = "";
+          if (COCO_NOMINATE_BOOT_COMP==code)
+            sprintf( obj, " %d", 
+                     message->votestate.nominations[nom].act_object );
+          if (voted_for)
+            sprintf( str, "You are voting to %s%s.  "
+                     "Press %d to change your mind.", 
+                     coco_nominate_action_descriptions[code],
+                     obj, nom );
+          else
+            sprintf( str, "To vote for %s%s, press %d.", 
+                     coco_nominate_action_descriptions[code],
+                     obj, nom );
+          coco_display_notice( str );
+        }
+    }
+  coco_old_votestate = message->votestate;
+  coco_old_votestate_initialized = COCO_TRUE;
+}
+
 
 /* display something like talk, but from the system instead of from a
    player.  Copies the string its passed.  */
@@ -2296,7 +2505,7 @@ coco_draw_talk( long tv_sec_now )
 {
   struct coco_font *font = &coco_default_font;
   int x = 100;
-  int h = coco_font_height( font ) + 4;
+  int h = COCO_FONT_INTERLINE_SPACING( font );
   int ptr = coco_talk_display_ptr;
   int i;
   int y = COCO_RADAR_Y;
@@ -2322,6 +2531,8 @@ static struct message_notifier_record *coco_talk_message_notifiers = NULL;
 static int coco_talk_message_notifiers_size = 0;
 static struct message_notifier_record *coco_play_message_notifiers = NULL;
 static int coco_play_message_notifiers_size = 0;
+static struct message_notifier_record *coco_vote_message_notifiers = NULL;
+static int coco_vote_message_notifiers_size = 0;
 
 
 #define COCO_INIT_NOTIFIER_STORAGE( structs, size ) \
@@ -2337,6 +2548,10 @@ static int coco_play_message_notifiers_size = 0;
   case COCO_MESSAGE_PLAY: \
     size = coco_play_message_notifiers_size; \
     structs = coco_play_message_notifiers; \
+    break;\
+  case COCO_MESSAGE_VOTESTATE: \
+    size = coco_vote_message_notifiers_size; \
+    structs = coco_vote_message_notifiers; \
     break;\
   default:\
     coco_fatal_printf( COCO_ERROR_COCO_IMPLEMENTAION_PROBLEM,\
@@ -2368,6 +2583,10 @@ coco_add_message_notification( int message_type, message_fn fn, void *data )
   case COCO_MESSAGE_PLAY:
     message_notifiers_size = &coco_play_message_notifiers_size;
     message_notifiers      = &coco_play_message_notifiers;
+    break;
+  case COCO_MESSAGE_VOTESTATE:
+    message_notifiers_size = &coco_vote_message_notifiers_size;
+    message_notifiers      = &coco_vote_message_notifiers;
     break;
   default:
     coco_fatal_printf( COCO_ERROR_COCO_IMPLEMENTAION_PROBLEM,

@@ -7,7 +7,7 @@
  * the Free Software Foundation; either version 2 of the License, or
  * (at your option) any later version.
  * 
- * This program is distributed in the hope that it will be useful,
+j * This program is distributed in the hope that it will be useful,
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
  * GNU General Public License for more details.
@@ -281,6 +281,14 @@ char *coco_sound_name_to_file_name( char *sound_name );
 
 int coco_check_hton( void );
 
+/* clsho.c */
+
+char *coco_nickname( void );
+
+void coco_set_nickname( char *value );
+
+
+
 /* command-line-sho.c */
 
 void coco_set_log_file( char *log_file_name );
@@ -346,10 +354,12 @@ typedef unsigned int coco_color;
 #define COCO_COLOR_CURSOR COCO_COLOR_RED
 #define COCO_COLOR_ROTOR COCO_COLOR_GREY
 #define COCO_COLOR_BULLET COCO_COLOR_WHITE
+#define COCO_COLOR_SMALL_BULLET COCO_COLOR_RED
 #define COCO_COLOR_BARRAGE_BALLON_LINE COCO_COLOR_GREY_E
 #define COCO_COLOR_BARREL COCO_COLOR_GREY
 #define COCO_COLOR_DASHBOARD_FG COCO_COLOR_GREY
 #define COCO_COLOR_DASHBOARD_FULL COCO_COLOR_GREEN_GREY
+#define COCO_COLOR_VOTESTATE COCO_COLOR_GREEN
 #elif (COCO_APPEARANCE == COCO_APPEARANCE_DOODLE)
 #define COCO_COLOR_BACKGROUND COCO_COLOR_GREY_E
 #define COCO_COLOR_GROUND COCO_COLOR_GREY_4
@@ -359,10 +369,12 @@ typedef unsigned int coco_color;
 #define COCO_COLOR_CURSOR COCO_COLOR_RED
 #define COCO_COLOR_ROTOR COCO_COLOR_GREY_2
 #define COCO_COLOR_BULLET COCO_COLOR_BLACK
+#define COCO_COLOR_SMALL_BULLET COCO_COLOR_BLACK
 #define COCO_COLOR_BARRAGE_BALLON_LINE COCO_COLOR_GREY_3
 #define COCO_COLOR_BARREL COCO_COLOR_GREY_4
 #define COCO_COLOR_DASHBOARD_FG COCO_COLOR_GREY_3
 #define COCO_COLOR_DASHBOARD_FULL COCO_COLOR_BLACK
+#define COCO_COLOR_VOTESTATE COCO_COLOR_GREY_3
 #else
 #error COCO_APPEARANCE is not a value known to coco.h
 #endif
@@ -457,6 +469,8 @@ struct coco_font {
   void *implementation_datum;
   long list_base;
 };
+
+#define COCO_FONT_INTERLINE_SPACING( font ) (coco_font_height( font ) + 4)
 
 extern struct coco_font coco_default_font;
 extern struct coco_font coco_huge_font;
@@ -691,7 +705,7 @@ struct coco_stream {
 #define COCO_MESSAGE_GAME 'G' /* describes game chatroom */
 #define COCO_MESSAGE_FULL 'F' /* Server is full.  Prepare to be dissed. */
 #define COCO_MESSAGE_PORT 'O' /* # of udp port on sending machine */
-
+#define COCO_MESSAGE_VOTESTATE 'S' /* Status of going nominations */
 
 #define COCO_CHAT_MAX (COCO_MESSAGE_SIZE - 8) /* incl. null */
 
@@ -728,6 +742,9 @@ struct coco_message_chat {
 #define COCO_NOMINATE_ADD_GOOD_GUY_COMP 1 /* act_object unused */
 #define COCO_NOMINATE_ADD_BAD_GUY_COMP  2 /* act_object unused */
 #define COCO_NOMINATE_BOOT_COMP         3 /* act_object == player_id */
+/* Also add to char *coco_nominate_action_descriptions[] in gamesho */
+extern char *coco_nominate_action_descriptions[];
+
 
 #define COCO_MAX_NOMINATIONS 10 /* because there are 10 digit keys on kbd */
 
@@ -739,6 +756,21 @@ struct coco_message_nominate {
   unsigned char action_code; /* COCO_NOMINATE_* above */
   unsigned char act_object;  /* interpretation varies by action_code */
   coco_bool vote;
+};
+
+#if (COCO_MAX_PLAYERS>30)
+#error not enough bits in votestate.votes
+#endif
+
+struct coco_votestate_nominations {
+  unsigned char action_code; /* includes possibly not in_use */
+  unsigned char act_object;
+  coco_u32 votes; /* nth bit is nth players vote.  in nbo */
+};
+
+struct coco_message_votestate {
+  unsigned char type;
+  struct coco_votestate_nominations nominations[COCO_MAX_NOMINATIONS];
 };
 
 
@@ -784,6 +816,7 @@ union coco_message {
   struct coco_message_play play;
   struct coco_message_chat chat;
   struct coco_message_nominate nominate;
+  struct coco_message_votestate votestate;
   struct coco_message_talk talk;
   struct coco_message_game game;
   struct coco_message_quit quit;
@@ -1498,6 +1531,10 @@ coco_bool coco_version_compatible_p( short major, short minor,
 
 coco_bool coco_process_server_arguments( int argc, char **argv );
 coco_bool coco_process_client_arguments( int argc, char **argv );
+
+extern unsigned long coco_command_line_left_comps;
+extern unsigned long coco_command_line_right_comps;
+
 
 
 /* main.c */

@@ -1,3 +1,7 @@
+2001-04-04  David Morse  <dm@bomberlan.net>
+
+	* client.c (coco_bullet_draw): Rifle bullets are red not white.
+
 2001-04-03  David Morse  <dm@bomberlan.net>
 
 	* methods.c (coco_launch_rocket): 

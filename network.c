@@ -174,6 +174,7 @@ coco_message_structrures_correct_size()
    * fprintf( stderr, "sizeof: %d\n", sizeof( struct coco_message_chat ));
    * fprintf( stderr, "sizeof: %d\n", sizeof( struct coco_message_talk ));
    * fprintf( stderr, "sizeof: %d\n", sizeof( struct coco_message_nominate ));
+   * fprintf( stderr, "sizeof: %d\n", sizeof( struct coco_message_votestate ));
    * fprintf( stderr, "sizeof: %d\n", sizeof( struct coco_message_game ));
    * fprintf( stderr, "sizeof: %d\n", sizeof( struct coco_message_quit ));
    * fprintf( stderr, "sizeof: %d\n", sizeof( struct coco_message_full ));
@@ -281,6 +282,8 @@ coco_network_shared_setup( void )
   /* If this fails better consider changing u32 and i32 to long. */
   assert( 4 == sizeof( coco_u32 ) );
   assert( 4 == sizeof( coco_i32 ) );
+  assert( 2 == sizeof( coco_u16 ) );
+  assert( 2 == sizeof( coco_i16 ) );
 
   coco_reset_coco_players_array();
 }

@@ -409,3 +409,4 @@ coco_check_hton( void )
   if (i != COCO_I16_NTOH( COCO_I16_HTON( i ) )) return test; test++;
   return 0;
 }
+

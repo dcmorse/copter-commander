@@ -413,3 +413,10 @@ const coco_color coco_blip_to_color[/* <= 256 */] = {
   COCO_COLOR_KHAKI,
   COCO_COLOR_GREY_C,      
 };
+
+char *coco_nominate_action_descriptions[] = {
+  "not in use",
+  "adding computer player to Right team",
+  "adding computer player to Left team",
+  "removing computer player"
+};
