@@ -40,7 +40,8 @@ const char *coco_gui_description_string = "GLX";
 
 /* keys and keystates _____________________________________ */
 
-static struct coco_keyboard_pointer_state coco_input_state = { 0 };
+/* moved to client.c */
+/* static struct coco_keyboard_pointer_state coco_input_state = { 0 }; */
 
 /* Get the (statically allocated) current key state.
    May be altered from call to call of handle-events. */
@@ -60,11 +61,6 @@ struct coco_keyboard_pointer_state *coco_get_keyboard_pointer_state()
 
 /* ________________________________________________________ */
 
-#define COCO_X_EVENT_MASK ExposureMask | ButtonPressMask | \
-      StructureNotifyMask | KeyPressMask | \
-      KeyReleaseMask | ButtonPressMask | \
-      ButtonReleaseMask | PointerMotionMask | \
-      EnterWindowMask | LeaveWindowMask
 
 static Display *xdisplay = NULL;
 static Window xwindow = 0;
@@ -134,7 +130,12 @@ coco_make_window( void )
     swa.colormap = XCreateColormap( xdisplay, rootwindow, visual->visual,
                                     AllocNone );
     swa.border_pixel = 0;
-    swa.event_mask = COCO_X_EVENT_MASK;
+    swa.event_mask = ExposureMask | ButtonPressMask \
+      | StructureNotifyMask \
+      | EnterWindowMask | LeaveWindowMask;
+    if (!coco_use_gii)
+      swa.event_mask |= KeyPressMask \
+	| KeyReleaseMask | ButtonReleaseMask | PointerMotionMask;
     xwindow = XCreateWindow( xdisplay, rootwindow, 0, 0, 
                              COCO_OFFICIAL_WINDOW_W, COCO_OFFICIAL_WINDOW_H,
                              0, visual->depth, InputOutput, visual->visual, 
@@ -293,11 +294,25 @@ coco_handle_ui_events( void )
     {
       /* coco_cookie( "XCheckWindowEvent found event\n" ); */
       switch (xevent.type) {
+      case MotionNotify:
       case ButtonRelease: /* all these events are exactly the same */
       case ButtonPress:   /* except KeyPress/Release have a */
       case KeyRelease:    /* keycode field. */
       case KeyPress:
-      case MotionNotify:
+	if (coco_use_gii) 
+	  {
+	    if (coco_recalibrate_gii_needed()
+		&& (xevent.type==ButtonPress))
+	      {
+		coco_input_state.pointer_x
+		  = xevent.xbutton.x - (COCO_OFFICIAL_WINDOW_W>>1);
+		coco_input_state.pointer_y
+		  = COCO_OFFICIAL_WINDOW_H - xevent.xbutton.y;
+		coco_recalibrate_gii_thank_you();
+	      }
+	    break; 
+	  }
+	/* Flush these guys if GII, otherwise fall through */
       case EnterNotify:
       case LeaveNotify:
         {
@@ -308,47 +323,50 @@ coco_handle_ui_events( void )
              about where the ground is.  */
           coco_input_state.client_time
             = COCO_U32_ADD_MODULAR( coco_input_state.client_time );
-          coco_input_state.pointer_x
-            = xevent.xbutton.x - (COCO_OFFICIAL_WINDOW_W>>1);
-          coco_input_state.pointer_y
-            = COCO_OFFICIAL_WINDOW_H - xevent.xbutton.y;
-          coco_update_bnb_from_xstate( keystate, xevent.xbutton.state, 
-                                       COCO_TRUE );
-          if (iskeyevent)
-            {
-              KeySym keysym;
-              int key;
-              int ispress = xevent.type == KeyPress;
-              keysym = XLookupKeysym( &(xevent.xkey), 0 );
-              key = coco_keysym_to_coco_key( keysym );
-              if (key != -1)
-                {
-                  coco_bool wasset = coco_get_bit( keystate, (coco_key) key );
-                  coco_set_bit( keystate, key, ispress );
-                  if (ispress)
-                    { 
-                      /* str is cheesey hack.  Should use xlookupstring or
-                         something. */
-                      char str[2];
-                      str[0] = COCO_KEY_TO_CHAR( key );
-                      str[1] = '\0';
-                      if (!wasset) 
-                        coco_key_press( key, str, keystate );
-                    }
-                  else coco_key_release( key, keystate );
-                }
-            }
-          else if ((xevent.type == ButtonPress) 
-                   || (xevent.type == ButtonRelease))
-            {
-              int ispress = xevent.type == ButtonPress;
-              coco_key key = COCO_LPOINTER + xevent.xbutton.button - Button1;
-              assert( (key >= COCO_LPOINTER) && (key <= COCO_5POINTER) );
-              coco_set_bit( keystate, key, ispress );
-              if (ispress) coco_key_press( key, NULL, keystate );
-              else coco_key_release( key, keystate );
-            }
-          else if (xevent.type == EnterNotify)
+	  if (!coco_use_gii)
+	    {
+	      coco_input_state.pointer_x
+		= xevent.xbutton.x - (COCO_OFFICIAL_WINDOW_W>>1);
+	      coco_input_state.pointer_y
+		= COCO_OFFICIAL_WINDOW_H - xevent.xbutton.y;
+	      coco_update_bnb_from_xstate( keystate, xevent.xbutton.state, 
+					   COCO_TRUE );
+	      if (iskeyevent)
+		{
+		  KeySym keysym;
+		  int key;
+		  int ispress = xevent.type == KeyPress;
+		  keysym = XLookupKeysym( &(xevent.xkey), 0 );
+		  key = coco_keysym_to_coco_key( keysym );
+		  if (key != -1)
+		    {
+		      coco_bool wasset = coco_get_bit( keystate, (coco_key) key );
+		      coco_set_bit( keystate, key, ispress );
+		      if (ispress)
+			{ 
+			  /* str is cheesey hack.  Should use xlookupstring or
+			     something. */
+			  char str[2];
+			  str[0] = COCO_KEY_TO_CHAR( key );
+			  str[1] = '\0';
+			  if (!wasset) 
+			    coco_key_press( key, str, keystate );
+			}
+		      else coco_key_release( key, keystate );
+		    }
+		}
+	      else if ((xevent.type == ButtonPress) 
+		       || (xevent.type == ButtonRelease))
+		{
+		  int ispress = xevent.type == ButtonPress;
+		  coco_key key = COCO_LPOINTER + xevent.xbutton.button - Button1;
+		  assert( (key >= COCO_LPOINTER) && (key <= COCO_5POINTER) );
+		  coco_set_bit( keystate, key, ispress );
+		  if (ispress) coco_key_press( key, NULL, keystate );
+		  else coco_key_release( key, keystate );
+		}
+	    }
+          if (xevent.type == EnterNotify)
             coco_mouse_in_window_p_private = COCO_TRUE;
           else if (xevent.type == LeaveNotify)
             coco_mouse_in_window_p_private = COCO_FALSE;
@@ -407,9 +425,15 @@ coco_grab_pointer( void )
 {
   coco_pointer_grabbed_flag |= GrabSuccess == 
     XGrabPointer( xdisplay, xwindow, True,
-                  ButtonPressMask | ButtonReleaseMask | PointerMotionMask
-                  | EnterWindowMask | LeaveWindowMask,
+		  coco_use_gii
+		  ? (ButtonPressMask | EnterWindowMask | LeaveWindowMask)
+		  : (ButtonPressMask | ButtonReleaseMask | PointerMotionMask
+		     | EnterWindowMask | LeaveWindowMask),
                   GrabModeAsync, GrabModeAsync, xwindow, None, CurrentTime);
+#ifdef COCO_USE_GII
+  if (coco_use_gii)
+    coco_recalibrate_gii_please();
+#endif
   return coco_pointer_grabbed_flag;
 }
 

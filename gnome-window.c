@@ -172,7 +172,8 @@ GtkWidget *coco_gnome_dialog_get_button (GnomeDialog *dialog, gint button );
 
 /* keys and keystates _____________________________________ */
 
-static struct coco_keyboard_pointer_state coco_input_state = { 0 };
+/* moved to client.c */
+/* struct coco_keyboard_pointer_state coco_input_state = { 0 }; */
 
 /* Get the (statically allocated) current key state.
    May be altered from call to call of handle-events. */
@@ -357,7 +358,7 @@ coco_input_event_callback( GtkWidget *area, GdkEvent *event )
 {
   gint return_value = FALSE;
   GdkEventType type = event->any.type;
-  coco_bool wrote_raw_p = COCO_FALSE;
+  coco_bool wrote_raw_mouse = COCO_FALSE;
   coco_gnum xraw = 0;
   coco_gnum yraw = 0;
   coco_key_state_ref keystate = coco_input_state.key_state;
@@ -365,89 +366,109 @@ coco_input_event_callback( GtkWidget *area, GdkEvent *event )
   coco_input_state.client_time
     = COCO_U32_ADD_MODULAR( coco_input_state.client_time );
 
-  if (GDK_MOTION_NOTIFY == type)
-    {
-      wrote_raw_p = COCO_TRUE;
-      xraw = event->motion.x;
-      yraw = event->motion.y;
-      coco_update_bnb_from_gstate( keystate, event->motion.state, COCO_TRUE );
-    }
-  else if ((GDK_ENTER_NOTIFY == type) || (GDK_LEAVE_NOTIFY == type))
+  if ((GDK_ENTER_NOTIFY == type) || (GDK_LEAVE_NOTIFY == type))
     {
       coco_mouse_in_window_p_private = (GDK_ENTER_NOTIFY == type);
-      wrote_raw_p = COCO_TRUE;
-      xraw = event->crossing.x;
-      yraw = event->crossing.y;
-      coco_update_bnb_from_gstate( keystate, event->crossing.state, COCO_TRUE );
+      if (!coco_use_gii)
+	{
+	  wrote_raw_mouse = COCO_TRUE;
+	  xraw = event->crossing.x;
+	  yraw = event->crossing.y;
+	  coco_update_bnb_from_gstate( keystate, event->crossing.state, 
+				       COCO_TRUE );
+	}
     }
-  else if ((GDK_BUTTON_PRESS == type) || (GDK_BUTTON_RELEASE == type))
+  else if (coco_use_gii && (GDK_BUTTON_PRESS == type)
+	   && coco_recalibrate_gii_needed())
     {
-      coco_bool ispress = GDK_BUTTON_PRESS == type;
-      coco_key key = COCO_LPOINTER + event->button.button - 1;
-      wrote_raw_p = COCO_TRUE;
+      wrote_raw_mouse = COCO_TRUE;
       xraw = event->button.x;
       yraw = event->button.y;
-      coco_update_bnb_from_gstate( keystate, event->button.state, COCO_TRUE );
-      coco_set_bit( keystate, key, ispress );
-      if (ispress)
-        { 
-          coco_key_press( key, NULL, keystate );
-          gtk_widget_grab_focus( area );
-        }
-      else coco_key_release( key, keystate );
+      coco_recalibrate_gii_thank_you();
     }
+  else if (coco_use_gii)
+    ; 				/* drop it */
   else if ((GDK_KEY_PRESS == type) || (GDK_KEY_RELEASE == type))
     {
       coco_bool ispress = GDK_KEY_PRESS == type;
       int key;
       /* struct _GdkEventKey
-         {
-         GdkEventType type;
-         GdkWindow *window;
-         gint8 send_event;
-         guint32 time;
-         guint state;
-         guint keyval;
-         gint length;
-         gchar *string;
-         }; */
+	 {
+	 GdkEventType type;
+	 GdkWindow *window;
+	 gint8 send_event;
+	 guint32 time;
+	 guint state;
+	 guint keyval;
+	 gint length;
+	 gchar *string;
+	 }; */
       /*
-      coco_cookie( "%s  keyval = %d, length = %d, string = %s, send = %d, time = %d\n",
-                   ispress ? "press" : "release",
-                   event->key.keyval, event->key.length, event->key.string,
-                   event->key.send_event, event->key.time ); 
+	coco_cookie( "%s  keyval = %d, length = %d, string = %s, send = %d, time = %d\n",
+	ispress ? "press" : "release",
+	event->key.keyval, event->key.length, event->key.string,
+	event->key.send_event, event->key.time ); 
       */
       coco_update_bnb_from_gstate( keystate, event->key.state, COCO_TRUE );
       key = coco_gdk_keysym_to_coco_key( event->key.keyval );
       if (key != -1)
-        {
-          coco_bool wasset = coco_get_bit( keystate, (coco_key) key );
-          coco_set_bit( keystate, (coco_key) key, ispress );
-          if (ispress) 
-            { 
-              if (!wasset) /* don't send multiple for typeomatic */
-                coco_key_press( key, 
-                                ((event->key.string && event->key.string[0])
-                                 ? event->key.string : NULL),
-                                keystate );
-            }
-          else coco_key_release( key, keystate );
-        }
+	{
+	  coco_bool wasset = coco_get_bit( keystate, (coco_key) key );
+	  coco_set_bit( keystate, (coco_key) key, ispress );
+	  if (ispress) 
+	    { 
+	      if (!wasset) /* don't send multiple for typeomatic */
+		coco_key_press( key, 
+				((event->key.string && event->key.string[0])
+				 ? event->key.string : NULL),
+				keystate );
+	    }
+	  else coco_key_release( key, keystate );
+	}
       gtk_signal_emit_stop_by_name( GTK_OBJECT( area ),
-                                    ispress 
-                                    ? "key_press_event"
-                                    : "key_release_event" );
+				    ispress 
+				    ? "key_press_event"
+				    : "key_release_event" );
       /* this required or else tab "spaces" the keyboard focus */
       return_value = TRUE;
+
+    }
+  else if (GDK_MOTION_NOTIFY == type)
+    {
+      wrote_raw_mouse = COCO_TRUE;
+      xraw = event->motion.x;
+      yraw = event->motion.y;
+      coco_update_bnb_from_gstate( keystate, event->motion.state, COCO_TRUE );
+    }
+  else if ((GDK_BUTTON_PRESS == type) || (GDK_BUTTON_RELEASE == type))
+    {
+      coco_bool ispress = GDK_BUTTON_PRESS == type;
+      coco_key key = COCO_LPOINTER + event->button.button - 1;
+      wrote_raw_mouse = COCO_TRUE;
+      xraw = event->button.x;
+      yraw = event->button.y;
+      coco_update_bnb_from_gstate( keystate, event->button.state, COCO_TRUE );
+      coco_set_bit( keystate, key, ispress );
+      if (ispress)
+	{ 
+	  coco_key_press( key, NULL, keystate );
+	  /* have to get focus some time, or else keystrokes go
+	     to some widget in space.  Can't do it too soon, or else
+	     it doesn't take.  THis hack gets it on every click,
+	     (most importantly the first one) */
+	  gtk_widget_grab_focus( area );
+	}
+      else coco_key_release( key, keystate );
     }
 
-  if (wrote_raw_p)
+  if (wrote_raw_mouse)
     {
       coco_gnum delta = COCO_OFFICIAL_WINDOW_H - yraw;
       coco_input_state.pointer_y 
         = COCO_CLAMP( 0, delta, COCO_OFFICIAL_WINDOW_H );
       coco_input_state.pointer_x = xraw - (COCO_OFFICIAL_WINDOW_W>>1);
     }
+
   return return_value; /* not sure what to return */
 }
 
@@ -500,12 +521,20 @@ coco_grab_pointer( void )
   gdkwindow = coco_gl_window->window;
   coco_pointer_grabbed_flag |= GrabSuccess == 
     gdk_pointer_grab( gdkwindow, True,
-                      GDK_BUTTON_PRESS_MASK
-                      | GDK_BUTTON_RELEASE_MASK
-                      | GDK_POINTER_MOTION_MASK
-                      | GDK_ENTER_NOTIFY_MASK
-                      | GDK_LEAVE_NOTIFY_MASK,
+		      coco_use_gii 
+		      ? (GDK_BUTTON_PRESS_MASK
+			 | GDK_ENTER_NOTIFY_MASK
+			 | GDK_LEAVE_NOTIFY_MASK)
+		      : (GDK_BUTTON_PRESS_MASK
+			 | GDK_BUTTON_RELEASE_MASK
+			 | GDK_POINTER_MOTION_MASK
+			 | GDK_ENTER_NOTIFY_MASK
+			 | GDK_LEAVE_NOTIFY_MASK),
                       gdkwindow, NULL, GDK_CURRENT_TIME);
+#ifdef COCO_USE_GII
+  if (coco_use_gii)
+    coco_recalibrate_gii_please();
+#endif
   return coco_pointer_grabbed_flag;
 }
 
@@ -2371,15 +2400,19 @@ coco_make_window( void )
   gtk_object_ref( GTK_OBJECT( coco_gl_window ) ); /* for global variable */
 
   gtk_widget_set_events ( coco_gl_window,
-                          GDK_POINTER_MOTION_MASK
-                          | GDK_BUTTON_PRESS_MASK
-                          | GDK_BUTTON_RELEASE_MASK
-                          | GDK_EXPOSURE_MASK
-                          | GDK_KEY_PRESS_MASK
-                          | GDK_KEY_RELEASE_MASK
-                          | GDK_ENTER_NOTIFY_MASK
-                          | GDK_LEAVE_NOTIFY_MASK
-                          );
+			  coco_use_gii
+			  ? (GDK_BUTTON_PRESS_MASK
+			     | GDK_EXPOSURE_MASK
+			     | GDK_ENTER_NOTIFY_MASK
+			     | GDK_LEAVE_NOTIFY_MASK)
+                          : (GDK_POINTER_MOTION_MASK
+			     | GDK_BUTTON_PRESS_MASK
+			     | GDK_BUTTON_RELEASE_MASK
+			     | GDK_EXPOSURE_MASK
+			     | GDK_KEY_PRESS_MASK
+			     | GDK_KEY_RELEASE_MASK
+			     | GDK_ENTER_NOTIFY_MASK
+			     | GDK_LEAVE_NOTIFY_MASK));
 
   GTK_WIDGET_SET_FLAGS( coco_gl_window, GTK_CAN_FOCUS );
 

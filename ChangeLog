@@ -1,3 +1,16 @@
+2001-12-11  David Morse  <svref@yahoo.com>
+
+	* client.c (coco_client_loop): fix choppyness bug.
+	(coco_draw_mouse_cursor): draw mouse cursor when COCO_DEBUG.
+
+	* gnome-window.c: gii support.
+
+	* glx-window.c: gii support.
+
+	* client.c: gii support.
+
+	* Makefile: gii support.
+
 2001-07-18  David Morse  <dm@bomberlan.net>
 
 	* methods.c (coco_copter_velocity_offset): latching camera.

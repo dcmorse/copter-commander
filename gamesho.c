@@ -546,14 +546,14 @@ const char *coco_minor_missions[] = {
   "Blow it up and you graduate from Boot with full honors!",
   "That armor's to strong for copters!  Order a Demolition `V'an instead.",
   "When a van reaches that crawler, we'll see just how thick that armor is...",
-  "Victory is ours !!!",
+  "Victory is ours !!!  Check the help menu for advanced stuff.",
 };
 
 struct coco_tutorial_info coco_tutorial_infos[COCO_TUTORIAL_INFO_SIZE] =
 {
   { "boot-camp", 0, 0, coco_update_boot_camp },
-  { "first-blood", 1, 0, NULL },
-  { "hammer-blow", 2, 0, NULL },
+  /* { "first-blood", 1, 0, NULL },
+     { "hammer-blow", 2, 0, NULL }, */
 };
 
 int coco_sky_option = -1; /* as interpreted by enum coco_sky_colors */

@@ -38,6 +38,12 @@
 #include "background.h"
 #include "rasters.h"
 
+/* this has to come after coco.h, or else COCO_USE_GII is always undefed */
+#ifdef COCO_USE_GII
+#include <ggi/gii.h>
+#include <ggi/gii-unix.h>
+#endif /* COCO_USE_GII */
+
 
 /* this variable, somewhat new, controls how much unneccesary graphics
    touches get put into the game.  0 means draw nothing unnessary, no
@@ -59,6 +65,27 @@ coco_gnum coco_real_window_h = COCO_OFFICIAL_WINDOW_H;
 /* ________________________________________________________________ */
 static coco_bool coco_old_votestate_initialized = COCO_FALSE;
 static struct coco_message_votestate coco_old_votestate;
+
+/* ________________________________________________________________ */
+
+
+#ifdef COCO_USE_GII
+/* the input, for the mouse and later possibly the keyboard. */
+static gii_input_t coco_gii_input = NULL;
+#define COCO_GII_EVENT_MASK emPtrRelative|emPtrAbsolute|emPtrButton|emKeyPress|emKeyRelease
+#endif /* COCO_USE_GII */
+
+coco_bool coco_use_gii 
+#ifdef COCO_USE_GII
+  = COCO_TRUE;
+#else
+  = COCO_FALSE;
+#endif
+
+struct coco_keyboard_pointer_state coco_input_state = { 0 };
+
+void coco_handle_gii_events( void );
+
 
 /* ________________________________________________________________ */
 
@@ -941,6 +968,13 @@ coco_draw_mission_objective( struct coco_cstate *cstate )
     }
 }
 
+void
+coco_draw_mouse_cursor( void )
+{
+  coco_draw_color( COCO_COLOR_RED );
+  coco_draw_big_point( coco_input_state.pointer_x + (coco_real_window_w>>1),
+		       coco_input_state.pointer_y, 3 );
+}
 
 void 
 coco_cstate_draw( struct coco_cstate *cstate )
@@ -1004,6 +1038,9 @@ coco_cstate_draw( struct coco_cstate *cstate )
     coco_draw_background( -cstate->camera_x, 0, COCO_FALSE );
   coco_draw_talk( now.tv_sec );
   coco_draw_chat( now.tv_sec );
+#ifdef COCO_DEBUG
+  coco_draw_mouse_cursor();
+#endif
 }
 
 
@@ -1577,7 +1614,13 @@ coco_play_intro_movie( void )
   coco_clear_window_color( COCO_COLOR_BACKGROUND );
   while ((COCO_CLIENT_DEMO == coco_get_client_state())
          && coco_play_intro_movie_frame( COCO_TRUE, COCO_FALSE))
-    coco_handle_ui_events();
+    {
+      coco_handle_ui_events();
+#ifdef COCO_USE_GII
+      if (coco_use_gii)
+	coco_handle_gii_events();
+#endif
+    }
   coco_set_inhibit_refresh( inhibit );
 }
 
@@ -2016,8 +2059,27 @@ coco_handle_compflux_message( coco_msg_ptr msg )
 
 
 
+static coco_bool coco_calibration_click_requested = COCO_FALSE;
 
+void
+coco_recalibrate_gii_please( void )
+{
+  coco_calibration_click_requested = COCO_TRUE;
+  coco_display_notice( "Click once to calibrate GII mouse." );
+}
 
+coco_bool 
+coco_recalibrate_gii_needed( void )
+{
+  return coco_calibration_click_requested;
+}
+
+void
+coco_recalibrate_gii_thank_you( void )
+{
+  coco_calibration_click_requested = COCO_FALSE;
+  coco_display_notice( "GII mouse calibrated." );
+}
 
 
 void 
@@ -2209,6 +2271,7 @@ coco_set_client_udp_fd( int value )
   client_udp_fd = value;
 }
 
+void coco_gii_shutdown( void );
 
 /* This isn't called on window-manager-kill of the x version because
    couldn't whack WM into sending me client message.  Oh well, the
@@ -2216,6 +2279,7 @@ coco_set_client_udp_fd( int value )
 void
 coco_client_shutdown( coco_bool exit_too )
 {
+  coco_gii_shutdown();
   coco_exit_sound_system();
   coco_close_fd( coco_get_client_udp_fd(), COCO_FALSE );
   coco_close_fd( coco_get_server_message_file_descriptor(), COCO_TRUE );
@@ -2225,7 +2289,141 @@ coco_client_shutdown( coco_bool exit_too )
     exit( 0 );
 }
 
+#ifdef COCO_USE_GII
+coco_key 
+coco_gii2coco_key( uint32 k )
+{
+  if (k < COCO_LPOINTER)
+    return COCO_CHAR_TO_KEY( k );
+  else if (k < COCO_CHAR_TO_KEY( '[' ))
+    return k + COCO_CHAR_TO_KEY( 'a' ) - GIIUC_A;
+  else if (k < COCO_KEYLIMIT)
+    return COCO_CHAR_TO_KEY( k );
+  else if ((k==GIIK_ShiftL)||(k==GIIK_ShiftR))
+    return COCO_KEY_SHIFT;
+  else if ((k==GIIK_CtrlL)||(k==GIIK_CtrlR))
+    return COCO_KEY_CONTROL;
+  else if ((k==GIIK_AltL)||(k==GIIK_AltR))
+    return COCO_KEY_ALT;
+  else if ((k==GIIK_MetaL)||(k==GIIK_MetaR))
+    return COCO_KEY_META;
+  else if ((k==GIIK_SuperL)||(k==GIIK_SuperR))
+    return COCO_KEY_SUPER;
+  else if ((k==GIIK_HyperL)||(k==GIIK_HyperR))
+    return COCO_KEY_HYPER;
+  else if (k==GIIK_Help)
+    return COCO_KEY_HELP;
+  else if (k==GIIK_Left)
+    return COCO_KEY_LEFT_ARROW;
+  else if (k==GIIK_Right)
+    return COCO_KEY_RIGHT_ARROW;
+  else if (k==GIIK_Up)
+    return COCO_KEY_UP_ARROW;
+  else if (k==GIIK_Down)
+    return COCO_KEY_DOWN_ARROW;
+  else
+    {
+      coco_warn_printf( "Untranslatable coco_gii2coco_key( 0x%x )\n", k );
+      return 0;
+    }
+}
 
+void
+coco_handle_gii_events( void )
+{
+  int n = giiEventsQueued( coco_gii_input, emAll );
+  int i;
+  for (i=0; i<n; i++)
+    {
+      static coco_bool get_absolute_events = COCO_FALSE;
+      static coco_bool get_relative_events = COCO_FALSE;
+      gii_event e;
+      int size = giiEventRead( coco_gii_input, &e, emAll );
+      if (0==size)
+	{
+	  coco_warn_printf( "giiEventRead() returned 0, an error.\n" );
+	  break;
+	}
+      /* the right thing? */
+      coco_input_state.client_time
+	= COCO_U32_ADD_MODULAR( coco_input_state.client_time );
+      switch (e.any.type) {
+      case evPtrRelative:
+	get_relative_events = COCO_TRUE;
+	if (!get_absolute_events)
+	  {
+	    coco_i32 x = coco_input_state.pointer_x;
+	    coco_i32 y = coco_input_state.pointer_y;
+	    coco_input_state.pointer_x
+	      = COCO_CLAMP( -(COCO_OFFICIAL_WINDOW_W>>1),
+			    x + e.pmove.x,
+			    COCO_OFFICIAL_WINDOW_W>>1 );
+	    coco_input_state.pointer_y
+	      = COCO_CLAMP( 0, y - e.pmove.y, COCO_OFFICIAL_WINDOW_H );
+	  }
+	break;
+      case evPtrAbsolute:
+	get_absolute_events = COCO_TRUE;
+	coco_warn_printf( "Not equipped to deal with absolute events."
+			  "Ignoring X: %3d, Y: %3d, Z: %3d, Wheel: %3d\n",
+			  e.pmove.x, e.pmove.y,
+			  e.pmove.z, e.pmove.wheel );
+	break;
+      case evPtrButtonPress:
+      case evPtrButtonRelease:
+	if ((1<=e.pbutton.button) && (e.pbutton.button<=5))
+	  {
+	    coco_key_state_ref keystate = coco_input_state.key_state;
+	    coco_key key = e.pbutton.button - 1 + COCO_LPOINTER;
+	    coco_bool ispress = (evPtrButtonPress == e.any.type);
+	    coco_set_bit( keystate, key, ispress );
+	    if (ispress)
+	      coco_key_press( key, NULL, keystate );
+	    else 
+	      coco_key_release( key, keystate );
+	    coco_cookie( "%s %d\n", ispress ? "press" : "release",
+			 e.pbutton.button);
+	  }
+	break;
+      case evKeyPress:
+      case evKeyRelease:
+	{
+	  coco_key key = coco_gii2coco_key( e.key.label );
+	  coco_cookie( "%s: e.key.label=%x, e.key.sym = %x coco_key '%c'(0x%x)\n",
+		       (e.any.type == evKeyPress)
+		       ? "press" : "release",
+		       e.key.label, e.key.sym, (char) key, (int) key );
+	  if (key)
+	    {
+	      coco_key_state_ref keystate = coco_input_state.key_state;
+	      coco_bool ispress = (e.any.type == evKeyPress);
+	      char str[2] = { 0, 0 };
+	      char *strp;
+	      if (ispress)
+		{
+		  if  (e.key.sym < 128)
+		    {
+		      strp = str;
+		      str[0] = e.key.sym;
+		    }
+		  else strp = NULL;
+		}
+	      coco_set_bit( keystate, key , ispress );
+	      if (ispress)
+		coco_key_press( key, strp, keystate );
+	      else
+		coco_key_release( key, keystate );
+	    }
+	}
+	break;
+      default:
+	coco_cookie( "OTHER EVENT\n");
+	break;
+      }
+
+    }
+}
+#endif /* COCO_USE_GII */
 
 void 
 coco_client_loop( void ) 
@@ -2235,6 +2433,7 @@ coco_client_loop( void )
   /* struct timezone tz; */
   /* struct timeval seltime, pactime, xtime, donetime, drawtime, swaptime; */
   int send_mouse_count = 3;
+  coco_u32 old_input_state_time;
   coco_u32 loop_pass = 0;
   fd_set readset;
   refresh_ok = coco_set_inhibit_refresh( COCO_TRUE );
@@ -2242,7 +2441,12 @@ coco_client_loop( void )
   while (1)
     {
       struct coco_stream *serv_str = coco_get_server_message_stream();
+      char *select_fn_name;
       int servfd, xfd, udpfd, maxfd;
+      int selected;
+#ifdef COCO_USE_GII
+      gii_event_mask gii_mask = 0;
+#endif      
 
       loop_pass = COCO_U32_ADD_MODULAR( loop_pass );
 
@@ -2261,11 +2465,38 @@ coco_client_loop( void )
       coco_time_cookie( NULL );
       coco_time_cookie( "select" );
       heartbeat = coco_ideal_frame_rate; /* linux writes this struct every time */
-      if ((-1==select( maxfd + 1, &readset, NULL, NULL, &heartbeat )))
+      /* Call select(2), or its gii equivalent */
+      if (coco_use_gii)
+	{
+#ifdef COCO_USE_GII	  
+	  select_fn_name = "giiEventSelect";
+	  gii_mask = COCO_GII_EVENT_MASK;
+	  selected = giiEventSelect( coco_gii_input,
+				     &gii_mask,
+				     maxfd + 1,
+				     &readset, NULL, NULL, &heartbeat );
+#endif
+	}
+      else
+	{
+	  select_fn_name = "select";
+	  selected = select( maxfd + 1, &readset, NULL, NULL, &heartbeat );
+	}
+      /* react on return value of select/giiEventSelect */
+      if (-1 == selected)
         coco_fatal_printf( COCO_ERROR_NETWORK_BROKEN,
-                           "select failed with errno=%d: %s\n", errno, 
+                           "%s() failed with errno=%d: %s\n", select_fn_name,
+			   errno, 
                            coco_errno_string( errno ) );
       coco_time_cookie( "events" );
+      
+      old_input_state_time = coco_input_state.client_time;
+#ifdef COCO_USE_GII
+      if (coco_use_gii 
+	  && gii_mask
+	  && (0 < giiEventsQueued( coco_gii_input, emAll )))
+	coco_handle_gii_events();
+#endif
       /* for some reason I sometimes need and find events even when xfd
          ISNTSET */
       if ((xfd>=0)/* && FD_ISSET( xfd, &readset ) */)
@@ -2277,6 +2508,12 @@ coco_client_loop( void )
               continue; /* get new FDs */
             }
         }
+
+      /* send 3 packets on consecutive turns whenever any input (not
+       just mouse) comes in. */
+      if (old_input_state_time != coco_input_state.client_time)
+	send_mouse_count = 3;
+
       if ((servfd>=0) && (FD_ISSET( servfd, &readset )))
         {
           coco_cookie( "Getting client message\n" );
@@ -2315,7 +2552,7 @@ coco_client_loop( void )
          up network contact. */
       coco_time_cookie( "sendmouse" );
       if ((udpfd>=0) && coco_have_game_message 
-          && ((send_mouse_count > 0) || ((loop_pass&7) == 0))) 
+          && ((send_mouse_count > 0) || ((loop_pass&7) == 0)))
         {
           if (send_mouse_count>0) send_mouse_count--;
           coco_write_client2server_packet
@@ -2513,12 +2750,76 @@ coco_display_player_flux( void *null, union coco_message *message )
 
 static coco_sound_type coco_game_sounds_size_loaded = 0; /* <= COCO_GAME_SOUNDS_SIZE */
 
+void
+coco_gii_init( void )
+{
+#ifdef COCO_USE_GII
+  if (coco_use_gii)
+    {
+      int status2;
+      int status = giiInit();
+      if (0 != status)
+	{
+	  coco_warn_printf( "giiInit() failed.\n" );
+	  coco_use_gii = COCO_FALSE;
+	  coco_gii_input = NULL;
+	  return;
+	}
+      coco_gii_input = giiOpen( NULL );
+      if (NULL == coco_gii_input)
+	{
+	  coco_warn_printf( "giiOpen( NULL ) failed.\n" );
+	  coco_gii_shutdown();
+	  coco_use_gii = COCO_FALSE;
+	  return;
+	}
+      status2 = giiSetEventMask( coco_gii_input, COCO_GII_EVENT_MASK );
+      if (0 != status2)
+	{
+	  coco_warn_printf( "giiSetEventMask( ..., 0x%X ) "
+			    "returned error code %d\n", COCO_GII_EVENT_MASK,
+			    status2 );
+	  coco_gii_shutdown();
+	  coco_use_gii = COCO_FALSE;
+	  return;
+	}
+    }
+#endif
+}
+
+void
+coco_gii_shutdown( void )
+{
+  const coco_bool debug = 
+#ifdef COCO_DEBUG
+    1;
+#else
+  0;
+#endif
+
+#ifdef COCO_USE_GII
+  if (coco_use_gii)
+    {
+      if (NULL != coco_gii_input)
+	{
+	  int status = giiClose( coco_gii_input );
+	  if ((/* GGI_OK */ 0 != status) && debug)
+	    coco_warn_printf( "giiClose( ... ) returned error code %d\n",
+			      status );
+	}
+      if (0 != giiExit())
+	if (debug) coco_warn_printf( "giiExit() failed.\n" );
+    }
+#endif /* COCO_USE_GII */
+}
+
 void 
 coco_client_exec( void )
 {
   coco_add_message_notification( COCO_MESSAGE_GAME, coco_display_player_flux,
                                  NULL );
   coco_init_sound_system();
+  coco_gii_init();
   coco_game_sounds_size_loaded
     = coco_load_sound_palette( coco_game_sound_names, 
                                COCO_GAME_SOUNDS_SIZE,

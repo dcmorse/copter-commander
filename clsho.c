@@ -163,6 +163,7 @@ coco_help_message()
           "  --blend-alpha           High quality graphics transperancy.\n"
           "  --no-blend-alpha        Opposite of above.\n"
           "  --gnome-options         send further options to gnome (--coco-options term'd)\n"
+	  "  --no-gii                Don't bother trying Generic Input Interface.\n"
           "\n"
           "Server Options:\n"
           "  --left-comps=NUM        Number of computer players on left.\n"

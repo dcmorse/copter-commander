@@ -72,6 +72,25 @@ COCO_SOUND_DIRECTORY=${COCO_SHARE_DIRECTORY}/sounds
 # libpthread thrown in.  See ./pthread-why.txt.
 COCO_BASIC_LIBS= -lm -lpthread
 
+# GII: General Input Interface
+# If support for GII is compiled in, it may be possible to get
+# snappier mouse and keyboard performance.  At this time (11-29-2001)
+# this is only experimental and will probaly cheese you off.
+# to not use: place "#" before "COCO_USE_GII=1"
+# to use: remove "#" before "COCO_USE_GII=1"
+#
+#COCO_USE_GII=1
+COCO_GII_LIB_DIRECTORY=/usr/lib
+COCO_GII_INCLUDE_DIRECTORY=/usr/include
+ifdef COCO_USE_GII
+COCO_GII_LINK_ARGUMENTS=-L${COCO_GII_LIB_DIRECTORY} -lgii
+COCO_GII_INCLUDE_ARGUMENTS=-I${COCO_GII_INCLUDE_DIRECTORY}
+else
+# (I leave them undefined, and not null string, for hackish reasons.)
+#COCO_GII_LINK_ARGUMENTS=""
+#COCO_GII_INCLUDE_ARGUMENTS=""
+endif
+
 # X11 (glx-copter-commander only)
 COCO_X11_LIB_DIRECTORY=/usr/X11R6/lib
 COCO_X11_INCLUDE_DIRECTORY=/usr/X11R6/include
@@ -266,6 +285,12 @@ configure-time.h: Makefile endian sizeof configure-*.sh
 	    echo fix the problem by extending configure-sizeof-short.sh then ;\
 	    echo execute rm configure-time.h and restart build ;\
 	fi ;
+ifdef COCO_USE_GII
+	set -e ;\
+	echo \#define COCO_USE_GII ${COCO_USE_GII} \
+	 >> configure-time.h ;\
+	echo >> configure-time.h ;
+endif
 
 
 # other decisions when the c objects are built.
@@ -323,6 +348,9 @@ esd-%.o: esd-%.c
           -I${COCO_ESD_INCLUDE_DIRECTORY} \
 	  `gnome-config --cflags gnomeui`
 
+client.o: client.c
+	${CC} ${CFLAGS_UNANSI} -c client.c ${COCO_GII_INCLUDE_ARGUMENTS}
+
 screenshot.o: screenshot.c 
 	${CC} ${CFLAGS} -c screenshot.c -o $@ \
           -I${COCO_LIBTIFF_INCLUDE_DIRECTORY}
@@ -335,14 +363,14 @@ screenshot.o: screenshot.c
 # add depenencies for all object files
 ${ALL_OBJ_FILES}: ${HDR_FILES} Makefile ${COCO_RASTER_DIRECTORY}/built
 
-
 GNOME_LINK_LINE=\
 ${CC} ${CFLAGS} -o $@ ${GAME_OBJ_FILES} ${GNOME_OBJ_FILES} ${USED_SOUND_OBJ_FILES} ${COCO_RASTER_DIRECTORY}/*.o \
 ${COCO_BASIC_LIBS} \
 -L${COCO_LIBTIFF_LIB_DIRECTORY} -ltiff \
 -L${COCO_GL_LIB_DIRECTORY} -lGL \
 `gnome-config --libs gnome gnomeui` \
--L${COCO_GTKGLAREA_LIB_DIRECTORY} -lgtkgl
+-L${COCO_GTKGLAREA_LIB_DIRECTORY} -lgtkgl \
+${COCO_GII_LINK_ARGUMENTS}
 
 
 copter-commander: ${GAME_OBJ_FILES} ${GNOME_OBJ_FILES} ${USED_SOUND_OBJ_FILES} ${COCO_RASTER_DIRECTORY}/built 
@@ -353,7 +381,8 @@ ${CC} ${CFLAGS} -o $@ ${GAME_OBJ_FILES} ${GLX_OBJ_FILES} ${USED_SOUND_OBJ_FILES}
 ${COCO_BASIC_LIBS} \
 -L${COCO_LIBTIFF_LIB_DIRECTORY} -ltiff \
 -L${COCO_X11_LIB_DIRECTORY} -lX11 -lXext \
--L${COCO_GL_LIB_DIRECTORY} -lGL
+-L${COCO_GL_LIB_DIRECTORY} -lGL \
+${COCO_GII_LINK_ARGUMENTS}
 
 glx-copter-commander: ${GAME_OBJ_FILES} ${GLX_OBJ_FILES} ${USED_SOUND_OBJ_FILES} ${COCO_RASTER_DIRECTORY}/built 
 ifeq (${COCO_SOUND},esd)

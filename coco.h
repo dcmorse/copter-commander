@@ -1130,6 +1130,19 @@ coco_bool coco_screenshot( char *file_name );
 
 extern int coco_eye_candy;
 
+/* COCO_USE_GII is true if there is compile time support for gii.
+   coco_use_gii is true if there is that, plus at run time the library
+   has opened correctly, devices initialized correctly, etc. 
+   One may consult coco_use_gii directly, without ifdef branching,
+   for convenience's sake. */
+extern coco_bool coco_use_gii;
+
+void coco_recalibrate_gii_please( void );
+coco_bool coco_recalibrate_gii_needed( void );
+void coco_recalibrate_gii_thank_you( void );
+
+extern struct coco_keyboard_pointer_state coco_input_state;
+
 
 /* These may change if the user figures out how to resize despite our best
    efforts.  They are not used by the server.  The game graphics are
@@ -1838,7 +1851,7 @@ struct coco_tutorial_info {
                                               int player_index );
 };
 
-#define COCO_TUTORIAL_INFO_SIZE 3
+#define COCO_TUTORIAL_INFO_SIZE 1
 
 extern struct coco_tutorial_info coco_tutorial_infos[COCO_TUTORIAL_INFO_SIZE];
 

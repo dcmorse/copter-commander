@@ -344,6 +344,8 @@ coco_process_client_arguments( int argc, char **argv )
         {
           coco_eye_candy = strtoul( argv[i] + 12, NULL, 10 );
         }
+      else if (0==strcmp( "--no-gii", argv[i] ))
+        coco_use_gii = COCO_FALSE;
       else coco_fatal_printf( COCO_ERROR_BAD_COMMAND_LINE,
                                "Unknown option \"%s\".\n",
                                argv[i] );
