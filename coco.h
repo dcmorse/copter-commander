@@ -1433,6 +1433,7 @@ coco_u32 coco_draw_frame_number;
 #define COCO_GROUND_UNIT_WARP_IN_X 80
 #define COCO_GROUND_UNIT_WARP_OUT_X 600
 #define COCO_FIRETRUCK_RELOAD_X 500
+#define COCO_PAD_HEAL_MASK 15 /* must be power of 2 minus 1, smaller = faster heal */
 #define COCO_COPTER_MAX_ANGLE_OF_ATTACK 10 /* coco_angle = 14 degrees */
 #define COCO_COPTER_MAX_LANDING_ANGLE_OF_ATTACK 8 /* coco_angle */
 #define COCO_COPTER_MAX_ANGULAR_SPEED 4 /* coco_angle/frame */
@@ -1724,6 +1725,9 @@ coco_comp_think( struct coco_comp *self,
 
 
 /* late gamesho.c */
+extern coco_sobject_cl *coco_aa_targetable_classes[];
+extern coco_sobject_cl *coco_at_targetable_classes[];
+
 void coco_sobject_weapon_hardpoint_coords( coco_sobject *sobject,
                                            coco_gnum *x_return,
                                            coco_gnum *y_return );

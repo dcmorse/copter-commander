@@ -414,8 +414,10 @@ coco_firetruck_update_state( coco_sobject *sobject,
         coco_gnum ex = COCO_SOBJECT_X( target );
         if ((ex <= xmax) && ((ex + COCO_SOBJECT_W( target )) >= xmin)
             && COCO_ENEMY_P( nat, COCO_SOBJECT_NATIONALITY( target ) )
-            && coco_sobject_subtype_p( COCO_SOBJECT_CL( target ),
-                                       COCO_COPTER_CLASS ))
+            && (coco_sobject_subtype_p( COCO_SOBJECT_CL( target ),
+                                        COCO_COPTER_CLASS )
+                ||coco_sobject_subtype_p( COCO_SOBJECT_CL( target ),
+                                          COCO_MECH_CLASS )))
           coco_launch_missile( sobject, COCO_SOBJECT_CL( sobject ), 
                               sstate, target );
       });
@@ -469,8 +471,10 @@ coco_headquarters_update_state( coco_sobject *sobject,
           coco_gnum ex = COCO_SOBJECT_X( target );
           if ((ex <= xmax) && ((ex + COCO_SOBJECT_W( target )) >= xmin)
               && COCO_ENEMY_P( nat, COCO_SOBJECT_NATIONALITY( target ) )
-              && coco_sobject_subtype_p( COCO_SOBJECT_CL( target ),
-                                         COCO_COPTER_CLASS ))
+              && (coco_sobject_subtype_p( COCO_SOBJECT_CL( target ),
+                                         COCO_COPTER_CLASS )
+                  || coco_sobject_subtype_p( COCO_SOBJECT_CL( target ),
+                                             COCO_MECH_CLASS )))
             coco_launch_missile( sobject, COCO_SOBJECT_CL( sobject ), 
                                  sstate, target );
         });
@@ -1035,7 +1039,7 @@ coco_gun_update_state( coco_sobject *sobject,
     {
       int i;
       int cl_count = COCO_SOBJECT_TARGETABLE_CLASSES_COUNT( sobject );
-      coco_sobject_cl *classes = COCO_SOBJECT_TARGETABLE_CLASSES( sobject );
+      coco_sobject_cl **classes = COCO_SOBJECT_TARGETABLE_CLASSES( sobject );
       { /* couldn't use COCO_DO_SSTATE_OBJECTS because of bugs */ 
         coco_sobject *target = sstate->sobjects;
         coco_sobject *sobject_end = target + sstate->sobject_size;
@@ -1053,7 +1057,7 @@ coco_gun_update_state( coco_sobject *sobject,
                       && (this_range_sqr < (COCO_BULLET_RANGE * COCO_BULLET_RANGE)))
                     for (i=0; i < cl_count; i++)
                       if (coco_sobject_subtype_p( COCO_SOBJECT_CL( target ), 
-                                                  classes + i ))
+                                                  classes[i] ))
                         { 
                           best_target_range_sqr = this_range_sqr;
                           best_target = target;
@@ -1401,10 +1405,19 @@ coco_gun_fire_bullet_coords( coco_sobject *gun, coco_sobject_cl *cl,
                              coco_gnum *x_return, coco_gnum *y_return )
 {
   coco_angle angle_return;
-  coco_ai_bullet_coords( gun, target, COCO_TRUE, 0.4,
+  coco_ai_bullet_coords( gun, target, 
+                         /* motion-comp used to be TRUE, but this makes
+                            life harder on mechs: */
+                         coco_sobject_subtype_p( COCO_SOBJECT_CL( gun ),
+                                                 COCO_AA_GUN_CLASS ), 
+                         0.4,
                          COCO_SOBJECT_BULLET_CLASS( gun ),
                          dx_return, dy_return, x_return, y_return,
                          &angle_return );
+
+  /* stop firing into the ground -dm 05-30-2001 */
+  *dy_return = abs( *dy_return ); 
+
   /* evil side effect: swivel gun barrel to track target */
   /* ps don't have to with tank because its update-state does it for us. */
   COCO_SOBJECT_ANGLE( gun ) = angle_return;
@@ -1440,7 +1453,8 @@ coco_bunker_fire_bullet_coords( coco_sobject *gun, coco_sobject_cl *cl,
 
 coco_sobject *
 coco_every_sobject_fire_bullet( coco_sobject *sobject, coco_sobject_cl *cl,
-                  coco_sstate *sstate, coco_sobject *target_or_null )
+                                coco_sstate *sstate,
+                                coco_sobject *target_or_null )
 {
   coco_sobject_cl *bcl;
   coco_facing facing = COCO_SOBJECT_FACING( sobject );
@@ -1663,6 +1677,7 @@ coco_copter_pad_update( coco_sobject *copter, coco_sobject_cl *cl,
 { /* reload and refuel copter */
   coco_u32 time = sstate->time;
   int bullets = COCO_COPTER_BULLETS( copter );
+  coco_health health = COCO_SOBJECT_HEALTH( copter );
   int fuel;
   if (bullets < COCO_SOBJECT_MAX_BULLETS( copter ))
     COCO_COPTER_BULLETS( copter ) = 1 + bullets;
@@ -1671,7 +1686,6 @@ coco_copter_pad_update( coco_sobject *copter, coco_sobject_cl *cl,
     COCO_COPTER_FUEL( copter ) = fuel + COCO_IDEAL_FRAMES_PER_SECOND;
   if (0==(time&3))
     {
-      coco_health health;
       int rockets;
       int bombs = COCO_COPTER_BOMBS( copter );
 
@@ -1682,13 +1696,10 @@ coco_copter_pad_update( coco_sobject *copter, coco_sobject_cl *cl,
       if ((rockets < COCO_SOBJECT_MAX_ROCKETS( copter ))
           && (0==(time&7)))
         COCO_COPTER_ROCKETS( copter ) = 1 + rockets;
-
-      health = COCO_SOBJECT_HEALTH( copter );
-      if ((health < COCO_SOBJECT_HEALTH_MAX( copter ))
-          && (0==(time&15)))
-        COCO_SOBJECT_HEALTH( copter ) = 1 + health;
-
     }
+  if ((health < COCO_SOBJECT_HEALTH_MAX( copter ))
+      && (0==(time&COCO_PAD_HEAL_MASK)))
+    COCO_SOBJECT_HEALTH( copter ) = 1 + health;
   {
     int missiles = COCO_COPTER_MISSILES( copter );
     if ((missiles < COCO_SOBJECT_MAX_MISSILES( copter ))
@@ -2044,11 +2055,18 @@ coco_bunker_hostile_collision( coco_sobject *bunker,
       else COCO_BUNKER_DEFENDERS( bunker ) = --defenders;
     } 
   else if (coco_sobject_subtype_p( COCO_SOBJECT_CL( obj2 ),
+                                   COCO_PLASMA_CLASS ))
+    /* tricky calling into another method */
+    coco_plasma_hostile_collision( obj2, COCO_SOBJECT_CL( obj2 ),
+                                   bunker, sstate, stat1, stat2 );
+  else if (coco_sobject_subtype_p( COCO_SOBJECT_CL( obj2 ),
                                    COCO_GROUND_UNIT_CLASS )
            || coco_sobject_subtype_p( COCO_SOBJECT_CL( obj2 ),
                                       COCO_EXPLOSION_CLASS )
            || coco_sobject_subtype_p( COCO_SOBJECT_CL( obj2 ),
-                                      COCO_BUILDING_CLASS ))
+                                      COCO_BUILDING_CLASS )
+           || coco_sobject_subtype_p( COCO_SOBJECT_CL( obj2 ),
+                                      COCO_MECH_CLASS ))
     {
       /* no op -- they can blow/drive through. */
     }
@@ -2107,14 +2125,26 @@ coco_plasma_update_state( coco_sobject *sobject,
                           coco_sstate *sstate )
 {
   coco_gnum h;
-  int dradius = COCO_PLASMA_COHERENT( sobject ) ? 2 : 5;
-  int sradius = dradius;
-  int radius = COCO_PLASMA_RADIUS( sobject ) + dradius;
+  int dradius, radius;
+
+  if (COCO_PLASMA_COHERENT( sobject ))
+    {
+      coco_gnum dx = COCO_SOBJECT_DX( sobject );
+      coco_gnum dy = COCO_SOBJECT_DY( sobject );
+      coco_gnum v = sqrt( dx*dx + dy*dy );
+      coco_gnum vmax = COCO_PLASMA_SPEED;
+      char t = sstate->time & 1;
+      if (v>vmax) dradius = 2 + t;
+      else if ((v<<1)>vmax) dradius = 2;
+      else dradius = 1 + t;
+    }
+  else dradius = 5;
+  radius = COCO_PLASMA_RADIUS( sobject ) + dradius;
   if (radius > COCO_PLASMA_RADIUS_MAX) return COCO_FALSE;
   COCO_PLASMA_RADIUS( sobject ) = radius;
-  COCO_SOBJECT_X( sobject ) -= sradius;
-  COCO_SOBJECT_Y( sobject ) -= sradius;
-  h = COCO_SOBJECT_H( sobject ) + (sradius<<1);
+  COCO_SOBJECT_X( sobject ) -= dradius;
+  COCO_SOBJECT_Y( sobject ) -= dradius;
+  h = COCO_SOBJECT_H( sobject ) + (dradius<<1);
   COCO_SOBJECT_W( sobject ) = h;
   COCO_SOBJECT_H( sobject ) = h;
   /* call-next-method */
@@ -2285,6 +2315,7 @@ coco_bullet_hostile_collision( coco_sobject *obj1,
       return;
     }
   */
+  /* call-next-method */
   else coco_hostile_collision( obj1, obj1cl->super, obj2, sstate, 
                                stat1, stat2 );
 }
@@ -2309,24 +2340,6 @@ coco_balloon_part_hostile_collision( coco_sobject *obj1,
                                stat1, stat2 );
 }
 
-
-void
-coco_mech_hostile_collision( coco_sobject *obj1,
-                             coco_sobject_cl *obj1cl,
-                             coco_sobject *obj2, 
-                             coco_sstate *sstate,
-                             coco_bool *stat1, coco_bool *stat2 )
-{
-  assert( !coco_sobject_subtype_p( COCO_SOBJECT_CL( obj2 ),
-                                   COCO_MUNITION_CLASS) );
-  if (COCO_NEUTRAL == COCO_SOBJECT_NATIONALITY( obj2 )
-      && coco_sobject_subtype_p( COCO_SOBJECT_CL( obj2 ),
-                                 COCO_BUILDING_CLASS ))
-    *stat1 = *stat2 = COCO_FALSE; /* eg hut or pad */
-  /* call-next-method */
-  else coco_hostile_collision( obj1, obj1cl->super, obj2, sstate,
-                               stat1, stat2 );
-}
 
 void
 coco_ground_unit_hostile_collision( coco_sobject *obj1,
@@ -2379,6 +2392,12 @@ coco_copter_hostile_collision( coco_sobject *obj1,
   if (coco_sobject_subtype_p( COCO_SOBJECT_CL( obj2 ),
                               COCO_LANDING_PAD_CLASS ))
     {
+      /* Note for copters with landing gear (ie collision recti bottom not
+         0), the pad will jostle a bit as you hit it, because the bottom
+         of the copter has to touch the pad before it gets kicked back up
+         to the bottom of the raster. This because the collision code
+         doesn't really know about the bottom of the copter raster, only
+         the bottom of the collision recti. -dm 05-30-2001*/
       if (coco_safe_landing_angle_p( obj1, COCO_SOBJECT_CL( obj1 ) ))
         {
           coco_gnum x0, x1, y, px0, px1;
@@ -2394,11 +2413,43 @@ coco_copter_hostile_collision( coco_sobject *obj1,
         }
       /* else don't explode because we're collided with pad! */
     }
+  /* call-next-method */
   else coco_hostile_collision( obj1, obj1cl->super, obj2, sstate,
                                stat1, stat2 );
 }
 
 
+
+void
+coco_mech_hostile_collision( coco_sobject *obj1,
+                             coco_sobject_cl *obj1cl,
+                             coco_sobject *obj2, 
+                             coco_sstate *sstate,
+                             coco_bool *stat1, coco_bool *stat2 )
+{
+  *stat1 = *stat2 = COCO_FALSE;
+  assert( !coco_sobject_subtype_p( COCO_SOBJECT_CL( obj2 ),
+                                   COCO_MUNITION_CLASS) );
+  if (coco_sobject_subtype_p( COCO_SOBJECT_CL( obj2 ),
+                              COCO_LANDING_PAD_CLASS ))
+    {
+      coco_gnum x0, x1, y, px0, px1;
+      coco_get_collision_recti( obj1, &x0, &x1, &y, &y );
+      coco_get_collision_recti( obj2, &px0, &px1, &y, &y );
+      if ((px0<=x0) && (x1<=px1))
+        {
+          COCO_MECH_LANDED_ON_PAD_P( obj1 ) = COCO_TRUE;
+          COCO_SOBJECT_DY( obj1 ) = 0;
+          COCO_SOBJECT_Y( obj1 ) = COCO_SOBJECT_Y1( obj2 ) ;
+        }
+    }
+  else if (coco_sobject_subtype_p( COCO_SOBJECT_CL( obj2 ),
+                                   COCO_BUILDING_CLASS ))
+    *stat1 = *stat2 = COCO_FALSE; /* eg hut, pad, hq */
+  /* call-next-method */
+  else coco_hostile_collision( obj1, obj1cl->super, obj2, sstate,
+                               stat1, stat2 );
+}
 
 void
 coco_every_sobject_friendly_collision( coco_sobject *obj1,

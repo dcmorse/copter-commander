@@ -152,7 +152,7 @@
    ;; but in at least one case (troopers versus bunkers) the computation
    ;; is more complex than that.  
    ("targetable_classes_count" "0" "unsigned char" :allocation :every-class)
-   ("targetable_classes"       "NULL" "coco_sobject_cl *" 
+   ("targetable_classes"       "NULL" "coco_sobject_cl **" 
                                :allocation :every-class)
    ;; only used by fancy vehicle classes (mech, cobra, cargo-copter, etc)
    ("dashboard_icon"           "NULL" "struct coco_raster *"
@@ -452,9 +452,10 @@
    ("max_fuel"     "300*COCO_IDEAL_FRAMES_PER_SECOND")
    ("dx_max"       "15")
    ("dy_max"       "9")
-   ("canonical_w"  "125")
-   ("canonical_h"  "47")
-   ("collision_rectangle" "COCO_MAKE_MINI_RECTANGLE( 1, 7, 83, 35 )")
+   ("canonical_w"  "124")
+   ("canonical_h"  "48")
+   ("collision_rectangle" 
+    "COCO_MAKE_MINI_RECTANGLE( 1, 7, 83, 35 )")
    ("rotor_points"      "coco_cargo_copter_rotor_points")
    ("weapon_hardpoints" "coco_cargo_copter_weapon_hardpoints")
    ("center_of_mass"    "coco_cargo_copter_center_of_mass")
@@ -468,6 +469,7 @@
 
 (c-define-class "mech" ("camera")
   (("energy"       "COCO_SOBJECT_MAX_ENERGY( inst )" "coco_u16")
+   ("landed_on_pad_p" "COCO_FALSE" "coco_bool")
    ("max_energy"   "COCO_MECH_CAPACITANCE")
    ;; should missile_cooldown be ported here, or be factored up to camera?
    ;;("missile_cooldown" "COCO_FALSE" "coco_bool")
@@ -792,13 +794,13 @@
 (c-define-method "effective_damage" "gun" "coco_light_armor_effective_damage")
 
 (c-define-class "aa_gun" ("gun")
-  (("targetable_classes_count" "1")
-   ("targetable_classes"       "COCO_COPTER_CLASS"))
+  (("targetable_classes_count" "2")
+   ("targetable_classes"       "coco_aa_targetable_classes"))
   :init-by-list-fn :automatic)
 
 (c-define-class "at_gun" ("gun")
   (("targetable_classes_count" "1")
-   ("targetable_classes"       "COCO_GROUND_VEHICLE_CLASS")
+   ("targetable_classes"       "coco_at_targetable_classes")
    ("angle"        "(COCO_GOOD_GUYS == COCO_SOBJECT_NATIONALITY( inst )) ? 128 : 0"))
   :init-by-list-fn :automatic)
 

@@ -629,3 +629,11 @@ struct coco_mech_part coco_leg_parts[COCO_MAX_LEG_PARTS] = {
   { &coco_legs_left_akimbo_raster,  0, -1, 15 },
 };
 
+/* if adding to this be sure to change the count constant in sobject.lisp */
+coco_sobject_cl *coco_aa_targetable_classes[] = {
+  COCO_COPTER_CLASS, COCO_MECH_CLASS
+};
+
+coco_sobject_cl *coco_at_targetable_classes[] = {
+  COCO_MECH_CLASS, COCO_GROUND_VEHICLE_CLASS
+};

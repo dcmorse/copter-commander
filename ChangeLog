@@ -1,5 +1,15 @@
 2001-05-30  David Morse  <dm@bomberlan.net>
 
+	* methods.c (coco_plasma_update_state): plasma that goes slower
+	lives longer.
+	(coco_mech_hostile_collision): mechs can land.
+	(coco_gun_update_state): at- and aa- guns target mechs.
+	(coco_gun_fire_bullet_coords): guns never shoot into ground.
+	(coco_firetruck_update_state): target mechs.
+	(coco_headquarters_update_state): target mechs.
+
+	* levels/micro.ccl (micro): Modernize turtle/pad positions.
+
 	* server.c (coco_mech_update_state): fix various animation quirks.
 
 	* client.c: start game right after [p] in glx-copter-commander

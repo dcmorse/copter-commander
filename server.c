@@ -956,8 +956,9 @@ coco_sstate_execute_collision( coco_sstate *sstate,
   if ((nata != natb) || (nata == COCO_NEUTRAL))
     coco_hostile_collision( obja, COCO_SOBJECT_CL( obja ), objb,
                             sstate, stata, statb );
-  else coco_friendly_collision( obja, COCO_SOBJECT_CL( obja ), objb,
-                                sstate, stata, statb );
+  else
+    coco_friendly_collision( obja, COCO_SOBJECT_CL( obja ), objb,
+                             sstate, stata, statb );
   return stat1;
 }
 
@@ -1034,17 +1035,17 @@ coco_sstate_find_collisions( coco_sstate *sstate )
                    || ((y0_2 <= y1_1) && (y1_1 <= y1_2))))
                 {
                   /* COLLISION OVERHAUL
-                  if (((nat1==COCO_NEUTRAL)
-                       && coco_sobject_subtype_p( COCO_SOBJECT_CL( obj1 ),
-                                                  COCO_BUILDING_CLASS )))
-                    coco_sobject_neutral_building_collide
-                      ( obj2, COCO_SOBJECT_CL( obj2 ), obj1 );
-                  else if (((nat2==COCO_NEUTRAL)
-                       && coco_sobject_subtype_p( COCO_SOBJECT_CL( obj2 ),
-                                                  COCO_BUILDING_CLASS )))
-                    coco_sobject_neutral_building_collide
-                      ( obj1, COCO_SOBJECT_CL( obj1 ), obj2 );
-                  else 
+                     if (((nat1==COCO_NEUTRAL)
+                     && coco_sobject_subtype_p( COCO_SOBJECT_CL( obj1 ),
+                     COCO_BUILDING_CLASS )))
+                     coco_sobject_neutral_building_collide
+                     ( obj2, COCO_SOBJECT_CL( obj2 ), obj1 );
+                     else if (((nat2==COCO_NEUTRAL)
+                     && coco_sobject_subtype_p( COCO_SOBJECT_CL( obj2 ),
+                     COCO_BUILDING_CLASS )))
+                     coco_sobject_neutral_building_collide
+                     ( obj1, COCO_SOBJECT_CL( obj1 ), obj2 );
+                     else 
                   */
                   if (coco_sstate_execute_collision( sstate, obj1, obj2 ))
                     break;
@@ -1736,6 +1737,22 @@ coco_power_shield( coco_sobject *sobject, coco_sobject_cl *class,
 /* Only used when its important to filter out typeomatic key presses */
 #define COCO_MECH_PRESSED( key ) (coco_get_bit( input->key_state, (key) )||coco_get_bit( old_input->key_state, (key) ))
 
+void
+coco_mech_pad_update( coco_sobject *sobject, coco_sobject_cl *cl, 
+                      coco_sstate *sstate )
+{
+  coco_u32 time = sstate->time;
+  coco_health health = COCO_SOBJECT_HEALTH( sobject );
+  int plasma = COCO_MECH_PLASMA( sobject );
+  if (((time & COCO_PAD_HEAL_MASK) == 0)
+      && (health < COCO_SOBJECT_HEALTH_MAX( sobject )))
+    COCO_SOBJECT_HEALTH( sobject ) = health + 1;
+  if (plasma < COCO_SOBJECT_MAX_PLASMA( sobject ))
+    COCO_MECH_PLASMA( sobject ) = plasma + 1;
+}
+
+
+
 coco_bool 
 coco_mech_update_state( coco_sobject *sobject, 
                         coco_sobject_cl *cl, 
@@ -1746,6 +1763,7 @@ coco_mech_update_state( coco_sobject *sobject,
   signed char comp_index = COCO_SOBJECT_COMP_INDEX( sobject );
   struct coco_keyboard_pointer_state *input;
   coco_facing run;
+  coco_bool landed_p = COCO_MECH_LANDED_ON_PAD_P( sobject );
   coco_bool jump = COCO_FALSE;
   int legs = COCO_MECH_LEG_RASTER_INDEX( sobject );
   int lefty = (legs >= COCO_LEFTY_LEG_PART) ? COCO_LEFTY_LEG_PART : 0;
@@ -1916,14 +1934,13 @@ coco_mech_update_state( coco_sobject *sobject,
           : ((dx_want_sorta > 0)
              ? COCO_AKIMBO_PART
              : (lefty + COCO_AKIMBO_PART) );
-        coco_cookie( "legs_out=%d due to jump   dx_want=%d, lefty+akimbo=%d, run=%d, dx=%d\n",
-                     (int) legs_out, dx_want_sorta,
-                     (lefty + COCO_AKIMBO_PART), run, dx );
         COCO_MECH_ENERGY( sobject ) 
           = ((e==effective_e)?(e - dydt):(e-(dydt>>1)) );
+        landed_p = COCO_FALSE;
       }
     /* if in air... */
-    if ((COCO_SOBJECT_Y( sobject ) > COCO_GROUND_Y+1))
+    if ((COCO_SOBJECT_Y( sobject ) > COCO_GROUND_Y+1)
+        && !landed_p)
       {
         if (run)
           {
@@ -1954,7 +1971,6 @@ coco_mech_update_state( coco_sobject *sobject,
                 legs_out = squati;
                 COCO_SOBJECT_Y( sobject ) += dh;
                 COCO_MECH_SQUATTING_DOWN( sobject ) = COCO_TRUE;
-                coco_cookie( "legs_out=%d due to squat\n", (int) legs_out );
               }
             /* flying friction */
             if (dx>0)
@@ -1977,7 +1993,6 @@ coco_mech_update_state( coco_sobject *sobject,
           {
             legs_out
               = legs - COCO_AKIMBO_PART + COCO_MIN_SQUAT_PARTS;
-            coco_cookie( "legs_out=%d due to squat/land\n", (int) legs_out );
             COCO_SOBJECT_DX( sobject ) = 0;
             COCO_MECH_SQUATTING_DOWN( sobject ) = COCO_TRUE;
           }
@@ -2000,6 +2015,7 @@ coco_mech_update_state( coco_sobject *sobject,
             : COCO_MIN_WALK_PARTS + COCO_LEFTY_LEG_PART;
         else if (run)
           {
+            landed_p = COCO_FALSE;
             if (run<0)
               {
                 legs_out
@@ -2032,6 +2048,7 @@ coco_mech_update_state( coco_sobject *sobject,
       }
     else if (run&&((COCO_IDLE==leg_action)||(COCO_LAND==leg_action)))
       {
+        landed_p = COCO_FALSE;
         COCO_MECH_SQUATTING_DOWN( sobject ) = COCO_FALSE;
         legs_out
           = (run<0)
@@ -2086,8 +2103,9 @@ coco_mech_update_state( coco_sobject *sobject,
                              COCO_MAX_WALK_PARTS ));
   assert( COCO_BETWEENA( 0, legs_out, COCO_MAX_LEG_PARTS ) );
   COCO_MECH_LEG_RASTER_INDEX( sobject ) = legs_out;
-  coco_cookie( "legs %d->%d, leg_action=%d\n", (int)legs, (int)legs_out,
-                leg_action );
+  if (landed_p)
+    coco_mech_pad_update( sobject, COCO_SOBJECT_CL( sobject ), sstate );
+  else COCO_MECH_LANDED_ON_PAD_P( sobject ) = COCO_FALSE;
   return coco_sobject_update_state( sobject, cl->super, sstate );
 }
 
