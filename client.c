@@ -2135,7 +2135,7 @@ coco_client_exec( void )
 #define COCO_TALK_DISPLAY_SIZE 4
 char coco_talk_display_talk_buffer[COCO_TALK_DISPLAY_SIZE][COCO_CHAT_MAX];
 char coco_talk_display_players_buffer[COCO_TALK_DISPLAY_SIZE][COCO_PLAYER_NAME_MAX];
-long coco_talk_display_times[COCO_TALK_DISPLAY_SIZE];
+time_t coco_talk_display_times[COCO_TALK_DISPLAY_SIZE];
 
 int coco_talk_display_count = 0;
 int coco_talk_display_ptr = 0;
@@ -2144,14 +2144,12 @@ int coco_talk_display_ptr = 0;
 void
 coco_note_talk( void *null, union coco_message *message )
 {
-
   int ptr = coco_talk_display_ptr;
   coco_u32 plr = COCO_U32_NTOH( message->talk.from_player );
   strcpy( coco_talk_display_talk_buffer[ptr], message->talk.message );
   strcpy( coco_talk_display_players_buffer[ptr], 
           (plr==COCO_U32_MAX)? "" : coco_players[plr].name );
-  gettimeofday( &now, &tz );
-  coco_talk_display_times[ptr] = now.tv_sec;
+  coco_talk_display_times[ptr] = time( NULL );
   coco_talk_display_ptr = ((ptr + 1) >= COCO_TALK_DISPLAY_SIZE) ? 0 : (ptr + 1);
   coco_talk_display_count = COCO_MAX( coco_talk_display_count, COCO_TALK_DISPLAY_SIZE );
 }
