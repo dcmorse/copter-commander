@@ -1013,7 +1013,7 @@ char *
 coco_generate_screenshot_fname( char *base, int *counter )
 {
   char *buf = coco_malloc( 40 );
-  sprintf( buf, "/home/dm/tmp/%s%03d.tif", base, ++(*counter) );
+  sprintf( buf, "/tmp/%s%03d.tif", base, ++(*counter) );
   return buf;
 }
 
