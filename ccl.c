@@ -288,6 +288,18 @@ coco_op_random( coco_env *env, coco_lnum *arguments, int argument_count  )
   return rand() % arguments[0];
 }
 
+/* returns last argument */
+coco_lnum 
+coco_op_print( coco_env *env, coco_lnum *arguments, int argument_count  )
+{
+  int i;
+  printf( "[ccl print] " );
+  for (i=0; i<argument_count; i++)
+    printf( "%d ", (int) arguments[i] );
+  printf( "\n" );
+  return arguments[argument_count-1];
+}
+
 
 struct coco_operator {
   char *name;
@@ -307,6 +319,7 @@ static struct coco_operator coco_operators[COCO_OPERATORS_COUNT] = {
   { "left-center",  1, COCO_TRUE,  coco_op_left_center },
   { "right-center", 1, COCO_TRUE,  coco_op_right_center },
   { "random",       1, COCO_FALSE, coco_op_random },
+  { "print",        1, COCO_TRUE,  coco_op_print },
 };
 
 /* returns a pointer to the first non-whitespace character.  Never fails,

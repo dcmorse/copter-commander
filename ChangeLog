@@ -1,5 +1,10 @@
 2001-03-13  David Morse  <dm@bomberlan.net>
 
+	* levels/gun-country.ccl: Created.  Also fixed centering bug on
+	most other levels.
+
+	* ccl.c (coco_op_print): Created.
+
 	* network.c (coco_close_fd): Add paramater shutdown_too, changed
 	callers.
 

@@ -2,7 +2,7 @@
 
 (define-coco-level flashpoint
     1 0                                 ; coco-version
-    1                                   ; level-version
+    2                                   ; level-version
     5000                                ; width
     ((ggpb (pillbox (- board-w (w pillbox)) good-guys 0 gghq))
      (gghq (headquarters (right-center headquarters 500) good-guys ggpb))
@@ -16,9 +16,9 @@
      (nil  (traffic-sign (right-center traffic-sign -300) 0))
 
      ;; center cluster
-     (nil (at-gun (/ (- board-w at-gun) 2) good-guys))
-     (nil (aa-gun (+ (/ (- board-w aa-gun) 2) 80) good-guys))
-     (nil (aa-gun (- (/ (- board-w aa-gun) 2) 80) bad-guys))
+     (nil (at-gun (/ (- board-w (w at-gun)) 2) good-guys))
+     (nil (aa-gun (+ (/ (- board-w (w aa-gun)) 2) 80) good-guys))
+     (nil (aa-gun (- (/ (- board-w (w aa-gun)) 2) 80) bad-guys))
 
      ;; left cluster
      (nil (hut (left-center hut 1750) bad-guys))

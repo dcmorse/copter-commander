@@ -2,7 +2,7 @@
 
 (define-coco-level long-battle
     1 0                                 ; coco-version
-    1                                   ; level-version
+    2                                   ; level-version
     8000                                ; width
     ((ggpb (pillbox (- board-w (w pillbox)) good-guys 0 gghq))
      (gghq (headquarters (right-center headquarters 500) good-guys ggpb))
@@ -16,7 +16,7 @@
      (nil  (traffic-sign (right-center traffic-sign -300) 0))
 
      ;; center cluster
-     (midpad (landing-pad (/ (- board-w landing-pad) 2)))
+     (midpad (landing-pad (/ (- board-w (w landing-pad)) 2)))
      (nil (hut (left-center hut 3800) bad-guys))
      (nil (hut (left-center hut 3900) bad-guys))
      (nil (aa-gun (left-center gun 3700) bad-guys))

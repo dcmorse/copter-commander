@@ -2,7 +2,7 @@
 
 (define-coco-level wind-walker
     1 0                                 ; coco-version
-    1                                   ; level-version
+    2                                   ; level-version
     8000                                ; width
     ((ggpb (pillbox (- board-w (w pillbox)) good-guys 0 gghq))
      (gghq (headquarters (right-center headquarters 300) good-guys ggpb))
@@ -17,16 +17,14 @@
 
      ;; center cluster
      (midpad (landing-pad (/ board-w 2)))
-     (nil (hut (- (/ board-w 2) 150) bad-guys))
-     (nil (hut (- (/ board-w 2) 225) bad-guys))
-     (nil (hut (+ (/ board-w 2) 150) good-guys))
-     (nil (hut (+ (/ board-w 2) 225) good-guys))
-     ;(nil (aa-gun (- (/ board-w 2) 300) bad-guys))
-     (nil (at-gun (- (/ board-w 2) 350) bad-guys))
-     (nil (aa-gun (- (/ board-w 2) 400) bad-guys))
-     ;(nil (aa-gun (+ (/ board-w 2) 300) good-guys))
-     (nil (at-gun (+ (/ board-w 2) 350) good-guys))
-     (nil (aa-gun (+ (/ board-w 2) 400) good-guys))
+     (nil (hut (- (/ (- board-w (w hut)) 2) 150) bad-guys))
+     (nil (hut (- (/ (- board-w (w hut)) 2) 225) bad-guys))
+     (nil (hut (+ (/ (- board-w (w hut)) 2) 150) good-guys))
+     (nil (hut (+ (/ (- board-w (w hut)) 2) 225) good-guys))
+     (nil (at-gun (- (/ (- board-w (w at-gun)) 2) 350) bad-guys))
+     (nil (aa-gun (- (/ (- board-w (w aa-gun)) 2) 400) bad-guys))
+     (nil (at-gun (+ (/ (- board-w (w at-gun)) 2) 350) good-guys))
+     (nil (aa-gun (+ (/ (- board-w (w aa-gun)) 2) 400) good-guys))
 
      ;; left cluster
      (nil (aa-gun (left-center aa-gun 1900) bad-guys))
