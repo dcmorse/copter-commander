@@ -1773,6 +1773,7 @@ coco_fire_plasma( coco_sobject *sobject, coco_sobject_cl *class,
         coco_init_plasma( plasma, COCO_PLASMA_CLASS, x, y, dx, dy,
                           COCO_SOBJECT_NATIONALITY( sobject ) );
         COCO_MECH_LAST_PLASMA_FIRE_TIME( sobject ) = sstate->time;
+        coco_make_snd( COCO_SOUND_PLASMA_CANNON, sstate, x, y );
         return plasma;
       }
     }

@@ -1051,11 +1051,12 @@ typedef unsigned char coco_sound_type;
 #define COCO_SOUND_RIFLE              11
 #define COCO_SOUND_TANK_GUN           12
 #define COCO_SOUND_COPTER_TAKE_OFF    13
-
+#define COCO_SOUND_MECH_TAKE_OFF      14
+#define COCO_SOUND_PLASMA_CANNON      15
 
 /* sounds get 0-(coco_game_sounds_size - 1), and have some arrays that big
    in gamesho. */
-#define COCO_GAME_SOUNDS_SIZE         14
+#define COCO_GAME_SOUNDS_SIZE         16
 
 
 #define COCO_FX_NONE             255

@@ -918,7 +918,13 @@ coco_inviso_camera_update_state( coco_sobject *sobject,
       coco_copter_start_coords( sstate, COCO_SOBJECT_NATIONALITY( sobject ),
                                 camera_idx, &x, &y );
       COCO_SOBJECT_X( sobject ) = x;
-      coco_make_snd( COCO_SOUND_COPTER_TAKE_OFF, sstate, x, y );
+      coco_make_snd( (coco_players[camera_idx].copters > 0)
+                     && coco_sobject_subtype_p( sstate->favorite_copter_class
+                                                [camera_idx],
+                                                COCO_MECH_CLASS )
+                     ? COCO_SOUND_MECH_TAKE_OFF
+                     : COCO_SOUND_COPTER_TAKE_OFF,
+                     sstate, x, y );
     }
   /* call-next-method */
   return coco_sobject_update_state( sobject, cl->super, sstate );

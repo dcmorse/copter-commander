@@ -1,5 +1,12 @@
 2001-06-25  David Morse  <dm@bomberlan.net>
 
+	* gamesho.c: new scream, etc.
+
+	* server.c (coco_fire_plasma): plasma noise.
+
+	* methods.c (coco_inviso_camera_update_state): different reincarn
+	noise for mech.
+
 	* server.c (timercmp): many changes to make new glibc shut up.
 
 	* openal-sound.c (coco_init_sound_system): many changes to
