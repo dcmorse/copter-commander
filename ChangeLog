@@ -1,5 +1,7 @@
 2001-12-12  David Morse  <svref@yahoo.com>
 
+	* globals.c: toying with version.
+
 	* methods.c (coco_gun_effective_damage): fix bug where infantry
 	can't kill aa/at guns.  Bug #487725
 
