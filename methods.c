@@ -609,7 +609,7 @@ coco_hut_stormin( coco_sobject *hut, coco_sstate *sstate,
   refund = COCO_SOBJECT_REFUND( hut );
   if (refund > 0)
     coco_add_funds( coco_find_closest_enemy_player( hut, sstate ),
-                    refund );
+                    COCO_FALSE, refund );
 
   hut_nat = COCO_SOBJECT_NATIONALITY( hut );
   final_nat
@@ -894,8 +894,8 @@ coco_inviso_camera_update_state( coco_sobject *sobject,
       COCO_SOBJECT_X( sobject ) = x;
       coco_make_snd( COCO_SOUND_COPTER_TAKE_OFF, sstate, x, y );
     }
-    /* call-next-method */
-    return coco_sobject_update_state( sobject, cl->super, sstate );
+  /* call-next-method */
+  return coco_sobject_update_state( sobject, cl->super, sstate );
 }
 
 
@@ -1019,8 +1019,8 @@ coco_every_sobject_kaboom( coco_sobject *sobject,
 {
   int refund = COCO_SOBJECT_REFUND( sobject );
   if (refund > 0)
-    coco_add_funds( coco_find_closest_enemy_player( sobject, sstate ),
-                    refund );
+    coco_add_funds( coco_find_closest_enemy_player( sobject, sstate ), 
+                    COCO_FALSE, refund );
   coco_make_shrapnel( COCO_SOBJECT_SHRAPNEL_COUNT( sobject ),
                       sstate, COCO_SOBJECT_X_CENTER( sobject ),
                       COCO_SOBJECT_Y_CENTER( sobject ),
@@ -1259,6 +1259,7 @@ coco_copter_delete( coco_sobject *sobject,
                        &xmid, &ymid );
   coco_sobject_delete( sobject, cl->super, sstate ); /* call-next-method */
   sobject = NULL; /* because we can't legally access it after here */
+  if (cam_idx<0) return; /* comp don't need an inviso-camera */
   camera = coco_sstate_allocate_sobject( sstate );
   if (!camera) return;
   coco_init_inviso_camera( camera, COCO_INVISO_CAMERA_CLASS, cam_idx,
@@ -1901,7 +1902,7 @@ coco_bunker_hostile_collision( coco_sobject *bunker,
           refund = COCO_SOBJECT_REFUND( bunker );
           if (refund > 0)
             coco_add_funds( coco_find_closest_enemy_player( bunker, sstate ),
-                            refund );
+                            COCO_FALSE, refund );
           switch (ricount) {
           case 1: new_ri = ri; break;
           case 2: new_ri = ri^1; break;
@@ -2393,9 +2394,11 @@ coco_camera_blip_color_index( coco_sobject *sobject,
                               coco_bool is_comp,
                               coco_sstate *sstate )
 {
-  if (is_comp
-      || ((!(sstate->time & 12))
-          && (COCO_SOBJECT_CAMERA_INDEX( sobject ) == p_or_c_index)))
+  if ((is_comp || (!(sstate->time & 12)))
+      && ((is_comp 
+           ? COCO_SOBJECT_COMP_INDEX( sobject )
+           : COCO_SOBJECT_CAMERA_INDEX( sobject ))
+          == p_or_c_index))
     {
       return COCO_BLIP_CAMERA_BLINK;
     }

@@ -383,6 +383,7 @@ coco_cstate_serial_header_hton( struct coco_cstate_serial_header *str )
   str->time          = COCO_U32_HTON( str->time );
   str->cobject_count = COCO_U32_HTON( str->cobject_count );
   str->cblip_count   = COCO_U32_HTON( str->cblip_count );
+  str->cobject_camera_index = COCO_I32_HTON( str->cobject_camera_index );
   str->cam_left      = COCO_I32_HTON( str->cam_left );
   str->board_w       = COCO_I32_HTON( str->board_w );
   str->dashinfo.bullets       = COCO_U32_HTON( str->dashinfo.bullets );
@@ -404,6 +405,7 @@ coco_cstate_serial_header_ntoh( struct coco_cstate_serial_header *str )
   str->time          = COCO_U32_NTOH( str->time );
   str->cobject_count = COCO_U32_NTOH( str->cobject_count );
   str->cblip_count   = COCO_U32_NTOH( str->cblip_count );
+  str->cobject_camera_index = COCO_I32_NTOH( str->cobject_camera_index );
   str->cam_left      = COCO_I32_NTOH( str->cam_left );
   str->board_w       = COCO_I32_NTOH( str->board_w );
   str->dashinfo.bullets       = COCO_U32_NTOH( str->dashinfo.bullets );

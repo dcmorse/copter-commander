@@ -641,6 +641,7 @@ struct coco_cstate_serial_header {
   coco_u32 time;
   coco_u32 cobject_count;
   coco_u32 cblip_count;
+  coco_i32 cobject_camera_index; /* -1 means its not drawn */
   unsigned char game_over_nationality;
   coco_i32 cam_left;
   coco_i32 board_w;
@@ -1117,7 +1118,6 @@ struct coco_raster_y_angle_cobject {
   coco_angle angle;
 };
 
-
 union coco_cobject {
   struct coco_every_cobject every;
   struct coco_y_cobject y;
@@ -1139,6 +1139,7 @@ union coco_cobject {
 #define COCO_COBJECT_X( cobject ) ((cobject)->every.x)
 #define COCO_COBJECT_Y( cobject ) (coco_cobject_y_helper( cobject ))
 #define COCO_COBJECT_Z( cobject ) (COCO_COBJECT_CL( cobject )->z)
+#define COCO_COBJECT_NATIONALITY_GUESS( cobject ) (coco_cobject_guess_nationality_helper( cobject ))
 #define COCO_COBJECT_RASTER_INDEX( cobject ) (coco_cobject_raster_index_helper( cobject ))
 #define COCO_COBJECT_RASTER( cobject ) \
   COCO_COBJECT_CL( cobject )->rasters[COCO_COBJECT_RASTER_INDEX( cobject )]
@@ -1161,6 +1162,16 @@ coco_cnum coco_cobject_y_y( coco_cobject *cobject );
 unsigned char coco_cobject_raster_index_helper( coco_cobject *cobject );
 unsigned char coco_cobject_simple_raster_index( coco_cobject *cobject );
 unsigned char coco_cobject_standard_raster_index( coco_cobject *cobject );
+
+int coco_cobject_guess_nationality_helper( coco_cobject *cobject );
+int coco_cobject_whimpy_guess_nationality( coco_cobject *cobject );
+int coco_copter_guess_nationality( coco_cobject *cobject );
+int coco_neutral_guess_nationality( coco_cobject *cobject );
+int coco_hut_guess_nationality( coco_cobject *cobject );
+int coco_2raster_guess_nationality( coco_cobject *cobject );
+int coco_firetruck_guess_nationality( coco_cobject *cobject );
+int coco_infantry_guess_nationality( coco_cobject *cobject );
+
 
 /* moved to after the definition of coco_sobject_cl */
 /*
@@ -1220,6 +1231,7 @@ void coco_send_play_message_maybe( void );
 
 /* server.c */
 
+#define COCO_COMP_FAVORITE_COPTER_CLASS COCO_COBRA_CLASS
 #define COCO_GROUND_UNIT_WARP_IN_X 80
 #define COCO_GROUND_UNIT_WARP_OUT_X 600
 #define COCO_FIRETRUCK_RELOAD_X 500
@@ -1257,6 +1269,7 @@ void coco_send_play_message_maybe( void );
 #define COCO_GROUND_UNIT_DX_MAX 1
 #define COCO_GUN_BARREL_LENGTH 8 /* must be power of 2 */
 #define COCO_BALLOON_FLOOR (COCO_GROUND_Y + 35) /* higher than highest bldng */
+#define COCO_AI_FLOOR COCO_BALLOON_FLOOR
 #define COCO_BALLOON_LINE_CEILING \
  (COCO_VIEWABLE_H - 100 - COCO_BALLOON_E_RASTER_H)
 #define COCO_HUT_BALLOON_REINCARNATION_FRAMES \
@@ -1390,8 +1403,10 @@ coco_sobject *
 coco_hut_init_by_list( coco_sobject *sobject, coco_sobject_cl *cla, 
                        coco_lnum *args );
 
-void coco_add_funds( int player_index, float funds );
-coco_bool coco_subtract_funds_available( int player_index, float funds );
+void coco_add_funds( int p_or_c_index, coco_bool is_comp, float funds );
+coco_bool coco_subtract_funds_available( int player_index, coco_bool is_comp, 
+                                         float funds );
+
 
 
 void
@@ -1400,18 +1415,26 @@ coco_make_snd( coco_sound_type sound, coco_sstate *sstate,
 
 struct coco_comp {
   coco_bool in_use;
+  int index;
   coco_nationality nationality;
   float funds;
   coco_u32 copters;
   struct coco_keyboard_pointer_state kpstate;
   char name[COCO_PLAYER_NAME_MAX];
+  coco_gnum cruise_altitude; /* altitude to seek when idle */
+  coco_gnum overgun;         /* small y offset gunning emy copter */
 };
 
 struct coco_comp coco_comps[COCO_MAX_COMPS];
 
-#define COCO_SCREEN_TO_RADAR_X( x ) ((COCO_OFFICIAL_WINDOW_W * (x)) / board_w)
-#define COCO_SCREEN_TO_RADAR_Y( y ) ((COCO_RADAR_H * (y)) / COCO_VIEWABLE_H)
+#define COCO_GNUM_TO_RXNUM( x, bw ) ((COCO_OFFICIAL_WINDOW_W * (x)) / (bw))
+#define COCO_GNUM_TO_RYNUM( y )     ((COCO_RADAR_H * (y)) / COCO_VIEWABLE_H)
+#define COCO_RXNUM_TO_GNUM( x, bw ) (((bw) * (x)) / COCO_OFFICIAL_WINDOW_W)
+#define COCO_RYNUM_TO_GNUM( y )     ((COCO_VIEWABLE_H * (y)) / COCO_RADAR_H)
 
+void coco_comp_key_press( struct coco_keyboard_pointer_state *kstate, 
+                          struct coco_comp *self,
+                          coco_key key );
 
 /* comp.c */
 
@@ -1419,8 +1442,7 @@ void
 coco_comp_think( struct coco_comp *self, 
                  struct coco_cstate_serial_header *cstate,
                  coco_cobject *cobjs,
-                 struct coco_cblip *cblips,
-                 struct coco_keyboard_pointer_state *state_return );
+                 struct coco_cblip *cblips );
 
 
 /* late gamesho.c */

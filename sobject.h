@@ -25,6 +25,7 @@ struct coco_sobject_class_ {
   struct coco_raster ** rasters;
   coco_cnum (* cobject_y_fn )(coco_cobject *);
   unsigned char (* cobject_raster_index_fn )(coco_cobject *);
+  int (* cobject_guess_nationality_fn )(coco_cobject *);
   coco_sobject_cl * bullet_class;
   void (* cobject_ntoh )(coco_cobject *);
   void (* cobject_draw )(coco_cobject *, coco_sobject_cl *);
@@ -1626,6 +1627,7 @@ coco_sobject *coco_firetruck_automatic_init_by_list( coco_sobject *inst, coco_so
 #define COCO_SOBJECT_RASTERS( clss ) ((clss)->every.cl->rasters)
 #define COCO_SOBJECT_COBJECT_Y_FN( clss ) ((clss)->every.cl->cobject_y_fn)
 #define COCO_SOBJECT_COBJECT_RASTER_INDEX_FN( clss ) ((clss)->every.cl->cobject_raster_index_fn)
+#define COCO_SOBJECT_COBJECT_GUESS_NATIONALITY_FN( clss ) ((clss)->every.cl->cobject_guess_nationality_fn)
 #define COCO_SOBJECT_BULLET_CLASS( clss ) ((clss)->every.cl->bullet_class)
 #define COCO_SOBJECT_COBJECT_NTOH( clss ) ((clss)->every.cl->cobject_ntoh)
 #define COCO_SOBJECT_COBJECT_DRAW( clss ) ((clss)->every.cl->cobject_draw)

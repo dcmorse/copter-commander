@@ -1,3 +1,8 @@
+2001-03-31  David Morse  <dm@bomberlan.net>
+
+	* server.c (coco_format_sstate_to_buffer): Blip at center of mass,
+	not at bottom left of raster.
+
 2001-03-24  David Morse  <dm@bomberlan.net>
 
 	* Start for computer controlled players: "comps".

@@ -87,6 +87,9 @@
    ("cobject_raster_index_fn" "coco_cobject_standard_raster_index"
                               ("unsigned char (*" ")(coco_cobject *)")
                               :allocation :every-class)
+   ("cobject_guess_nationality_fn" "coco_cobject_whimpy_guess_nationality"
+                                   ("int (*" ")(coco_cobject *)")
+                                   :allocation :every-class)
    ("bullet_class" "COCO_BULLET_CLASS" "coco_sobject_cl *" 
                    :allocation :every-class)
    ;; this should be true if the last 2 bytes of the cobject are interpreted as
@@ -304,9 +307,7 @@
    ("y"            "COCO_GROUND_Y + 1")
    ("cobject_draw" "coco_cobject_inviso_draw")
    ("default_blip_color_index" 
-       "COCO_BLIP_TRIPLET_TRANSPARENT")
-       
-   ))
+       "COCO_BLIP_TRIPLET_TRANSPARENT")))
 
 (c-define-method "ground_trooper_target_p" "inviso_camera"
                  "coco_trooper_never_target_me")
@@ -328,7 +329,7 @@
    ("next_missilebeat_on_pad" "0"   "coco_u32")
    ("dx_max"       "COCO_COPTER_DX_MAX")
    ("dy_max"       "COCO_COPTER_DY_MAX")
-   ("x_force"      "2") ; for decel.  Accell is half that.
+   ("x_force"      "4") ; for decel.  Accell is half that.
    ("health_max"   "4")
    ("clip_to_board" "COCO_TRUE")
    ("raster_index" "((nationality==COCO_BAD_GUYS)<<1)+(facing>0)")
@@ -337,6 +338,7 @@
    ;;("canonical_w"  "COCO_COPTER_EVEN_RASTER_W")
    ;;("rasters"      "coco_copter_rasters")
    ("raster_count" "COCO_COPTER_RASTER_COUNT") ;; all have same # rasters
+   ("cobject_guess_nationality_fn" "coco_copter_guess_nationality")
    ;; also massy-rectangle rotor_points, and rotor_radius in sobject.
    ("cobject_draw" "coco_copter_draw")
    ("rotor_radius" "10")
@@ -416,6 +418,7 @@
    ("refund"       "1")
    ("cost"         "5")
    ("health_max"   "3")
+   ("x_force"      "2")
 ))
 
 (c-define-class "smoke" ("sobject")
@@ -498,7 +501,9 @@
 (c-define-class "building" ("sobject")
   (("y"            "COCO_GROUND_Y")
    ("facing"       "0")
-   ;; by default buildings have only 1 raster (except for headquarters)
+   ;; by default buildings have only 1 raster 
+   ;; (except for headquarters, bunkers, guns, huts ... 
+   ;; guess that was bad assumption!)
    ("cobject_raster_index_fn" "coco_cobject_simple_raster_index")
    ("shrapnel_count" "4")
    ("collision_priority" "200")
@@ -521,6 +526,7 @@
    ("raster_index"  :arg)
    ("rasters"       "coco_traffic_sign_rasters")
    ("raster_count"  "COCO_TRAFFIC_SIGN_RASTER_COUNT")
+   ("cobject_guess_nationality_fn" "coco_neutral_guess_nationality")
    ("cobject_raster_index_fn" "coco_cobject_standard_raster_index")
    ("default_blip_color_index" 
        "COCO_BLIP_TRIPLET_TRANSPARENT"))
@@ -533,6 +539,7 @@
    ("raster_index"  "nationality")
    ("rasters"       "coco_hut_rasters")
    ("raster_count"  "COCO_HUT_RASTER_COUNT")
+   ("cobject_guess_nationality_fn" "coco_hut_guess_nationality")
    ("health_max"    "COCO_MISSILE_DAMAGE<<1")
    ("canonical_w"   "COCO_HUT_NEUTRAL_RASTER_W")
    ("cobject_raster_index_fn" "coco_cobject_standard_raster_index")
@@ -558,6 +565,7 @@
    ("roof_tab"       "50")
    ("bullet_class"   "COCO_RIFLE_BULLET_CLASS")
    ("cobject_raster_index_fn" "coco_cobject_standard_raster_index")
+   ("cobject_guess_nationality_fn" "coco_2raster_guess_nationality")
    ("max_internal_infantry" "5")
    ("refund"         "7"))
   :init-by-list-fn :automatic)
@@ -578,8 +586,7 @@
    ("raster_count" "COCO_PILLBOX_RASTER_COUNT")
    ("canonical_w"  "COCO_PILLBOX_RASTER_W")
    ("roof_tab"     "0")
-   ("max_internal_infantry" "2")
-   ("cobject_raster_index_fn" "coco_cobject_simple_raster_index"))
+   ("max_internal_infantry" "2"))
   :init-by-list-fn :automatic)
 
 (c-define-method "sobject_unlink" "pillbox" 
@@ -589,6 +596,7 @@
   (("nationality"  "COCO_NEUTRAL")
    ("rasters"      "coco_landing_pad_rasters")
    ("raster_count" "COCO_LANDING_PAD_RASTER_COUNT")
+   ("cobject_guess_nationality_fn" "coco_neutral_guess_nationality")
    ("canonical_w"  "COCO_LANDING_PAD_RASTER_W")
    ("default_blip_color_index" 
        "COCO_MAKE_BLIP_TRIPLET( COCO_BLIP_FRY_BUILDING, COCO_BLIP_EMY_BUILDING, COCO_BLIP_NEUTRAL_BUILDING )"))
@@ -605,6 +613,7 @@
    ("rasters"         "coco_headquarters_rasters")
    ("raster_count"    "COCO_HEADQUARTERS_RASTER_COUNT")
    ("canonical_w"     "COCO_HEADQUARTERS_GREEN_RASTER_W")
+   ("cobject_guess_nationality_fn" "coco_2raster_guess_nationality")
    ("cobject_raster_index_fn" "coco_cobject_standard_raster_index")
    ("shrapnel_count"  "25")
    ("refund"          "255")
@@ -626,6 +635,7 @@
    ("rasters"       "coco_gun_rasters")
    ("raster_count"  "COCO_GUN_RASTER_COUNT")
    ("raster_index"  "nationality - COCO_GOOD_GUYS")
+   ("cobject_guess_nationality_fn" "coco_2raster_guess_nationality")
    ("shrapnel_count" "4")
    ("cobject_draw" "coco_cobject_barreloid_draw")
    ("weapon_hardpoints" "coco_gun_hardpoints")
@@ -661,6 +671,7 @@
    ("phase" "COCO_VAPOR")
    ("rasters" "coco_gun_rubble_rasters")
    ("raster_count" "COCO_GUN_RUBBLE_RASTER_COUNT")
+   ("cobject_guess_nationality_fn" "coco_neutral_guess_nationality")
    ("nationality" "COCO_NEUTRAL")
    ("canonical_w"   "COCO_GUN_RUBBLE_RASTER_W")
    ("default_blip_color_index" 
@@ -686,11 +697,10 @@
 (c-define-method "sobject_update_state" "ground_unit"
                  "coco_ground_unit_update_state")
 
-
-
 (c-define-class "ground_vehicle" ("ground_unit")
   (("shrapnel_count" "3")
-   ("raster_index" "nationality - COCO_GOOD_GUYS"))
+   ("raster_index" "nationality - COCO_GOOD_GUYS")
+   ("cobject_guess_nationality_fn" "coco_2raster_guess_nationality"))
   :init-by-list-fn :automatic)
 
 (c-define-method "kaboom" "ground_vehicle" "coco_airbursting_kaboom")
@@ -733,6 +743,7 @@
   (("raster_index" "(nationality - COCO_GOOD_GUYS) << 1")
    ("rasters"      "coco_firetruck_rasters")
    ("raster_count" "COCO_FIRETRUCK_RASTER_COUNT")
+   ("cobject_guess_nationality_fn" "coco_firetruck_guess_nationality")
    ("smoke_countdown" "0" "unsigned char")
    ("canonical_w"   "COCO_FIRETRUCK_GREEN_RASTER_W")
    ("cost"         "3"))
@@ -754,6 +765,7 @@
    ("y_force"      "COCO_FLYING_MAN_ACCELL")
    ("rasters"       "coco_infantry_rasters")
    ("raster_count"  "COCO_INFANTRY_RASTER_COUNT")
+   ("cobject_guess_nationality_fn" "coco_infantry_guess_nationality")
    ("health_max"   "1")
    ("bullet_class" "COCO_RIFLE_BULLET_CLASS")
    ("shrapnel_count" "0")
@@ -953,7 +965,8 @@
    ("shrapnel_count" "0")
    ("canonical_w"  "24")
    ("default_blip_color_index" 
-       "COCO_BLIP_TRIPLET_TRANSPARENT")))
+       "COCO_BLIP_TRIPLET_TRANSPARENT")
+   ("cobject_guess_nationality_fn" "coco_neutral_guess_nationality")))
 
 (c-define-method "sobject_update_state" "shrapnel"
                  "coco_shrapnel_update_state")
@@ -995,6 +1008,7 @@
    ("damage"       "0")
    ("z"            "1")
    ("nationality"  "COCO_NEUTRAL")
+   ("cobject_guess_nationality_fn" "coco_neutral_guess_nationality")
    ("health"       "COCO_NIGH_INVULNERABLE")
    ("default_blip_color_index" 
        "COCO_MAKE_BLIP_TRIPLET( COCO_BLIP_EXPLOSION, COCO_BLIP_EXPLOSION, COCO_BLIP_EXPLOSION )")))

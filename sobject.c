@@ -30,6 +30,7 @@ coco_sobject_cl coco_sobject_classes[] = {
     NULL,                               /* rasters */
     coco_cobject_y_y,                   /* cobject_y_fn */
     coco_cobject_standard_raster_index, /* cobject_raster_index_fn */
+    coco_cobject_whimpy_guess_nationality, /* cobject_guess_nationality_fn */
     COCO_BULLET_CLASS,                  /* bullet_class */
     coco_cobject_y_ntoh,                /* cobject_ntoh */
     coco_cobject_rasteroid_draw,        /* cobject_draw */
@@ -106,6 +107,7 @@ coco_sobject_cl coco_sobject_classes[] = {
     NULL,                               /* rasters */
     coco_cobject_y_y,                   /* cobject_y_fn */
     coco_cobject_standard_raster_index, /* cobject_raster_index_fn */
+    coco_cobject_whimpy_guess_nationality, /* cobject_guess_nationality_fn */
     COCO_BULLET_CLASS,                  /* bullet_class */
     coco_cobject_y_ntoh,                /* cobject_ntoh */
     coco_cobject_sound_draw,            /* cobject_draw */
@@ -182,6 +184,7 @@ coco_sobject_cl coco_sobject_classes[] = {
     NULL,                               /* rasters */
     coco_cobject_y_y,                   /* cobject_y_fn */
     coco_cobject_standard_raster_index, /* cobject_raster_index_fn */
+    coco_cobject_whimpy_guess_nationality, /* cobject_guess_nationality_fn */
     COCO_BULLET_CLASS,                  /* bullet_class */
     coco_cobject_y_ntoh,                /* cobject_ntoh */
     coco_cobject_rasteroid_draw,        /* cobject_draw */
@@ -258,6 +261,7 @@ coco_sobject_cl coco_sobject_classes[] = {
     NULL,                               /* rasters */
     coco_cobject_y_y,                   /* cobject_y_fn */
     coco_cobject_standard_raster_index, /* cobject_raster_index_fn */
+    coco_cobject_whimpy_guess_nationality, /* cobject_guess_nationality_fn */
     COCO_BULLET_CLASS,                  /* bullet_class */
     coco_cobject_y_ntoh,                /* cobject_ntoh */
     coco_cobject_inviso_draw,           /* cobject_draw */
@@ -321,7 +325,7 @@ coco_sobject_cl coco_sobject_classes[] = {
     COCO_TRUE,                          /* rotate_p */
     COCO_COPTER_DX_MAX,                 /* dx_max */
     COCO_COPTER_DY_MAX,                 /* dy_max */
-    2,                                  /* x_force */
+    4,                                  /* x_force */
     0,                                  /* y_force */
     4,                                  /* health_max */
     COCO_COPTER_DAMAGE,                 /* damage */
@@ -334,6 +338,7 @@ coco_sobject_cl coco_sobject_classes[] = {
     NULL,                               /* rasters */
     coco_cobject_y_y,                   /* cobject_y_fn */
     coco_cobject_standard_raster_index, /* cobject_raster_index_fn */
+    coco_copter_guess_nationality,      /* cobject_guess_nationality_fn */
     COCO_BULLET_CLASS,                  /* bullet_class */
     coco_cobject_y_ntoh,                /* cobject_ntoh */
     coco_copter_draw,                   /* cobject_draw */
@@ -397,7 +402,7 @@ coco_sobject_cl coco_sobject_classes[] = {
     COCO_TRUE,                          /* rotate_p */
     COCO_COPTER_DX_MAX,                 /* dx_max */
     COCO_COPTER_DY_MAX,                 /* dy_max */
-    2,                                  /* x_force */
+    4,                                  /* x_force */
     0,                                  /* y_force */
     4,                                  /* health_max */
     COCO_COPTER_DAMAGE,                 /* damage */
@@ -410,6 +415,7 @@ coco_sobject_cl coco_sobject_classes[] = {
     coco_cobra_rasters,                 /* rasters */
     coco_cobject_y_y,                   /* cobject_y_fn */
     coco_cobject_standard_raster_index, /* cobject_raster_index_fn */
+    coco_copter_guess_nationality,      /* cobject_guess_nationality_fn */
     COCO_BULLET_CLASS,                  /* bullet_class */
     coco_cobject_y_ntoh,                /* cobject_ntoh */
     coco_copter_draw,                   /* cobject_draw */
@@ -486,6 +492,7 @@ coco_sobject_cl coco_sobject_classes[] = {
     coco_bubble_copter_rasters,         /* rasters */
     coco_cobject_y_y,                   /* cobject_y_fn */
     coco_cobject_standard_raster_index, /* cobject_raster_index_fn */
+    coco_copter_guess_nationality,      /* cobject_guess_nationality_fn */
     COCO_BULLET_CLASS,                  /* bullet_class */
     coco_cobject_y_ntoh,                /* cobject_ntoh */
     coco_copter_draw,                   /* cobject_draw */
@@ -562,6 +569,7 @@ coco_sobject_cl coco_sobject_classes[] = {
     coco_smoke_rasters,                 /* rasters */
     coco_cobject_y_y,                   /* cobject_y_fn */
     coco_cobject_standard_raster_index, /* cobject_raster_index_fn */
+    coco_cobject_whimpy_guess_nationality, /* cobject_guess_nationality_fn */
     COCO_BULLET_CLASS,                  /* bullet_class */
     coco_cobject_y_ntoh,                /* cobject_ntoh */
     coco_cobject_rasteroid_draw,        /* cobject_draw */
@@ -638,6 +646,7 @@ coco_sobject_cl coco_sobject_classes[] = {
     coco_cloud_rasters,                 /* rasters */
     coco_cobject_y_y,                   /* cobject_y_fn */
     coco_cobject_standard_raster_index, /* cobject_raster_index_fn */
+    coco_cobject_whimpy_guess_nationality, /* cobject_guess_nationality_fn */
     COCO_BULLET_CLASS,                  /* bullet_class */
     coco_cobject_y_ntoh,                /* cobject_ntoh */
     coco_cobject_rasteroid_draw,        /* cobject_draw */
@@ -714,6 +723,7 @@ coco_sobject_cl coco_sobject_classes[] = {
     NULL,                               /* rasters */
     coco_cobject_y_y,                   /* cobject_y_fn */
     coco_cobject_standard_raster_index, /* cobject_raster_index_fn */
+    coco_cobject_whimpy_guess_nationality, /* cobject_guess_nationality_fn */
     COCO_BULLET_CLASS,                  /* bullet_class */
     coco_cobject_y_ntoh,                /* cobject_ntoh */
     coco_cobject_rasteroid_draw,        /* cobject_draw */
@@ -790,6 +800,7 @@ coco_sobject_cl coco_sobject_classes[] = {
     coco_balloon_rasters,               /* rasters */
     coco_cobject_y_y,                   /* cobject_y_fn */
     coco_cobject_standard_raster_index, /* cobject_raster_index_fn */
+    coco_cobject_whimpy_guess_nationality, /* cobject_guess_nationality_fn */
     COCO_BULLET_CLASS,                  /* bullet_class */
     coco_cobject_y_ntoh,                /* cobject_ntoh */
     coco_cobject_rasteroid_draw,        /* cobject_draw */
@@ -866,6 +877,7 @@ coco_sobject_cl coco_sobject_classes[] = {
     NULL,                               /* rasters */
     coco_cobject_y_y,                   /* cobject_y_fn */
     coco_cobject_standard_raster_index, /* cobject_raster_index_fn */
+    coco_cobject_whimpy_guess_nationality, /* cobject_guess_nationality_fn */
     COCO_BULLET_CLASS,                  /* bullet_class */
     coco_cobject_y_ntoh,                /* cobject_ntoh */
     coco_balloon_line_draw,             /* cobject_draw */
@@ -942,6 +954,7 @@ coco_sobject_cl coco_sobject_classes[] = {
     NULL,                               /* rasters */
     coco_cobject_y_y,                   /* cobject_y_fn */
     coco_cobject_simple_raster_index,   /* cobject_raster_index_fn */
+    coco_cobject_whimpy_guess_nationality, /* cobject_guess_nationality_fn */
     COCO_BULLET_CLASS,                  /* bullet_class */
     coco_cobject_y_ntoh,                /* cobject_ntoh */
     coco_cobject_rasteroid_draw,        /* cobject_draw */
@@ -1018,6 +1031,7 @@ coco_sobject_cl coco_sobject_classes[] = {
     coco_traffic_sign_rasters,          /* rasters */
     coco_cobject_y_y,                   /* cobject_y_fn */
     coco_cobject_standard_raster_index, /* cobject_raster_index_fn */
+    coco_neutral_guess_nationality,     /* cobject_guess_nationality_fn */
     COCO_BULLET_CLASS,                  /* bullet_class */
     coco_cobject_y_ntoh,                /* cobject_ntoh */
     coco_cobject_rasteroid_draw,        /* cobject_draw */
@@ -1094,6 +1108,7 @@ coco_sobject_cl coco_sobject_classes[] = {
     coco_hut_rasters,                   /* rasters */
     coco_cobject_y_y,                   /* cobject_y_fn */
     coco_cobject_standard_raster_index, /* cobject_raster_index_fn */
+    coco_hut_guess_nationality,         /* cobject_guess_nationality_fn */
     COCO_BULLET_CLASS,                  /* bullet_class */
     coco_cobject_y_ntoh,                /* cobject_ntoh */
     coco_cobject_rasteroid_draw,        /* cobject_draw */
@@ -1170,6 +1185,7 @@ coco_sobject_cl coco_sobject_classes[] = {
     coco_bunker_rasters,                /* rasters */
     coco_cobject_y_y,                   /* cobject_y_fn */
     coco_cobject_standard_raster_index, /* cobject_raster_index_fn */
+    coco_2raster_guess_nationality,     /* cobject_guess_nationality_fn */
     COCO_RIFLE_BULLET_CLASS,            /* bullet_class */
     coco_cobject_y_ntoh,                /* cobject_ntoh */
     coco_cobject_rasteroid_draw,        /* cobject_draw */
@@ -1245,7 +1261,8 @@ coco_sobject_cl coco_sobject_classes[] = {
     COCO_PILLBOX_RASTER_COUNT,          /* raster_count */
     coco_pillbox_rasters,               /* rasters */
     coco_cobject_y_y,                   /* cobject_y_fn */
-    coco_cobject_simple_raster_index,   /* cobject_raster_index_fn */
+    coco_cobject_standard_raster_index, /* cobject_raster_index_fn */
+    coco_2raster_guess_nationality,     /* cobject_guess_nationality_fn */
     COCO_RIFLE_BULLET_CLASS,            /* bullet_class */
     coco_cobject_y_ntoh,                /* cobject_ntoh */
     coco_cobject_rasteroid_draw,        /* cobject_draw */
@@ -1322,6 +1339,7 @@ coco_sobject_cl coco_sobject_classes[] = {
     coco_landing_pad_rasters,           /* rasters */
     coco_cobject_y_y,                   /* cobject_y_fn */
     coco_cobject_simple_raster_index,   /* cobject_raster_index_fn */
+    coco_neutral_guess_nationality,     /* cobject_guess_nationality_fn */
     COCO_BULLET_CLASS,                  /* bullet_class */
     coco_cobject_y_ntoh,                /* cobject_ntoh */
     coco_cobject_rasteroid_draw,        /* cobject_draw */
@@ -1398,6 +1416,7 @@ coco_sobject_cl coco_sobject_classes[] = {
     coco_headquarters_rasters,          /* rasters */
     coco_cobject_y_y,                   /* cobject_y_fn */
     coco_cobject_standard_raster_index, /* cobject_raster_index_fn */
+    coco_2raster_guess_nationality,     /* cobject_guess_nationality_fn */
     COCO_BULLET_CLASS,                  /* bullet_class */
     coco_cobject_y_ntoh,                /* cobject_ntoh */
     coco_cobject_rasteroid_draw,        /* cobject_draw */
@@ -1474,6 +1493,7 @@ coco_sobject_cl coco_sobject_classes[] = {
     coco_gun_rasters,                   /* rasters */
     coco_cobject_y_y,                   /* cobject_y_fn */
     coco_cobject_standard_raster_index, /* cobject_raster_index_fn */
+    coco_2raster_guess_nationality,     /* cobject_guess_nationality_fn */
     COCO_BULLET_CLASS,                  /* bullet_class */
     coco_cobject_y_ntoh,                /* cobject_ntoh */
     coco_cobject_barreloid_draw,        /* cobject_draw */
@@ -1550,6 +1570,7 @@ coco_sobject_cl coco_sobject_classes[] = {
     coco_gun_rasters,                   /* rasters */
     coco_cobject_y_y,                   /* cobject_y_fn */
     coco_cobject_standard_raster_index, /* cobject_raster_index_fn */
+    coco_2raster_guess_nationality,     /* cobject_guess_nationality_fn */
     COCO_BULLET_CLASS,                  /* bullet_class */
     coco_cobject_y_ntoh,                /* cobject_ntoh */
     coco_cobject_barreloid_draw,        /* cobject_draw */
@@ -1626,6 +1647,7 @@ coco_sobject_cl coco_sobject_classes[] = {
     coco_gun_rasters,                   /* rasters */
     coco_cobject_y_y,                   /* cobject_y_fn */
     coco_cobject_standard_raster_index, /* cobject_raster_index_fn */
+    coco_2raster_guess_nationality,     /* cobject_guess_nationality_fn */
     COCO_BULLET_CLASS,                  /* bullet_class */
     coco_cobject_y_ntoh,                /* cobject_ntoh */
     coco_cobject_barreloid_draw,        /* cobject_draw */
@@ -1702,6 +1724,7 @@ coco_sobject_cl coco_sobject_classes[] = {
     coco_gun_rubble_rasters,            /* rasters */
     coco_cobject_y_y,                   /* cobject_y_fn */
     coco_cobject_simple_raster_index,   /* cobject_raster_index_fn */
+    coco_neutral_guess_nationality,     /* cobject_guess_nationality_fn */
     COCO_BULLET_CLASS,                  /* bullet_class */
     coco_cobject_y_ntoh,                /* cobject_ntoh */
     coco_cobject_rasteroid_draw,        /* cobject_draw */
@@ -1778,6 +1801,7 @@ coco_sobject_cl coco_sobject_classes[] = {
     NULL,                               /* rasters */
     coco_cobject_ground_unit_y,         /* cobject_y_fn */
     coco_cobject_standard_raster_index, /* cobject_raster_index_fn */
+    coco_cobject_whimpy_guess_nationality, /* cobject_guess_nationality_fn */
     COCO_BULLET_CLASS,                  /* bullet_class */
     coco_cobject_y_ntoh,                /* cobject_ntoh */
     coco_cobject_rasteroid_draw,        /* cobject_draw */
@@ -1854,6 +1878,7 @@ coco_sobject_cl coco_sobject_classes[] = {
     NULL,                               /* rasters */
     coco_cobject_ground_unit_y,         /* cobject_y_fn */
     coco_cobject_standard_raster_index, /* cobject_raster_index_fn */
+    coco_2raster_guess_nationality,     /* cobject_guess_nationality_fn */
     COCO_BULLET_CLASS,                  /* bullet_class */
     coco_cobject_y_ntoh,                /* cobject_ntoh */
     coco_cobject_rasteroid_draw,        /* cobject_draw */
@@ -1930,6 +1955,7 @@ coco_sobject_cl coco_sobject_classes[] = {
     coco_demo_van_rasters,              /* rasters */
     coco_cobject_ground_unit_y,         /* cobject_y_fn */
     coco_cobject_standard_raster_index, /* cobject_raster_index_fn */
+    coco_2raster_guess_nationality,     /* cobject_guess_nationality_fn */
     COCO_BULLET_CLASS,                  /* bullet_class */
     coco_cobject_y_ntoh,                /* cobject_ntoh */
     coco_cobject_rasteroid_draw,        /* cobject_draw */
@@ -2006,6 +2032,7 @@ coco_sobject_cl coco_sobject_classes[] = {
     coco_tank_rasters,                  /* rasters */
     coco_cobject_ground_unit_y,         /* cobject_y_fn */
     coco_cobject_standard_raster_index, /* cobject_raster_index_fn */
+    coco_2raster_guess_nationality,     /* cobject_guess_nationality_fn */
     COCO_TANK_BULLET_CLASS,             /* bullet_class */
     coco_cobject_y_ntoh,                /* cobject_ntoh */
     coco_cobject_barreloid_draw,        /* cobject_draw */
@@ -2082,6 +2109,7 @@ coco_sobject_cl coco_sobject_classes[] = {
     coco_firetruck_rasters,             /* rasters */
     coco_cobject_ground_unit_y,         /* cobject_y_fn */
     coco_cobject_standard_raster_index, /* cobject_raster_index_fn */
+    coco_firetruck_guess_nationality,   /* cobject_guess_nationality_fn */
     COCO_BULLET_CLASS,                  /* bullet_class */
     coco_cobject_y_ntoh,                /* cobject_ntoh */
     coco_cobject_rasteroid_draw,        /* cobject_draw */
@@ -2158,6 +2186,7 @@ coco_sobject_cl coco_sobject_classes[] = {
     coco_infantry_rasters,              /* rasters */
     coco_cobject_y_y,                   /* cobject_y_fn */
     coco_cobject_standard_raster_index, /* cobject_raster_index_fn */
+    coco_infantry_guess_nationality,    /* cobject_guess_nationality_fn */
     COCO_RIFLE_BULLET_CLASS,            /* bullet_class */
     coco_cobject_y_ntoh,                /* cobject_ntoh */
     coco_cobject_rasteroid_draw,        /* cobject_draw */
@@ -2234,6 +2263,7 @@ coco_sobject_cl coco_sobject_classes[] = {
     coco_engineer_rasters,              /* rasters */
     coco_cobject_y_y,                   /* cobject_y_fn */
     coco_cobject_standard_raster_index, /* cobject_raster_index_fn */
+    coco_infantry_guess_nationality,    /* cobject_guess_nationality_fn */
     COCO_RIFLE_BULLET_CLASS,            /* bullet_class */
     coco_cobject_y_ntoh,                /* cobject_ntoh */
     coco_cobject_rasteroid_draw,        /* cobject_draw */
@@ -2310,6 +2340,7 @@ coco_sobject_cl coco_sobject_classes[] = {
     NULL,                               /* rasters */
     coco_cobject_y_y,                   /* cobject_y_fn */
     coco_cobject_standard_raster_index, /* cobject_raster_index_fn */
+    coco_cobject_whimpy_guess_nationality, /* cobject_guess_nationality_fn */
     COCO_BULLET_CLASS,                  /* bullet_class */
     coco_cobject_y_ntoh,                /* cobject_ntoh */
     coco_cobject_rasteroid_draw,        /* cobject_draw */
@@ -2386,6 +2417,7 @@ coco_sobject_cl coco_sobject_classes[] = {
     NULL,                               /* rasters */
     coco_cobject_y_y,                   /* cobject_y_fn */
     coco_cobject_standard_raster_index, /* cobject_raster_index_fn */
+    coco_cobject_whimpy_guess_nationality, /* cobject_guess_nationality_fn */
     COCO_BULLET_CLASS,                  /* bullet_class */
     coco_cobject_y_ntoh,                /* cobject_ntoh */
     coco_bullet_draw,                   /* cobject_draw */
@@ -2462,6 +2494,7 @@ coco_sobject_cl coco_sobject_classes[] = {
     NULL,                               /* rasters */
     coco_cobject_y_y,                   /* cobject_y_fn */
     coco_cobject_standard_raster_index, /* cobject_raster_index_fn */
+    coco_cobject_whimpy_guess_nationality, /* cobject_guess_nationality_fn */
     COCO_BULLET_CLASS,                  /* bullet_class */
     coco_cobject_y_ntoh,                /* cobject_ntoh */
     coco_bullet_draw,                   /* cobject_draw */
@@ -2538,6 +2571,7 @@ coco_sobject_cl coco_sobject_classes[] = {
     NULL,                               /* rasters */
     coco_cobject_y_y,                   /* cobject_y_fn */
     coco_cobject_standard_raster_index, /* cobject_raster_index_fn */
+    coco_cobject_whimpy_guess_nationality, /* cobject_guess_nationality_fn */
     COCO_BULLET_CLASS,                  /* bullet_class */
     coco_cobject_y_ntoh,                /* cobject_ntoh */
     coco_bullet_draw,                   /* cobject_draw */
@@ -2614,6 +2648,7 @@ coco_sobject_cl coco_sobject_classes[] = {
     coco_bomb_rasters,                  /* rasters */
     coco_cobject_y_y,                   /* cobject_y_fn */
     coco_cobject_standard_raster_index, /* cobject_raster_index_fn */
+    coco_cobject_whimpy_guess_nationality, /* cobject_guess_nationality_fn */
     COCO_BULLET_CLASS,                  /* bullet_class */
     coco_cobject_y_ntoh,                /* cobject_ntoh */
     coco_cobject_rasteroid_draw,        /* cobject_draw */
@@ -2690,6 +2725,7 @@ coco_sobject_cl coco_sobject_classes[] = {
     NULL,                               /* rasters */
     coco_cobject_y_y,                   /* cobject_y_fn */
     coco_cobject_standard_raster_index, /* cobject_raster_index_fn */
+    coco_cobject_whimpy_guess_nationality, /* cobject_guess_nationality_fn */
     COCO_BULLET_CLASS,                  /* bullet_class */
     coco_cobject_y_ntoh,                /* cobject_ntoh */
     coco_missile_draw,                  /* cobject_draw */
@@ -2766,6 +2802,7 @@ coco_sobject_cl coco_sobject_classes[] = {
     NULL,                               /* rasters */
     coco_cobject_y_y,                   /* cobject_y_fn */
     coco_cobject_standard_raster_index, /* cobject_raster_index_fn */
+    coco_cobject_whimpy_guess_nationality, /* cobject_guess_nationality_fn */
     COCO_BULLET_CLASS,                  /* bullet_class */
     coco_cobject_y_ntoh,                /* cobject_ntoh */
     coco_missile_draw,                  /* cobject_draw */
@@ -2842,6 +2879,7 @@ coco_sobject_cl coco_sobject_classes[] = {
     NULL,                               /* rasters */
     coco_cobject_y_y,                   /* cobject_y_fn */
     coco_cobject_standard_raster_index, /* cobject_raster_index_fn */
+    coco_cobject_whimpy_guess_nationality, /* cobject_guess_nationality_fn */
     COCO_BULLET_CLASS,                  /* bullet_class */
     coco_cobject_y_ntoh,                /* cobject_ntoh */
     coco_missile_draw,                  /* cobject_draw */
@@ -2918,6 +2956,7 @@ coco_sobject_cl coco_sobject_classes[] = {
     NULL,                               /* rasters */
     coco_cobject_y_y,                   /* cobject_y_fn */
     coco_cobject_standard_raster_index, /* cobject_raster_index_fn */
+    coco_cobject_whimpy_guess_nationality, /* cobject_guess_nationality_fn */
     COCO_BULLET_CLASS,                  /* bullet_class */
     coco_cobject_y_ntoh,                /* cobject_ntoh */
     coco_spark_draw,                    /* cobject_draw */
@@ -2994,6 +3033,7 @@ coco_sobject_cl coco_sobject_classes[] = {
     NULL,                               /* rasters */
     coco_cobject_y_y,                   /* cobject_y_fn */
     coco_cobject_standard_raster_index, /* cobject_raster_index_fn */
+    coco_neutral_guess_nationality,     /* cobject_guess_nationality_fn */
     COCO_BULLET_CLASS,                  /* bullet_class */
     coco_cobject_y_ntoh,                /* cobject_ntoh */
     coco_cobject_rasteroid_draw,        /* cobject_draw */
@@ -3070,6 +3110,7 @@ coco_sobject_cl coco_sobject_classes[] = {
     NULL,                               /* rasters */
     coco_cobject_y_y,                   /* cobject_y_fn */
     coco_cobject_standard_raster_index, /* cobject_raster_index_fn */
+    coco_neutral_guess_nationality,     /* cobject_guess_nationality_fn */
     COCO_BULLET_CLASS,                  /* bullet_class */
     coco_cobject_y_ntoh,                /* cobject_ntoh */
     coco_metal_shrapnel_draw,           /* cobject_draw */
@@ -3146,6 +3187,7 @@ coco_sobject_cl coco_sobject_classes[] = {
     coco_big_metal_shrapnel_rasters,    /* rasters */
     coco_cobject_y_y,                   /* cobject_y_fn */
     coco_cobject_standard_raster_index, /* cobject_raster_index_fn */
+    coco_neutral_guess_nationality,     /* cobject_guess_nationality_fn */
     COCO_BULLET_CLASS,                  /* bullet_class */
     coco_cobject_y_ntoh,                /* cobject_ntoh */
     coco_metal_shrapnel_draw,           /* cobject_draw */
@@ -3222,6 +3264,7 @@ coco_sobject_cl coco_sobject_classes[] = {
     coco_med_metal_shrapnel_rasters,    /* rasters */
     coco_cobject_y_y,                   /* cobject_y_fn */
     coco_cobject_standard_raster_index, /* cobject_raster_index_fn */
+    coco_neutral_guess_nationality,     /* cobject_guess_nationality_fn */
     COCO_BULLET_CLASS,                  /* bullet_class */
     coco_cobject_y_ntoh,                /* cobject_ntoh */
     coco_metal_shrapnel_draw,           /* cobject_draw */
@@ -3298,6 +3341,7 @@ coco_sobject_cl coco_sobject_classes[] = {
     coco_small_metal_shrapnel_rasters,  /* rasters */
     coco_cobject_y_y,                   /* cobject_y_fn */
     coco_cobject_standard_raster_index, /* cobject_raster_index_fn */
+    coco_neutral_guess_nationality,     /* cobject_guess_nationality_fn */
     COCO_BULLET_CLASS,                  /* bullet_class */
     coco_cobject_y_ntoh,                /* cobject_ntoh */
     coco_metal_shrapnel_draw,           /* cobject_draw */
@@ -3374,6 +3418,7 @@ coco_sobject_cl coco_sobject_classes[] = {
     coco_explosion_rasters,             /* rasters */
     coco_cobject_y_y,                   /* cobject_y_fn */
     coco_cobject_standard_raster_index, /* cobject_raster_index_fn */
+    coco_neutral_guess_nationality,     /* cobject_guess_nationality_fn */
     COCO_BULLET_CLASS,                  /* bullet_class */
     coco_cobject_y_ntoh,                /* cobject_ntoh */
     coco_cobject_rasteroid_draw,        /* cobject_draw */

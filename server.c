@@ -31,6 +31,9 @@
 #include "coco.h"
 #include "rasters.h"       /* for raster dimensions */
 
+coco_sobject *
+coco_find_camera( coco_sstate *sstate, int p_or_c_index, coco_bool is_comp );
+
 void *
 coco_format_sstate_to_buffer( coco_sstate *sstate, int p_or_c_index, 
                               coco_bool is_comp, coco_bool network_byte_order,
@@ -507,7 +510,12 @@ coco_init_comps( void )
 {
   int i;
   for (i=0; i<COCO_MAX_COMPS; i++)
-    coco_comps[i].in_use = COCO_FALSE;
+    {
+      coco_comps[i].in_use = COCO_FALSE;
+      coco_comps[i].index = i;
+      coco_comps[i].cruise_altitude = COCO_VIEWABLE_H;
+      coco_comps[i].overgun = 5;
+    }
 }
 
 
@@ -1144,11 +1152,12 @@ coco_summon_unit_maybe( coco_sstate *sstate, coco_sobject_cl *cl,
                         ( coco_sobject *, coco_sobject_cl *, 
                           coco_gnum, coco_nationality),
                         coco_nationality nationality,
-                        int player_idx )
+                        int p_or_c_index,
+                        coco_bool is_comp )
 {
   struct coco_team *team = sstate->teams + nationality - COCO_GOOD_GUYS;
   if (team->summon_enable 
-      && coco_subtract_funds_available( player_idx, cl->cost ))
+      && coco_subtract_funds_available( p_or_c_index, is_comp, cl->cost ))
     {
       coco_sobject *unit = coco_sstate_allocate_sobject( sstate );
       if (unit)
@@ -1166,7 +1175,7 @@ coco_summon_unit_maybe( coco_sstate *sstate, coco_sobject_cl *cl,
         }
       else
         { /* refund the purchase price */
-          coco_add_funds( player_idx, cl->cost );
+          coco_add_funds( p_or_c_index, is_comp, cl->cost );
           return COCO_FALSE;
         }
     }
@@ -1224,14 +1233,25 @@ coco_camera_update_state( coco_sobject *sobject,
          &coco_init_infantry_from_ground },
        { COCO_CHAR_TO_KEY( 'e' ), COCO_ENGINEER_CLASS,
          &coco_init_infantry_from_ground }};
+  int cam_idx = COCO_SOBJECT_CAMERA_INDEX( sobject );
+  int comp_idx = COCO_SOBJECT_COMP_INDEX( sobject );
+  coco_bool is_comp = (comp_idx >= 0);
   struct coco_keyboard_pointer_state *input 
-    = coco_remote_input_states + COCO_SOBJECT_CAMERA_INDEX( sobject );
+    = is_comp
+    ? &(coco_comps[comp_idx].kpstate)
+    : (coco_remote_input_states + cam_idx);
   int i;
-  for (i=0; i<COCO_UNIT_ORDER_KEYMAP_LENGTH; i++)
-    if (coco_get_bit( input->key_state, bindings[i].key ))
-      coco_summon_unit_maybe( sstate, bindings[i].cl, bindings[i].init_fn,
-                              COCO_SOBJECT_NATIONALITY( sobject ),
-                              COCO_SOBJECT_CAMERA_INDEX( sobject ));
+  if ((is_comp || (cam_idx >= 0)))
+    {
+      for (i=0; i<COCO_UNIT_ORDER_KEYMAP_LENGTH; i++)
+        if (coco_get_bit( input->key_state, bindings[i].key ))
+          coco_summon_unit_maybe( sstate, bindings[i].cl, bindings[i].init_fn,
+                                  COCO_SOBJECT_NATIONALITY( sobject ),
+                                  is_comp ? comp_idx : cam_idx, is_comp );
+    }
+  else coco_warn_printf( "%s %d is not comp nor plr\n",
+                         COCO_SOBJECT_NAME( sobject ),
+                         COCO_SOBJECT_INDEX( sobject ) );
   return coco_sobject_update_state( sobject, cl->super, sstate );
 }
 
@@ -1406,15 +1426,19 @@ coco_copter_update_state( coco_sobject *sobject,
       = landed_p ? rest_angle : ((int) angle_goal)&255;
 
     /* x axis */
+    coco_facing facing = COCO_SOBJECT_FACING( sobject );
     coco_gnum dx = COCO_SOBJECT_DX( sobject );
     coco_gnum dx_max = COCO_SOBJECT_DX_MAX( sobject );
     coco_gnum ddx_raw = COCO_SOBJECT_X_FORCE( sobject );
     coco_gnum dx_goal
       = (coco_gnum) (((float) dx_max) * px
                      / ((float) (COCO_OFFICIAL_WINDOW_W>>1)));
-    /* accell takes 2x as long as decel */
+    /* accell takes 2x as long as decel,
+       takes 4x as long if facing wrong way, or near top speed */
     coco_gnum ddx_vectored = ((dx_goal <= 0) == (dx <= 0))
-      ? (ddx_raw>>1)
+      ? COCO_MAX( (((facing<=0)==(dx_goal <= 0))
+                   && (abs( dx ) < (dx_max>>1))) ? (ddx_raw>>1) : (ddx_raw>>2),
+                  1 )
       : ddx_raw;
     coco_gnum dx_unclipped = (dx_goal <= dx) 
       ? COCO_MAX( (dx - ddx_vectored), dx_goal )
@@ -1482,7 +1506,8 @@ coco_copter_start_coords( coco_sstate *sstate, coco_nationality nat,
     ( sstate,
       sstate->teams[((int)nat)-COCO_GOOD_GUYS].landing_pad_index );
   coco_sobject_cl *cla = (player_index>=0) 
-    ? (sstate->favorite_copter_class[player_index]) : COCO_COBRA_CLASS;
+    ? (sstate->favorite_copter_class[player_index])
+    : COCO_COMP_FAVORITE_COPTER_CLASS;
   coco_mini_rectangle mr = cla->collision_rectangle;
   if (x_return)
     *x_return = COCO_SOBJECT_X( pad )
@@ -1603,8 +1628,10 @@ coco_sstate_update( coco_sstate *sstate )
           if (spare_copter_p)
             coco_players[i].copters--;
           else 
-            coco_subtract_funds_available( i, COCO_BUBBLE_COPTER_CLASS->cost );
-          fcc = spare_copter_p 
+            coco_subtract_funds_available( i, 
+                                           COCO_FALSE, 
+                                           COCO_BUBBLE_COPTER_CLASS->cost );
+          fcc = spare_copter_p
             ? sstate->favorite_copter_class[i]
             : COCO_BUBBLE_COPTER_CLASS;
           sstate->camera_indicies[i] 
@@ -1643,7 +1670,9 @@ coco_sstate_update( coco_sstate *sstate )
               = COCO_MIN( coco_comps[i].funds
                           - COCO_BUBBLE_COPTER_CLASS->cost, 
                           0 );
-          fcc = spare_copter_p ? COCO_COBRA_CLASS : COCO_BUBBLE_COPTER_CLASS;
+          fcc = spare_copter_p 
+            ? COCO_COMP_FAVORITE_COPTER_CLASS
+            : COCO_BUBBLE_COPTER_CLASS;
           coco_copter_start_coords( sstate, nat, -1, &x, &y );
           copter = coco_sstate_allocate_sobject( sstate );
           if (NULL==copter)
@@ -1676,42 +1705,51 @@ coco_add_hazard_pay( coco_sstate *sstate )
      .25 fund / second.  */
   if (0 == (sstate->time % (COCO_IDEAL_FRAMES_PER_SECOND>>2)))
     {
-      int i;
-      for (i=0; i<COCO_MAX_PLAYERS; i++)
-        if (coco_players[i].in_use && sstate->camera_indicies[i] >= 0)
-          {
-            coco_sobject *cam
-              = COCO_SSTATE_OBJECT_REF( sstate, sstate->camera_indicies[i] );
-            coco_gnum camx = COCO_SOBJECT_X( cam );
-            coco_nationality nat = COCO_SOBJECT_NATIONALITY( cam );
-            coco_bool targ_on_screen_p = COCO_FALSE;
-            coco_bool passed_targ_p = COCO_FALSE;
-            COCO_DO_SSTATE_OBJECTS( targ, sstate,
-            {
-              if (COCO_ENEMY_P( nat, COCO_SOBJECT_NATIONALITY( targ ) )
-                  && (coco_sobject_subtype_p( COCO_SOBJECT_CL( targ ),
-                                              COCO_CAMERA_CLASS )
-                      || coco_sobject_subtype_p( COCO_SOBJECT_CL( targ ),
-                                                 COCO_HEADQUARTERS_CLASS )))
+      static coco_bool ST_is_comps[] = { COCO_FALSE, COCO_TRUE };
+      static int ST_maxes[] = { COCO_MAX_PLAYERS, COCO_MAX_COMPS };
+      int i, j;
+      coco_bool is_comp;
+      int max;
+      for (j = 0; j < 2; j++)
+        {
+          coco_sobject *cam;
+          is_comp = ST_is_comps[j];
+          max = ST_maxes[j];
+          for (i=0; i<max; i++)
+            if ((is_comp ? (coco_comps[i].in_use) : (coco_players[i].in_use))
+                && (cam = coco_find_camera( sstate, i, is_comp )))
+              {
+                coco_gnum camx = COCO_SOBJECT_X( cam );
+                coco_nationality nat = COCO_SOBJECT_NATIONALITY( cam );
+                coco_bool targ_on_screen_p = COCO_FALSE;
+                coco_bool passed_targ_p = COCO_FALSE;
+                COCO_DO_SSTATE_OBJECTS( targ, sstate,
                 {
-                  coco_gnum targx = COCO_SOBJECT_X( targ );
-                  coco_gnum dist = abs( targx - camx );
-                  if (dist < COCO_OFFICIAL_WINDOW_W)
+                  if (COCO_ENEMY_P( nat, COCO_SOBJECT_NATIONALITY( targ ) )
+                      && (coco_sobject_subtype_p( COCO_SOBJECT_CL( targ ),
+                                                  COCO_CAMERA_CLASS )
+                          || coco_sobject_subtype_p( COCO_SOBJECT_CL( targ ),
+                                                     COCO_HEADQUARTERS_CLASS )))
                     {
-                      targ_on_screen_p = COCO_TRUE;
-                      break;
+                      coco_gnum targx = COCO_SOBJECT_X( targ );
+                      coco_gnum dist = abs( targx - camx );
+                      if (dist < COCO_OFFICIAL_WINDOW_W)
+                        {
+                          targ_on_screen_p = COCO_TRUE;
+                          break;
+                        }
+                      if (nat == COCO_GOOD_GUYS)
+                        passed_targ_p |= (targx > camx);
+                      else /* nat == COCO_BAD_GUYS */
+                        passed_targ_p |= (targx < camx);
                     }
-                  if (nat == COCO_GOOD_GUYS)
-                    passed_targ_p |= (targx > camx);
-                  else /* nat == COCO_BAD_GUYS */
-                    passed_targ_p |= (targx < camx);
-                }
-            });
-            if (targ_on_screen_p)
-              coco_add_funds( i, 0.25 );
-            else if (passed_targ_p)
-              coco_add_funds( i, 0.0675 );
-          }
+                });
+                if (targ_on_screen_p)
+                  coco_add_funds( i, is_comp, 0.25 );
+                else if (passed_targ_p)
+                  coco_add_funds( i, is_comp, 0.0675 );
+              }
+        }
     }
 }
 
@@ -1769,13 +1807,53 @@ coco_send_cstate( int udpfd, int plr_index, void *cstate_buf, size_t buf_size )
   return COCO_TRUE;
 }
 
-
-void coco_server_key_press( int player_idx, coco_key key, coco_sstate *sstate )
+coco_bool
+coco_buy_copter_maybe( coco_sstate *sstate, 
+                       int p_or_c_index, coco_bool is_comp  )
 {
-  int index = sstate->camera_indicies[player_idx];
-  if (-1 != index)
+  float cost = (is_comp
+                ? COCO_COMP_FAVORITE_COPTER_CLASS 
+                : sstate->favorite_copter_class[p_or_c_index])->cost;
+  if (coco_subtract_funds_available( p_or_c_index, is_comp, cost ))
     {
-      coco_sobject *cam = COCO_SSTATE_OBJECT_REF( sstate, index );
+      if (is_comp)
+        coco_comps[p_or_c_index].copters++;
+      else 
+        coco_players[p_or_c_index].copters++;
+      return COCO_TRUE;
+    }
+  else return COCO_FALSE;
+}
+
+
+/* NULL on fail */
+coco_sobject *
+coco_find_camera( coco_sstate *sstate, int p_or_c_index, coco_bool is_comp )
+{
+  if (is_comp)
+    COCO_DO_SSTATE_OBJECTS( sobject, sstate, {
+      if (p_or_c_index == COCO_SOBJECT_COMP_INDEX( sobject ))
+        return sobject;
+    })
+  else
+    {
+      int idx = sstate->camera_indicies[p_or_c_index];
+      if (idx >=0)
+        return COCO_SSTATE_OBJECT_REF( sstate, idx );
+      else return NULL;
+    }
+  return NULL;
+}
+
+
+void 
+coco_server_key_press( int p_or_c_index, coco_bool is_comp,
+                       coco_key key, coco_sstate *sstate )
+{
+  coco_sobject *cam = coco_find_camera( sstate, p_or_c_index, is_comp );
+  if (cam)
+    {
+      
       switch (key){
       case COCO_LPOINTER: 
         if (cam
@@ -1785,24 +1863,33 @@ void coco_server_key_press( int player_idx, coco_key key, coco_sstate *sstate )
           coco_toggle_facing( cam, COCO_SOBJECT_CL( cam ) );
         break;
       case COCO_CHAR_TO_KEY( 'h' ):
-        {
-          if (coco_subtract_funds_available( player_idx,
-                                             sstate->favorite_copter_class
-                                             [player_idx]->cost))
-            coco_players[player_idx].copters++;
-        }
+        coco_buy_copter_maybe( sstate, p_or_c_index, is_comp );
       default:
         break;
       }
     }
 }
 
-void coco_server_key_release( int player_idx, coco_key key,
-                              coco_sstate *sstate )
+/* Should be used in leiu of setting the bits individually. */
+void
+coco_comp_key_press( struct coco_keyboard_pointer_state *kstate,
+                     struct coco_comp *self,
+                     coco_key key )
 {
-  /* this function left intentionally blank, since nothing uses it now.  */
+  coco_server_key_press( self->index, COCO_TRUE, key, coco_get_sstate() );
+  coco_set_bit( kstate->key_state, key, COCO_TRUE );
 }
 
+
+/* Function removed, since supporting it would require work to integrate
+   with comps. 
+void 
+coco_server_key_release( int player_idx, coco_key key, coco_sstate *sstate )
+{
+  /+ this function left intentionally blank, since nothing uses it now. +/
+
+}
+*/
 
 void
 coco_read_client_packet( int udpfd, coco_sstate *sstate )
@@ -1910,7 +1997,8 @@ coco_read_client_packet( int udpfd, coco_sstate *sstate )
                         if (!coco_get_bit( oris->key_state, key ))
                           {
                             if (sstate->game_in_progress)
-                              coco_server_key_press( plr_idx, key, sstate );
+                              coco_server_key_press( plr_idx, COCO_FALSE,
+                                                     key, sstate );
                             coco_set_bit( oris->key_state, key, 1 );
                           }
                       }
@@ -1918,8 +2006,10 @@ coco_read_client_packet( int udpfd, coco_sstate *sstate )
                       {
                         if (coco_get_bit( oris->key_state, key ))
                           {
+                            /* function no longer exists -dm 04-02-2001
                             if (sstate->game_in_progress)
                               coco_server_key_release( plr_idx, key, sstate );
+                            */
                             coco_set_bit( oris->key_state, key, 0 );
                           }
                       }
@@ -2055,8 +2145,7 @@ coco_server_loop( int listenfd, int out_udpfd,
                                                     COCO_FALSE, &size,
                                                     &cobjs, &cblips );
                 coco_comp_think( coco_comps + i,
-                                 buf, cobjs, cblips, 
-                                 &(coco_comps[i].kpstate) );
+                                 buf, cobjs, cblips );
               }
         }
     }
@@ -2194,11 +2283,13 @@ coco_write_cstate_serial_header( struct coco_cstate_serial_header *str,
                                  int player_index,
                                  int cobject_count,
                                  int cblip_count,
-                                 coco_i32 cam_left )
+                                 coco_i32 cam_left,
+                                 coco_i32 camera_index )
 {
   str->time = sstate->time;
   str->cobject_count = cobject_count;
   str->cblip_count = cblip_count;
+  str->cobject_camera_index = camera_index;
   str->game_over_nationality = sstate->game_over_nationality;
   str->cam_left = cam_left;
   str->board_w = sstate->board_w;
@@ -2241,28 +2332,14 @@ coco_format_sstate_to_buffer( coco_sstate *sstate, int p_or_c_index,
   int send_buffer_desired_size;
   coco_gnum board_w = sstate->board_w;
   int cam_idx;
+  coco_i32 client_cam_idx = -1;
   coco_sobject *cam_object;
   coco_u32 cobject_count = 0;
   coco_u32 cblip_count = 0;
   coco_gnum cam_x, cam_left, cam_right;
 
-  if (is_comp)
-    {
-      cam_idx = -1;
-      COCO_DO_SSTATE_OBJECTS( sobject, sstate, {
-        if (p_or_c_index == COCO_SOBJECT_COMP_INDEX( sobject ))
-          {
-            cam_idx = COCO_SOBJECT_INDEX( sobject );
-            goto done; /* don't use break inside DO_SSTATE_OBJECTS */
-          }
-      });
-    done:
-      ;
-    }
-  else cam_idx = sstate->camera_indicies[p_or_c_index]; 
-  cam_object = (-1==cam_idx)
-    ? NULL
-    : COCO_SSTATE_OBJECT_REF( sstate, cam_idx );
+  cam_object = coco_find_camera( sstate, p_or_c_index, is_comp );
+  cam_idx = cam_object ? COCO_SOBJECT_INDEX( cam_object ) : -1;
 
   if (cam_object == NULL)
     {
@@ -2306,7 +2383,11 @@ coco_format_sstate_to_buffer( coco_sstate *sstate, int p_or_c_index,
     coco_blip_index ci;
     if (coco_sobject_is_visible( sobject, COCO_SOBJECT_CL( sobject ), 
                                  cam_left, cam_right, cam_object ))
-      cobject_count++;
+      {
+        if ((cam_idx >= 0) && (COCO_SOBJECT_INDEX( sobject ) == cam_idx))
+          client_cam_idx = cobject_count;
+        cobject_count++;
+      }
     ci = coco_sobject_blip_color_index( sobject, COCO_SOBJECT_CL( sobject ), 
                                         p_or_c_index, is_comp, sstate );
     /* initialize scratch blip cache */
@@ -2328,7 +2409,8 @@ coco_format_sstate_to_buffer( coco_sstate *sstate, int p_or_c_index,
 
   coco_write_cstate_serial_header( send_buffer, sstate, cam_object,
                                    p_or_c_index,
-                                   cobject_count, cblip_count, cam_left );
+                                   cobject_count, cblip_count, cam_left,
+                                   client_cam_idx );
   if (network_byte_order)
     coco_cstate_serial_header_hton( send_buffer );
 
@@ -2362,9 +2444,16 @@ coco_format_sstate_to_buffer( coco_sstate *sstate, int p_or_c_index,
         {
           coco_rxnum x;
           coco_rynum y;
+          coco_mini_point mp;
+          coco_sobject_cl *class1 = COCO_SOBJECT_CL( sobject );
+          unsigned int ri = COCO_SOBJECT_RASTER_INDEX( sobject );
+          mp = coco_sobject_com_by_raster_index( class1, ri );
           cblip_ptr->color_index = ci;
-          x = COCO_SCREEN_TO_RADAR_X( COCO_SOBJECT_X( sobject ) );
-          y = COCO_SCREEN_TO_RADAR_Y( COCO_SOBJECT_Y( sobject ) );
+          x = COCO_GNUM_TO_RXNUM( COCO_SOBJECT_X( sobject ) 
+                                  + COCO_MINI_POINT_X( mp ),
+                                  board_w );
+          y = COCO_GNUM_TO_RYNUM( COCO_SOBJECT_Y( sobject )
+                                  + COCO_MINI_POINT_Y( mp ) );
           cblip_ptr->x = network_byte_order ? COCO_RXNUM_HTON( x ) : x;
           cblip_ptr->y = network_byte_order ? COCO_RYNUM_HTON( y ) : y;
           cblip_ptr++;
@@ -2382,20 +2471,35 @@ coco_format_sstate_to_buffer( coco_sstate *sstate, int p_or_c_index,
 
 
 void
-coco_add_funds( int player_index, float funds )
+coco_add_funds( int p_or_c_index, coco_bool is_comp, float funds )
 {
-  if (player_index >= 0)
-    coco_players[player_index].funds += funds;
+  if (p_or_c_index >= 0)
+    {
+      if (is_comp)
+        coco_comps[p_or_c_index].funds += funds;
+      else 
+        coco_players[p_or_c_index].funds += funds;
+    }
 }
 
 coco_bool
-coco_subtract_funds_available( int player_index, float funds )
+coco_subtract_funds_available( int player_index, coco_bool is_comp, 
+                               float funds )
 {
-  if ((player_index >= 0)
+  if ((!is_comp)
+      && (player_index >= 0)
       && coco_players[player_index].in_use
       && (coco_players[player_index].funds >= funds))
     {
       coco_players[player_index].funds -= funds;
+      return COCO_TRUE;
+    }
+  else if (is_comp
+           && (player_index >= 0)
+           && coco_comps[player_index].in_use
+           && (coco_comps[player_index].funds >= funds))
+    {
+      coco_comps[player_index].funds -= funds;
       return COCO_TRUE;
     }
   else return COCO_FALSE;

@@ -129,39 +129,110 @@ void coco_draw_talk( long tv_sec_now );
 /* _cobject        _____________________________________________________ */
 
 /* the generic function */
-coco_cnum coco_cobject_y_helper( coco_cobject *cobject )
+coco_cnum 
+coco_cobject_y_helper( coco_cobject *cobject )
 {
   return COCO_COBJECT_CL( cobject )->cobject_y_fn( cobject );
 }
 
 /* method for ground units */
-coco_cnum coco_cobject_ground_unit_y( coco_cobject *cobject )
+coco_cnum 
+coco_cobject_ground_unit_y( coco_cobject *cobject )
 {
   return COCO_GROUND_Y;
 }
 
 /* method for air units */
-coco_cnum coco_cobject_y_y( coco_cobject *cobject )
+coco_cnum 
+coco_cobject_y_y( coco_cobject *cobject )
 {
   return cobject->y.y;
 }
 
 /* the generic function */
-unsigned char coco_cobject_raster_index_helper( coco_cobject *cobject )
+unsigned char 
+coco_cobject_raster_index_helper( coco_cobject *cobject )
 {
   return COCO_COBJECT_CL( cobject )->cobject_raster_index_fn( cobject );
 }
 
 /* method for single-raster units */
-unsigned char coco_cobject_simple_raster_index( coco_cobject *cobject )
+unsigned char 
+coco_cobject_simple_raster_index( coco_cobject *cobject )
 {
   return 0;
 }
 
 /* method for units which have their raster sent over the wire */
-unsigned char coco_cobject_standard_raster_index( coco_cobject *cobject )
+unsigned char 
+coco_cobject_standard_raster_index( coco_cobject *cobject )
 {
   return cobject->r.raster_index;
+}
+
+/* the generic function.  Returns -1 on don't know, or on success 
+   cast result to COCO_NATIONALITY */
+int 
+coco_cobject_guess_nationality_helper( coco_cobject *cobject )
+{
+  return COCO_COBJECT_CL( cobject )->cobject_guess_nationality_fn( cobject );
+}
+
+/* default method */
+int
+coco_cobject_whimpy_guess_nationality( coco_cobject *cobject )
+{
+  return -1;
+}
+
+int
+coco_copter_guess_nationality( coco_cobject *cobject )
+{
+  return (COCO_COBJECT_RASTER_INDEX( cobject ) < 2)
+    ? COCO_GOOD_GUYS
+    : COCO_BAD_GUYS;
+}
+
+int
+coco_neutral_guess_nationality( coco_cobject *cobject )
+{
+  return (int) COCO_NEUTRAL;
+}
+
+int
+coco_hut_guess_nationality( coco_cobject *cobject )
+{
+  return (int) COCO_COBJECT_RASTER_INDEX( cobject );
+}
+
+int
+coco_2raster_guess_nationality( coco_cobject *cobject )
+{
+  return (int) COCO_COBJECT_RASTER_INDEX( cobject ) + COCO_GOOD_GUYS;
+}
+
+int
+coco_firetruck_guess_nationality( coco_cobject *cobject )
+{
+  return (COCO_COBJECT_RASTER_INDEX( cobject ) < 2)
+    ? COCO_GOOD_GUYS
+    : COCO_BAD_GUYS;
+}
+
+int
+coco_infantry_guess_nationality( coco_cobject *cobject )
+{
+  unsigned char ri = COCO_COBJECT_RASTER_INDEX( cobject );
+  if (ri<5)
+    return COCO_GOOD_GUYS;
+  else if (ri<10)
+    return COCO_BAD_GUYS;
+  else if (ri==14)
+    return COCO_GOOD_GUYS;
+  else if (ri==15)
+    return COCO_BAD_GUYS;
+  else 
+    return -1;
 }
 
 
