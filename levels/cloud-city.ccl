@@ -1,0 +1,75 @@
+;;; -*- Mode: lisp; -*-
+
+(define-coco-level cloud-city
+    1 0                                 ; coco-version
+    1                                   ; level-version
+    7000                                ; width
+    ((ggpb (pillbox (- board-w (w pillbox)) good-guys 0 gghq))
+     (nil  (aa-gun  (right-center aa-gun 150) good-guys))
+     (gghq (headquarters (right-center headquarters 500) good-guys ggpb))
+     (gglp (landing-pad (right-center headquarters 300)))
+        
+     (bbpb (pillbox 0 bad-guys 0 bbhq))      
+     (nil  (aa-gun  (left-center aa-gun 150) bad-guys))
+     (bbhq (headquarters (left-center headquarters 500) bad-guys bbpb))
+     (bblp (landing-pad (left-center landing-pad 300)))
+
+     (nil  (traffic-sign (left-center traffic-sign -300) 0))
+     (nil  (traffic-sign (right-center traffic-sign -300) 0))
+
+     ;; center cluster
+     (midpad (landing-pad (/ (- board-w (w landing-pad)) 2)))
+     (nil (hut (- (/ (- board-w (w hut)) 2) 150) bad-guys))
+     (nil (hut (- (/ (- board-w (w hut)) 2) 225) bad-guys))
+     (nil (hut (+ (/ (- board-w (w hut)) 2) 150) good-guys))
+     (nil (hut (+ (/ (- board-w (w hut)) 2) 225) good-guys))
+
+     ;; left cluster
+     (nil (hut (left-center hut 1750) neutral))
+     (nil (hut (left-center bunker 2100) neutral 2))
+     (nil (hut (left-center bunker 2500) neutral 2))
+     (nil (hut (left-center bunker 2800) neutral 2))
+
+     ;; right cluster
+     (nil (hut (right-center hut 1750) neutral))
+     (nil (hut (right-center bunker 2100) neutral 2))
+     (nil (hut (right-center bunker 2500) neutral 2))
+     (nil (hut (right-center bunker 2800) neutral 2))
+
+     (nil (hut (right-center hut 1500) neutral))
+     (nil (hut (left-center hut 1500)  neutral))
+
+     ;; clouds
+     (nil (cloud (+ 0250 (random 250)) (+ balloon-y-min (random (- board-h balloon-y-min 150)))))
+     (nil (cloud (+ 0500 (random 250)) (+ balloon-y-min (random (- board-h balloon-y-min 150)))))
+     (nil (cloud (+ 0750 (random 250)) (+ balloon-y-min (random (- board-h balloon-y-min 150)))))
+     (nil (cloud (+ 1000 (random 250)) (+ balloon-y-min (random (- board-h balloon-y-min 150)))))
+     (nil (cloud (+ 1250 (random 250)) (+ balloon-y-min (random (- board-h balloon-y-min 150)))))
+     (nil (cloud (+ 1500 (random 250)) (+ balloon-y-min (random (- board-h balloon-y-min 150)))))
+     (nil (cloud (+ 1750 (random 250)) (+ balloon-y-min (random (- board-h balloon-y-min 150)))))
+     (nil (cloud (+ 2000 (random 250)) (+ balloon-y-min (random (- board-h balloon-y-min 150)))))
+     (nil (cloud (+ 2250 (random 250)) (+ balloon-y-min (random (- board-h balloon-y-min 150)))))
+     (nil (cloud (+ 2500 (random 250)) (+ balloon-y-min (random (- board-h balloon-y-min 150)))))
+     (nil (cloud (+ 2750 (random 250)) (+ balloon-y-min (random (- board-h balloon-y-min 150)))))
+     (nil (cloud (+ 3000 (random 250)) (+ balloon-y-min (random (- board-h balloon-y-min 150)))))
+     (nil (cloud (+ 3250 (random 250)) (+ balloon-y-min (random (- board-h balloon-y-min 150)))))
+     (nil (cloud (+ 3500 (random 250)) (+ balloon-y-min (random (- board-h balloon-y-min 150)))))
+     (nil (cloud (+ 3750 (random 250)) (+ balloon-y-min (random (- board-h balloon-y-min 150)))))
+     (nil (cloud (+ 4000 (random 250)) (+ balloon-y-min (random (- board-h balloon-y-min 150)))))
+     (nil (cloud (+ 4250 (random 250)) (+ balloon-y-min (random (- board-h balloon-y-min 150)))))
+     (nil (cloud (+ 4500 (random 250)) (+ balloon-y-min (random (- board-h balloon-y-min 150)))))
+     (nil (cloud (+ 4750 (random 250)) (+ balloon-y-min (random (- board-h balloon-y-min 150)))))
+     (nil (cloud (+ 5000 (random 250)) (+ balloon-y-min (random (- board-h balloon-y-min 150)))))
+     (nil (cloud (+ 5250 (random 250)) (+ balloon-y-min (random (- board-h balloon-y-min 150)))))
+     (nil (cloud (+ 5500 (random 250)) (+ balloon-y-min (random (- board-h balloon-y-min 150)))))
+     (nil (cloud (+ 5750 (random 250)) (+ balloon-y-min (random (- board-h balloon-y-min 150)))))
+     (nil (cloud (+ 6000 (random 250)) (+ balloon-y-min (random (- board-h balloon-y-min 150)))))
+     (nil (cloud (+ 6250 (random 250)) (+ balloon-y-min (random (- board-h balloon-y-min 150)))))
+     (nil (cloud (+ 6500 (random 250)) (+ balloon-y-min (random (- board-h balloon-y-min 150)))))
+     (nil (cloud (+ 6750 (random 250)) (+ balloon-y-min (random (- board-h balloon-y-min 150)))))
+
+     ))
+
+
+
+
