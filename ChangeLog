@@ -1,5 +1,7 @@
 2001-03-21  David Morse  <dm@bomberlan.net>
 
+	* openal-sound.c (COCO_AL_SOURCE_X): Unswap L-R speakers
+
 	* graphics.c (coco_setup_misc_graphics): use alpha blending by
 	default if not GL_VENDOR~="Mesa Indirect".
 

@@ -154,9 +154,14 @@ coco_unload_sound( coco_sound sound )
 
 
 /* is there something I'm missing, or are my speakers swapped? */
+/* Your speakers were swapped, fool! -dm 03-21-2001
+ * #define COCO_AL_SOURCE_X( x ) \
+ * ((8.0 * (float) (((COCO_OFFICIAL_WINDOW_W>>1) - (x)) << 1)) \
+ * / COCO_OFFICIAL_WINDOW_W) */
 #define COCO_AL_SOURCE_X( x ) \
- ((8.0 * (float) (((COCO_OFFICIAL_WINDOW_W>>1) - (x)) << 1)) \
-  / COCO_OFFICIAL_WINDOW_W)
+ ((8.0 * (float) (((x) - (COCO_OFFICIAL_WINDOW_W>>1)) << 1)) \
+ / COCO_OFFICIAL_WINDOW_W)
+
 
 #define COCO_AL_SOURCE_Y( y ) \
   ((8.0 * (float) (y))/COCO_VIEWABLE_H)
