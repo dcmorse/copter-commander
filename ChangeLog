@@ -1,3 +1,9 @@
+2002-01-04  David Morse  <svref@yahoo.com>
+
+	* INSTALL: spiffed up.
+
+	* Makefile: tidy up a bit.
+
 2002-01-03  David Morse  <svref@yahoo.com>
 
 	* Makefile (tiff-compile): -lm since libtiff needs it but is

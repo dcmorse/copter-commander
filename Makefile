@@ -45,10 +45,7 @@
 # make COCO_OPTIMIZATION_FLAGS=-"g -DCOCO_DEBUG" COCO_LEVEL_DIRECTORY=/home/dm/coco/levels COCO_SOUND_DIRECTORY=/home/dm/coco/sounds COCO_SOUND=openal copter-commander COCO_GII_INCLUDE_DIRECTORY=/usr/local/include COCO_GII_LIB_DIRECTORY=/usr/local/lib COCO_USE_GII=1
 #
 # 
-# ____________________________________________________________________________
-#                            *** VERSION ***
 
-# Also have to change coco_version_string in globals.c -- should fix.
 COCO_MAJOR_VERSION=1
 COCO_MINOR_VERSION=7
 
@@ -57,9 +54,6 @@ COCO_MINOR_VERSION=7
 
 
 # INSTALLATION LOCATIONS
-# Copter Commander will (barely) run out of the source directlory, but you
-# must use the file browser to find the levels, and it won't find its sound
-# files.
 COCO_INSTALL_DIRECTORY=/usr/local
 COCO_BIN_DIRECTORY=${COCO_INSTALL_DIRECTORY}/bin
 COCO_SHARE_DIRECTORY=${COCO_INSTALL_DIRECTORY}/share/copter-commander/${COCO_MAJOR_VERSION}.${COCO_MINOR_VERSION}
@@ -69,11 +63,11 @@ COCO_SOUND_DIRECTORY=${COCO_SHARE_DIRECTORY}/sounds
 
 # LIBRARIES
 
-# Mesa-derived OpenGLs won't be able to run on (say) nvidia machines without
+# Mesa-derived OpenGLs won't be able to run on some machines without
 # libpthread thrown in.  See ./pthread-why.txt.
 COCO_BASIC_LIBS= -lm -lpthread
 
-# GII: General Input Interface
+# GII: General Input Interface (optional & experimental)
 # If support for GII is compiled in, it may be possible to get
 # snappier mouse and keyboard performance.  At this time (11-29-2001)
 # this is only experimental and will probaly cheese you off.
@@ -83,14 +77,6 @@ COCO_BASIC_LIBS= -lm -lpthread
 #COCO_USE_GII=1
 COCO_GII_LIB_DIRECTORY=/usr/lib
 COCO_GII_INCLUDE_DIRECTORY=/usr/include
-ifdef COCO_USE_GII
-COCO_GII_LINK_ARGUMENTS=-L${COCO_GII_LIB_DIRECTORY} -lgii
-COCO_GII_INCLUDE_ARGUMENTS=-I${COCO_GII_INCLUDE_DIRECTORY}
-else
-# (I leave them undefined, and not null string, for hackish reasons.)
-#COCO_GII_LINK_ARGUMENTS=""
-#COCO_GII_INCLUDE_ARGUMENTS=""
-endif
 
 # X11 (glx-copter-commander only)
 COCO_X11_LIB_DIRECTORY=/usr/X11R6/lib
@@ -130,17 +116,6 @@ COCO_ESD_LIB_DIRECTORY=/usr/lib
 COCO_ESD_INCLUDE_DIRECTORY=/usr/include
 COCO_ESD_LIBS=-lesd
 
-ifeq (${COCO_SOUND},openal)
-COCO_SOUND_LINK_LINE=-L${COCO_OPENAL_LIB_DIRECTORY} ${COCO_OPENAL_LIBS}
-else
-ifeq (${COCO_SOUND},esd)
-COCO_SOUND_LINK_LINE=-L${COCO_ESD_LIB_DIRECTORY} ${COCO_ESD_LIBS}
-else
-#assign null string:
-COCO_SOUND_LINK_LINE=
-endif
-endif
-
 
 # C COMPILER
 CC=cc
@@ -165,6 +140,29 @@ CLISP_FLAGS=--quiet
 #                           (end of variables)
 # ____________________________________________________________________________
 #                         *** MAKEFILE BODY ***
+
+ifdef COCO_USE_GII
+COCO_GII_LINK_ARGUMENTS=-L${COCO_GII_LIB_DIRECTORY} -lgii
+COCO_GII_INCLUDE_ARGUMENTS=-I${COCO_GII_INCLUDE_DIRECTORY}
+else
+# (I leave them undefined, and not null string, for hackish reasons.)
+#COCO_GII_LINK_ARGUMENTS=""
+#COCO_GII_INCLUDE_ARGUMENTS=""
+endif
+
+
+ifeq (${COCO_SOUND},openal)
+COCO_SOUND_LINK_LINE=-L${COCO_OPENAL_LIB_DIRECTORY} ${COCO_OPENAL_LIBS}
+else
+ifeq (${COCO_SOUND},esd)
+COCO_SOUND_LINK_LINE=-L${COCO_ESD_LIB_DIRECTORY} ${COCO_ESD_LIBS}
+else
+#assign null string:
+COCO_SOUND_LINK_LINE=
+endif
+endif
+
+
 
 # official value:     COCO_APPEARANCE_RESCUE_RAIDERS
 # experimental value: COCO_APPEARANCE_DOODLE 
