@@ -1,3 +1,8 @@
+2002-02-26  David Morse  <dm@bomberlan.net>
+
+	* server.c (coco_get_collision_recti): fix facing bug.  Related to
+	cargo copter non-landing problem.
+
 2002-02-24  David Morse  <svref@yahoo.com>
 
 	* tiff-compile.c: remove malloc.h dependancy.

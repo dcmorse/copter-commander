@@ -990,24 +990,23 @@ coco_get_collision_recti( coco_sobject *sobject, coco_gnum *x0, coco_gnum *x1,
       *x1 = x + COCO_SOBJECT_W( sobject );
       *y1 = y + COCO_SOBJECT_H( sobject );
     }
-  else if (COCO_SOBJECT_FACING( sobject ) > 0)
-    {
-      coco_gnum w = COCO_SOBJECT_W( sobject );
-      coco_gnum h = COCO_SOBJECT_H( sobject );
-      *x0 = x + w - COCO_MINI_RECTANGLE_X1( mr );
-      *y0 = y + h - COCO_MINI_RECTANGLE_Y1( mr );
-      *x1 = x + w - COCO_MINI_RECTANGLE_X0( mr );
-      *y1 = y + h - COCO_MINI_RECTANGLE_Y0( mr );
-    }
   else
     {
-      *x0 = x + COCO_MINI_RECTANGLE_X0( mr );
       *y0 = y + COCO_MINI_RECTANGLE_Y0( mr );
-      *x1 = x + COCO_MINI_RECTANGLE_X1( mr );
       *y1 = y + COCO_MINI_RECTANGLE_Y1( mr );
+      if (COCO_SOBJECT_FACING( sobject ) > 0)
+        {
+          coco_gnum w = COCO_SOBJECT_W( sobject );
+          *x0 = x + w - COCO_MINI_RECTANGLE_X1( mr );
+          *x1 = x + w - COCO_MINI_RECTANGLE_X0( mr );
+        }
+      else
+        {
+          *x0 = x + COCO_MINI_RECTANGLE_X0( mr );
+          *x1 = x + COCO_MINI_RECTANGLE_X1( mr );
+        }
     }
 }
-
 void 
 coco_sstate_find_collisions( coco_sstate *sstate )
 {
