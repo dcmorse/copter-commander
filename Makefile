@@ -389,7 +389,7 @@ ${COCO_TAR_FILE}:
 	cp sounds/*.wav ${COCO_TAR_DIRECTORY}/sounds
 	cp levels/*.ccl ${COCO_TAR_DIRECTORY}/levels
 	find ${COCO_TAR_DIRECTORY} -name \*~ -print | xargs rm -f
-	find ${COCO_TAR_DIRECTORY} -name CVS -print | xargs rm -f
+	find ${COCO_TAR_DIRECTORY} -name CVS -print | xargs rm -rf
 	tar -cf ${COCO_TAR_FILE} ${COCO_TAR_DIRECTORY}
 	rm -rf ${COCO_TAR_DIRECTORY}
 
