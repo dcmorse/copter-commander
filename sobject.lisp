@@ -151,6 +151,9 @@
    ("targetable_classes_count" "0" "unsigned char" :allocation :every-class)
    ("targetable_classes"       "NULL" "coco_sobject_cl *" 
                                :allocation :every-class)
+   ;; only used by fancy vehicle classes (mech, cobra, cargo-copter, etc)
+   ("dashboard_icon"           "NULL" "struct coco_raster *"
+                               :allocation :every-class)
    )
   :class-layout :index
   :named-classes-p t
@@ -395,7 +398,7 @@
    ("rotor_radius" "56")
    ("refund"       "4")
    ("cost"         "20")
-   
+   ("dashboard_icon" "&coco_cobra_icon_raster")
 ))
 
 (c-define-class "bubble_copter" ("copter")
@@ -420,6 +423,29 @@
    ("health_max"   "3")
    ("x_force"      "2")
 ))
+
+(c-define-class "cargo_copter" ("copter")
+  (("max_bullets"      "0")
+   ("max_bombs"        "36")
+   ("max_missiles"     "0")
+   ("max_rockets"      "0")
+   ("max_internal_infantry" "12")
+   ("max_fuel"     "300*COCO_IDEAL_FRAMES_PER_SECOND")
+   ("dx_max"       "15")
+   ("dy_max"       "9")
+   ("canonical_w"  "125")
+   ("canonical_h"  "47")
+   ("collision_rectangle" "COCO_MAKE_MINI_RECTANGLE( 1, 7, 83, 35 )")
+   ("rotor_points"      "coco_cargo_copter_rotor_points")
+   ("weapon_hardpoints" "coco_cargo_copter_weapon_hardpoints")
+   ("center_of_mass"    "coco_cargo_copter_center_of_mass")
+   ("rasters"      "coco_cargo_copter_rasters")
+   ("rotor_radius" "65")
+   ("refund"       "2")
+   ("cost"         "10")
+   ("health_max"   "4")
+   ("x_force"      "2")
+   ("dashboard_icon" "&coco_cargo_copter_icon_raster")))
 
 (c-define-class "smoke" ("sobject")
   (("raster_index" :arg)
@@ -472,6 +498,7 @@
    ("rasters"      "coco_balloon_rasters")
    ("raster_count" "COCO_BALLOON_RASTER_COUNT")
    ("health_max"   "4 * COCO_BULLET_DAMAGE")
+   ("z"             "-1") ;; behind balloon-factory's 0.
    ;;("cobject_raster_index_fn" "coco_cobject_simple_raster_index") ; not used
    ("collision_priority" "150")
    ("canonical_w"   "COCO_BALLOON_W_RASTER_W")
@@ -604,7 +631,7 @@
 (c-define-class "balloon_factory" ("building")
   (("nationality"    "COCO_NEUTRAL")
    ("phase"          "COCO_VAPOR")
-   ("z"              "1")
+   ("z"              "0")
    ("raster_index"   "0")
    ("rasters"        "coco_balloon_factory_rasters")
    ("raster_count"   "COCO_BALLOON_FACTORY_RASTER_COUNT")

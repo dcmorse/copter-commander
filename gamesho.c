@@ -104,6 +104,42 @@ struct coco_raster *coco_bubble_copter_rasters[COCO_COPTER_RASTER_COUNT] = {
   &coco_bubble_grey_e_raster,
 };
 
+
+coco_mini_point 
+coco_cargo_copter_rotor_points[COCO_COPTER_RASTER_COUNT] = {
+  COCO_MAKE_MINI_POINT( 35, 47 ),
+  COCO_MAKE_MINI_POINT( 85, 47 ),
+  COCO_MAKE_MINI_POINT( 35, 47 ),
+  COCO_MAKE_MINI_POINT( 85, 47 ),
+};
+
+coco_mini_point 
+coco_cargo_copter_weapon_hardpoints[COCO_COPTER_RASTER_COUNT] = {
+  /* same as center of mass */
+  COCO_MAKE_MINI_POINT( 35, 39 ),
+  COCO_MAKE_MINI_POINT( 89, 39 ),
+  COCO_MAKE_MINI_POINT( 35, 39 ),
+  COCO_MAKE_MINI_POINT( 89, 39 ),
+};
+
+coco_mini_point 
+coco_cargo_copter_center_of_mass[COCO_COPTER_RASTER_COUNT] = {
+  COCO_MAKE_MINI_POINT( 35, 39 ),
+  COCO_MAKE_MINI_POINT( 89, 39 ),
+  COCO_MAKE_MINI_POINT( 35, 39 ),
+  COCO_MAKE_MINI_POINT( 89, 39 ),
+};
+
+struct coco_raster *coco_cargo_copter_rasters[COCO_COPTER_RASTER_COUNT] = {
+  &coco_choctaw_green_w_raster,
+  &coco_choctaw_green_e_raster,
+  &coco_choctaw_grey_w_raster,
+  &coco_choctaw_grey_e_raster,
+};
+
+
+
+
 /*
 struct coco_raster *coco_fireball_shrapnel_rasters[COCO_FIREBALL_SHRAPNEL_RASTER_COUNT] = {
   &coco_fireball_24a_raster,

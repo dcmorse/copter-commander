@@ -1,3 +1,17 @@
+2001-05-23  David Morse  <dm@bomberlan.net>
+
+	* client.c (coco_draw_dashboard): helicopter icon new depicts type
+	of fancy copter.
+
+	* server.c (coco_server_key_press): 'n' now changes to New fancy
+	copter type.
+
+2001-05-21  David Morse  <dm@bomberlan.net>
+
+	* sobject.lisp (cargo-copter): Created cargo copter.
+
+	* tiff-compile.c (coco_tiff_compile): add log_file fflush.
+
 2001-05-19  David Morse  <dm@bomberlan.net>
 
 	* levels/balloon-run.ccl (balloon-run): Add balloon factories.
@@ -27,8 +41,8 @@
 	* tiffs/rgba-8-blend/bubble-green-w.xcf: revise bubble copter
 	graphic.
 
-	* graphics.c (coco_begin_rotated_view): honor alpha blending of
-	raster.
+	* graphics.c (coco_draw_raster_rotate): honor alpha blending of
+	rotated raster.
 
 	* Makefile (.PRECIOUS): add this to keep make from deleting
 	intermediate file.

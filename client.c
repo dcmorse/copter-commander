@@ -773,7 +773,7 @@ coco_draw_dashboard_static()
         &coco_missile_icon_raster,
         &coco_rocket_icon_raster,
         &coco_man_icon_raster,
-        &coco_copter_icon_raster,
+        NULL, /* &coco_copter_icon_raster, no longer constant */
         &coco_money_icon_raster,
         &coco_fuel_icon_raster,
       };
@@ -795,7 +795,7 @@ coco_draw_dashboard_static()
                 coco_font_string_dimensions( fps, -1, font, &w, &h, &a );
                 fps_width = w;
               }
-            else w = rasters[i]->w;
+            else w = rasters[i] ? rasters[i]->w : 0;
             if (w>coco_max_icon_width)
               coco_max_icon_width = w;
           }
@@ -816,7 +816,7 @@ coco_draw_dashboard_static()
           else
             {
               struct coco_raster *raster = rasters[i];
-              coco_draw_raster( x-raster->w, y, raster );
+              if (raster) coco_draw_raster( x-raster->w, y, raster );
             }
         }
       glEndList();
@@ -932,6 +932,14 @@ coco_draw_dashboard( struct coco_cstate *cstate, int cfps )
         }
       coco_draw_string( x, y, buf, -1, &coco_default_font, COCO_BASELINE );
     }
+  {
+    int fcla_idx = dashinfo->fancy_class_index;
+    struct coco_raster *r = coco_sobject_classes[fcla_idx].dashboard_icon;
+    int copter_x;
+    assert( r );
+    copter_x = coco_max_icon_width + (5 * COCO_DASHBOARD_SPACING) - r->w;
+    coco_draw_raster( copter_x, COCO_DASHBOARD_BASELINE, r );
+  }
 }
 
 long coco_chat_cursor_last_blink = 0; /* second */

@@ -256,7 +256,7 @@ coco_tiff_compile( char *infile, char *outh, char *outc, char *cname,
   pixels = coco_tiff_load( infile, &w, &h, error_descrip );
   if (!pixels) return 0;
    
-  if (log_file) fprintf( log_file, "." );
+  if (log_file) { fprintf( log_file, "." ); fflush( log_file ) ; }
   f = fopen( outh, "w" );
   COCO_FAIL_ON_FAIL( f, "Couldn't open output header file" );
   coco_write_raster_header( f, pixels, w, h, fmt, cname );

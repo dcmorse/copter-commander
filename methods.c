@@ -2267,10 +2267,10 @@ coco_demo_van_hostile_collision( coco_sobject *obj1,
 
 void
 coco_copter_hostile_collision( coco_sobject *obj1,
-                                 coco_sobject_cl *obj1cl,
-                                 coco_sobject *obj2, 
-                                 coco_sstate *sstate,
-                                 coco_bool *stat1, coco_bool *stat2 )
+                               coco_sobject_cl *obj1cl,
+                               coco_sobject *obj2, 
+                               coco_sstate *sstate,
+                               coco_bool *stat1, coco_bool *stat2 )
 {
   *stat1 = *stat2 = COCO_FALSE;
   if (coco_sobject_subtype_p( COCO_SOBJECT_CL( obj2 ),
@@ -2285,7 +2285,7 @@ coco_copter_hostile_collision( coco_sobject *obj1,
             {
               COCO_COPTER_LANDED_P( obj1 ) = COCO_TRUE;
               COCO_SOBJECT_DX( obj1 ) = COCO_SOBJECT_DY( obj1 ) = 0;
-              COCO_SOBJECT_Y( obj1 ) = COCO_SOBJECT_Y1( obj2 );
+              COCO_SOBJECT_Y( obj1 ) = COCO_SOBJECT_Y1( obj2 ) ;
               COCO_COPTER_LANDED_ON_PAD_P( obj1 ) = COCO_TRUE;
             }
         }

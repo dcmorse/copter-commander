@@ -17,7 +17,8 @@ m                    order man
 e                    order engineer
 a                    order anti-aircraft truck
 v                    order demolition van
-h                    order helicopter gunship
+h                    order fancy helicopter
+n                    new fancy copter type
 ___________________________________________________
 COMPUTER PLAYER MANAGEMENT
 

@@ -196,6 +196,7 @@ enum coco_version_domain {COCO_NETWORK, COCO_LEVEL_FILE_FORMAT};
 extern const char *coco_product_authors[];
 extern const char *coco_product_copyright;
 extern const char *coco_product_description;
+extern const char *coco_product_description_windbag;
 
 extern const char *coco_gnu_public_license;
 #define COCO_GNU_NON_WARRANTY (coco_gnu_public_license + 13852)
@@ -658,6 +659,7 @@ struct coco_dashboard_info {
   coco_u32 funds;
   coco_u32 fuel;
   unsigned char server_fps;
+  unsigned char fancy_class_index;
   coco_i32 camera_class_index; /* so wide a type for -1 */
 };
 
@@ -906,6 +908,7 @@ struct coco_client_to_server_packet {
 #define COCO_COPTER_RASTER_COUNT 4 /* no associated rasters */
 struct coco_raster *coco_cobra_rasters[COCO_COPTER_RASTER_COUNT];
 struct coco_raster *coco_bubble_copter_rasters[COCO_COPTER_RASTER_COUNT];
+struct coco_raster *coco_cargo_copter_rasters[COCO_COPTER_RASTER_COUNT];
 #define COCO_SMALL_METAL_RASTER_COUNT 2
 extern struct coco_raster *coco_small_metal_shrapnel_rasters[COCO_SMALL_METAL_RASTER_COUNT];
 #define COCO_MED_METAL_RASTER_COUNT 3
@@ -987,6 +990,12 @@ coco_mini_point
 coco_bubble_copter_weapon_hardpoints[COCO_COPTER_RASTER_COUNT];
 coco_mini_point 
 coco_bubble_copter_center_of_mass[COCO_COPTER_RASTER_COUNT];
+coco_mini_point 
+coco_cargo_copter_rotor_points[COCO_COPTER_RASTER_COUNT];
+coco_mini_point 
+coco_cargo_copter_weapon_hardpoints[COCO_COPTER_RASTER_COUNT];
+coco_mini_point 
+coco_cargo_copter_center_of_mass[COCO_COPTER_RASTER_COUNT];
 
 enum coco_sky_colors {
   COCO_NIGHT,

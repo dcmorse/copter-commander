@@ -28,6 +28,7 @@
 #include <errno.h>
 #include <stdlib.h>             /* for abs, rand */
 #include <string.h>             /* for memcpy */
+#include <math.h>               /* for stinkin fmod (%, hello?) */
 #include "coco.h"
 #include "rasters.h"       /* for raster dimensions */
 
@@ -1266,7 +1267,9 @@ coco_summon_unit_maybe( coco_sstate *sstate, coco_sobject_cl *cl,
                           coco_gnum, coco_nationality),
                         coco_nationality nationality,
                         int p_or_c_index,
-                        coco_bool is_comp )
+                        coco_bool is_comp,
+                        coco_sobject *summoner /* possibly NULL */
+                        )
 {
   struct coco_team *team = sstate->teams + nationality - COCO_GOOD_GUYS;
   if (team->summon_enable 
@@ -1276,10 +1279,34 @@ coco_summon_unit_maybe( coco_sstate *sstate, coco_sobject_cl *cl,
       if (unit)
         {
           coco_u32 delta_t;
-          init_fn( unit, cl, (COCO_GOOD_GUYS==nationality)
-                   ? (sstate->board_w + COCO_GROUND_UNIT_WARP_IN_X)
-                   : (-COCO_GROUND_UNIT_WARP_IN_X - cl->canonical_w),
-                   nationality );
+          coco_gnum cw = cl->canonical_w;
+          coco_bool gg = (COCO_GOOD_GUYS==nationality);
+          coco_gnum x;
+          if (summoner
+              && coco_sobject_subtype_p( COCO_SOBJECT_CL( summoner ),
+                                         COCO_CARGO_COPTER_CLASS )
+              && COCO_COPTER_LANDED_P( summoner )
+              && !COCO_COPTER_LANDED_ON_PAD_P( summoner ))
+            {
+              coco_gnum x0, y0, x1, y1;
+              coco_get_collision_recti( summoner, &x0, &x1, &y0, &y1 );
+              
+              if (coco_sobject_subtype_p( cl, COCO_INFANTRY_CLASS ))
+                /* infantry have to go in front or get sucked in as
+                   passengers */
+                x = gg  
+                  ? x0 - cw - 1
+                  : x1 + 1;
+              else /* armor come out of the belly */
+                x = gg
+                  ? x0
+                  : x1 - cw;
+            }
+          else
+            x = gg
+              ? (sstate->board_w + COCO_GROUND_UNIT_WARP_IN_X)
+              : (-COCO_GROUND_UNIT_WARP_IN_X - cw);
+          init_fn( unit, cl, x, nationality );
           delta_t = COCO_GROUND_UNIT_DX_MAX * (COCO_SOBJECT_W( unit ) + 5);
           team->summon_enable = COCO_FALSE;
           team->summon_disable_until
@@ -1360,7 +1387,8 @@ coco_camera_update_state( coco_sobject *sobject,
         if (coco_get_bit( input->key_state, bindings[i].key ))
           coco_summon_unit_maybe( sstate, bindings[i].cl, bindings[i].init_fn,
                                   COCO_SOBJECT_NATIONALITY( sobject ),
-                                  is_comp ? comp_idx : cam_idx, is_comp );
+                                  is_comp ? comp_idx : cam_idx, is_comp,
+                                  sobject );
     }
   else coco_warn_printf( "%s %d is not comp nor plr\n",
                          COCO_SOBJECT_NAME( sobject ),
@@ -1980,6 +2008,13 @@ coco_find_camera( coco_sstate *sstate, int p_or_c_index, coco_bool is_comp )
 }
 
 
+#define COCO_MAX_FANCY_COPTER 2
+
+coco_sobject_cl *coco_fancy_copter_classes[COCO_MAX_FANCY_COPTER] = {
+  COCO_COBRA_CLASS, COCO_CARGO_COPTER_CLASS
+};
+
+
 void 
 coco_server_key_press( int p_or_c_index, coco_bool is_comp,
                        coco_key key, coco_sstate *sstate )
@@ -1988,7 +2023,7 @@ coco_server_key_press( int p_or_c_index, coco_bool is_comp,
   if (cam)
     {
       
-      switch (key){
+      switch (key) {
       case COCO_LPOINTER: 
         if (cam
             && coco_sobject_subtype_p( COCO_SOBJECT_CL( cam ), 
@@ -1998,6 +2033,52 @@ coco_server_key_press( int p_or_c_index, coco_bool is_comp,
         break;
       case COCO_CHAR_TO_KEY( 'h' ):
         coco_buy_copter_maybe( sstate, p_or_c_index, is_comp );
+        break;
+      case COCO_CHAR_TO_KEY( 'n' ):
+        if (is_comp)
+          coco_warn_printf( "Changing favorite copter class "
+                            "not supported for comps.\n" );
+        else 
+          {
+            int i;
+            int new_class_idx = 0;
+            coco_sobject_cl *new_fav, *old_fav
+              = sstate->favorite_copter_class[p_or_c_index];
+            for (i=0; i< COCO_MAX_FANCY_COPTER-1; i++)
+              if (coco_fancy_copter_classes[i]
+                  == sstate->favorite_copter_class[p_or_c_index])
+                {
+                  new_class_idx = i+1;
+                  break;
+                }
+            new_fav
+              = sstate->favorite_copter_class[p_or_c_index]
+              = coco_fancy_copter_classes[new_class_idx];
+            {
+              int ncopters = coco_players[p_or_c_index].copters;
+              float nc = new_fav->cost;
+              float oc = old_fav->cost;
+              float ocx = oc * ncopters;
+              if (nc == 0)
+                {
+#ifdef COCO_DEBUG                  
+                  coco_fatal_printf( COCO_ERROR_COCO_IMPLEMENTAION_PROBLEM,
+                                     "favorite copter class has 0 cost, would "
+                                     "cause divide by zero.");
+#else
+                  nc = 0.001;
+#endif
+                }
+              if (nc > oc)
+                {
+                  coco_players[p_or_c_index].copters = ocx / nc;
+                  coco_add_funds( p_or_c_index, is_comp, fmod( ocx, nc ) );
+                }
+              else
+                coco_add_funds( p_or_c_index, is_comp, ocx - nc * ncopters );
+            }
+          }
+        break;
       default:
         break;
       }
@@ -2684,6 +2765,8 @@ coco_write_cstate_serial_header( struct coco_cstate_serial_header *str,
   str->dashinfo.copters = coco_players[player_index].copters;
   str->dashinfo.funds   = coco_players[player_index].funds;
   str->dashinfo.server_fps = COCO_IDEAL_FRAMES_PER_SECOND;
+  str->dashinfo.fancy_class_index 
+    = sstate->favorite_copter_class[player_index]->cl_index;
   str->dashinfo.camera_class_index
     = cam_object_or_null ? COCO_SOBJECT_CL_INDEX( cam_object_or_null ) : -1;
 }

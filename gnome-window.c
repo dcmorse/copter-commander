@@ -17,6 +17,96 @@
  * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
  */
 
+/*
+From: Dave Morse <dm-gtk@bomberlan.net>
+Subject: how to get backtrace on warnings?
+To: gtk-app-devel-list@gnome.org
+Date: Sat, 19 May 2001 18:23:55 -0700
+  
+  
+I'm trying to figure out which line of code, of roughly 97 million, is
+responsible for things like this:
+  
+  Gdk-ERROR **: BadValue (integer parameter out of range for operation)
+    serial 5170 error_code 2 request_code 130 minor_code 9
+  
+I'd like to get a backtrace or something.  I tried running the app with
+"--sync --g-fatal-warnings", then getting gdb to break on the call of the
+function "exit", but gdb refuses to break on exit.  I tried breaking
+gtk_exit, but its not called.  Ideas?
+
+From: Iain <iain@ximian.com>
+Subject: Re: how to get backtrace on warnings?
+To: jrb@redhat.com
+Cc: Dave Morse <dm-gtk@bomberlan.net>, gtk-app-devel-list@gnome.org
+Date: 20 May 2001 01:21:24 -0400
+
+On 19 May 2001 22:26:26 -0400, jrb@redhat.com wrote:
+> Break on g_log.
+
+Or if it's an X error like that one looks, try breaking on gdk_x_error
+
+From: Havoc Pennington <hp@redhat.com>
+Subject: Re: how to get backtrace on warnings?
+To: Dave Morse <dm-gtk@bomberlan.net>
+Cc: gtk-app-devel-list@gnome.org
+Date: 20 May 2001 01:57:51 -0400
+  
+Dave Morse <dm-gtk@bomberlan.net> writes:
+> I'd like to get a backtrace or something.  I tried running the app with
+> "--sync --g-fatal-warnings", then getting gdb to break on the call of the
+> function "exit", but gdb refuses to break on exit.  I tried breaking
+> gtk_exit, but its not called.  Ideas?
+> 
+  
+You shouldn't need to break on anything, --g-fatal-warnings will call
+abort() which should stop you in the debugger.
+
+Failing that, jrb suggested g_log, this only works on compilers with
+varargs macros, g_logv should always work though.
+
+From: Havoc Pennington <hp@redhat.com>
+Subject: Re: how to get backtrace on warnings?
+To: Iain <iain@ximian.com>
+Cc: jrb@redhat.com, Dave Morse <dm-gtk@bomberlan.net>,
+        gtk-app-devel-list@gnome.org
+Date: 20 May 2001 03:47:02 -0400
+  
+  
+Iain <iain@ximian.com> writes:
+> Or if it's an X error like that one looks, try breaking on gdk_x_error
+> 
+  
+Hmm, good point - g_warning()/g_log()/g_logv() aren't involved at
+all. ;-)
+  
+
+From: Havoc Pennington <hp@redhat.com>
+Subject: Re: how to get backtrace on warnings?
+To: Dave Morse <dm-gtk@bomberlan.net>
+Cc: gtk-app-devel-list@gnome.org
+Date: 20 May 2001 23:17:18 -0400
+  
+Dave Morse <dm-gtk@bomberlan.net> writes:
+> Hmmmmmm... Still no joy.  Here's a transcript.  Its puzzling that it
+> prints out "Breakpoint 1 at 0x813fc38" during the running of the program,
+> but doesn't actually wake up the interactive debugging prompt.  Perhaps
+> gdb can't find the source for gdk, and thus automatically continues?
+  
+My best explanation is "gdb on crack"
+  
+Soemetimes it's a bit confused by breakpoints in shared libs prior to
+running the app - you might try something like:
+  
+(gdb) break main
+(gdb) run --sync
+[breaks at main]
+(gdb) break gdk_x_error
+  
+
+ */
+
+
 #include <gnome.h>
 #include <gtkgl/gtkglarea.h> /* sold seperatly from gtk */
 #include <gdk/gdk.h>   /* for GdkFont */
@@ -122,7 +212,7 @@ coco_get_x_file_descriptor( void )
 static gint
 coco_root_delete_callback( GtkWidget *widget, GdkEvent *event, gpointer data )
 {
-  coco_cookie( "root_delete_callback here\n" );
+  coco_cookie( "root_delete_callback here-and-ok\n" );
   /* return FALSE to continue closing the window */
   return FALSE;
 }
@@ -130,7 +220,7 @@ coco_root_delete_callback( GtkWidget *widget, GdkEvent *event, gpointer data )
 static gint
 coco_root_destroy_callback( GtkWidget *widget, gpointer data )
 {
-  coco_cookie( "root_destroy_callback here, maybe coco_root_window gone\n" );
+  coco_cookie( "root_destroy_callback here\n" );
   if (widget == coco_root_window)
     {
       gtk_object_unref( GTK_OBJECT( coco_gl_window ) );
@@ -138,6 +228,7 @@ coco_root_destroy_callback( GtkWidget *widget, gpointer data )
       gtk_object_unref( GTK_OBJECT( coco_root_window ) );
       coco_root_window = NULL;
     }
+  coco_cookie( "root_destroy_callback ok\n" );
   return 0; /* not sure what I should return.  Looks like it makes no diff. */
 }
 
@@ -253,7 +344,8 @@ coco_gdk_keysym_to_coco_key( guint keysym )
 
 static coco_bool coco_mouse_in_window_p_private = COCO_FALSE;
 
-coco_bool coco_mouse_in_window_p()
+coco_bool 
+coco_mouse_in_window_p()
 {
   return coco_mouse_in_window_p_private;
 }
@@ -555,7 +647,9 @@ void
 coco_on_exit1_activate( GtkMenuItem     *menuitem,
                         gpointer         user_data)
 {
+  coco_cookie( "exit1_activate here\n" );
   coco_kill_window();
+  coco_cookie( "exit1_activate done\n" );
 }
 
 /* coco_on_game_activate: moved to after menu def   */
@@ -602,7 +696,7 @@ coco_on_about1_activate( GtkMenuItem     *menuitem,
                                       coco_version_string,
                                       coco_product_copyright,
                                       coco_product_authors,
-                                      coco_product_description,
+                                      coco_product_description_windbag,
                                       NULL );
   if (coco_root_window)
     gnome_dialog_set_parent( GNOME_DIALOG( about ), 
@@ -1196,6 +1290,7 @@ coco_remove_play_notification_callback( GtkWidget *widget,
 static void
 coco_gtk_widget_destroy_adapter( void *data, union coco_message *message )
 {
+  coco_cookie( "destroy_adapter here\n" );
   gtk_widget_destroy( GTK_WIDGET( data ) );
 }
 
