@@ -1,3 +1,7 @@
+2002-01-25  David Morse  <svref@yahoo.com>
+
+	* levels/gun-country.ccl (gun-country): at guns removed
+
 2002-01-04  David Morse  <svref@yahoo.com>
 
 	* client.c (coco_play_intro_movie_frame): use coco_product_copyright.

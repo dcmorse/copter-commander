@@ -19,8 +19,10 @@
      ;; of the bunker.
      (nil (gun-rubble (/ (- board-w (w gun-rubble)) 2) aa-gun))
      (nil (bunker (/ (- board-w (w bunker)) 2) bad-guys 0))
-     (nil (at-gun (+ (/ (- board-w (w at-gun)) 2) 120) good-guys))
-     (nil (at-gun (- (/ (- board-w (w at-gun)) 2) 120) bad-guys))
+     ;; these are lame, make middle basically impregnable.
+     ;; without them a tank can take the center.
+     ;; (nil (at-gun (+ (/ (- board-w (w at-gun)) 2) 120) good-guys))
+     ;; (nil (at-gun (- (/ (- board-w (w at-gun)) 2) 120) bad-guys))
 
 
      ;; left side guns
