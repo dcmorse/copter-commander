@@ -210,8 +210,12 @@ rstr-%/built: rstr-%/rasters.h
 
 # tiff-compile only does its thing if the files are out of date.
 # so in essence it already manages its dependancies.
+# the .PRECIOUS keeps gnu make from deleting the .h when its done.
+# which is annoying, imo. -dm 05-18-2001
 rstr-%/rasters.h: tiff-compile
 	./tiff-compile tiffs `dirname $@`
+
+.PRECIOUS: ${COCO_RASTER_DIRECTORY}/rasters.h
 
 # force recompile of tiffs (changes to which are not otherwise sensed by this makefile)
 art: tiff-compile
@@ -332,7 +336,6 @@ ${COCO_BASIC_LIBS} \
 
 copter-commander: ${GAME_OBJ_FILES} ${GNOME_OBJ_FILES} ${USED_SOUND_OBJ_FILES} ${COCO_RASTER_DIRECTORY}/built 
 	${GNOME_LINK_LINE} ${COCO_SOUND_LINK_LINE}
-	@echo all done
 
 GLX_LINK_LINE=\
 ${CC} ${CFLAGS} -o $@ ${GAME_OBJ_FILES} ${GLX_OBJ_FILES} ${USED_SOUND_OBJ_FILES} ${COCO_RASTER_DIRECTORY}/*.o \
@@ -377,7 +380,7 @@ endian: endian.c
 	${CC} ${CFLAGS} -o endian endian.c
 
 clean:
-	rm -f rstr-*/built *rstr/*.o rstr-*/*.c rstr-*/*.h *.o \
+	rm -f rstr-*/built rstr-*/*.o rstr-*/*.c rstr-*/*.h *.o \
 	  copter-commander glx-copter-commander \
 	  config-time.h *.strlit endian sizeof tiff-compile
 
