@@ -1241,7 +1241,7 @@ coco_emit_smoke_helper( coco_sobject *sobject, coco_sstate *sstate,
   turn_mod_6 = sstate->time % 6;
   if (smokelevel > COCO_SMOKE_RASTER_COUNT)
     {
-      if (turn_mod_6 == 3)
+      if (turn_mod_6 == 4)
         {
           smokelevel -= COCO_SMOKE_RASTER_COUNT;
           if (smokelevel > COCO_SMOKE_RASTER_COUNT)
@@ -1748,6 +1748,7 @@ coco_mech_update_state( coco_sobject *sobject,
   coco_facing run;
   coco_bool jump = COCO_FALSE;
   int legs = COCO_MECH_LEG_RASTER_INDEX( sobject );
+  int lefty = (legs >= COCO_LEFTY_LEG_PART) ? COCO_LEFTY_LEG_PART : 0;
   int legs_out = legs;
   enum { COCO_RUN, COCO_IDLE, COCO_FLY, COCO_LAND } leg_action;
   if (COCO_COPTER_MISSILE_COOLDOWN( sobject )
@@ -1911,12 +1912,13 @@ coco_mech_update_state( coco_sobject *sobject,
         COCO_SOBJECT_DY( sobject ) = dy + dydt;
         legs_out 
           = (dx_want_sorta < 0)
-          ? COCO_AKIMBO_PART + COCO_LEFTY_LEG_PART
+          ? (COCO_AKIMBO_PART + COCO_LEFTY_LEG_PART)
           : ((dx_want_sorta > 0)
              ? COCO_AKIMBO_PART
-             : ((legs>=COCO_LEFTY_LEG_PART) 
-                ? (COCO_LEFTY_LEG_PART + COCO_AKIMBO_PART)
-                : COCO_AKIMBO_PART));
+             : (lefty + COCO_AKIMBO_PART) );
+        coco_cookie( "legs_out=%d due to jump   dx_want=%d, lefty+akimbo=%d, run=%d, dx=%d\n",
+                     (int) legs_out, dx_want_sorta,
+                     (lefty + COCO_AKIMBO_PART), run, dx );
         COCO_MECH_ENERGY( sobject ) 
           = ((e==effective_e)?(e - dydt):(e-(dydt>>1)) );
       }
@@ -1941,8 +1943,7 @@ coco_mech_update_state( coco_sobject *sobject,
           }
         else
           {
-            int squati = COCO_MIN_SQUAT_PARTS
-              + ((legs>=COCO_LEFTY_LEG_PART) ? COCO_LEFTY_LEG_PART : 0);
+            int squati = COCO_MIN_SQUAT_PARTS + lefty;
             struct coco_mech_part *squat = coco_leg_parts + squati;
             coco_gnum dh = coco_leg_parts[legs].dh - squat->dh;
             if ((COCO_SOBJECT_DY( sobject ) <= 0)
@@ -1953,11 +1954,12 @@ coco_mech_update_state( coco_sobject *sobject,
                 legs_out = squati;
                 COCO_SOBJECT_Y( sobject ) += dh;
                 COCO_MECH_SQUATTING_DOWN( sobject ) = COCO_TRUE;
+                coco_cookie( "legs_out=%d due to squat\n", (int) legs_out );
               }
             /* flying friction */
             if (dx>0)
               COCO_SOBJECT_DX( sobject ) = dx-1;
-            else 
+            else if (dx<0)
               COCO_SOBJECT_DX( sobject ) = dx+1;
           }
 
@@ -1975,6 +1977,7 @@ coco_mech_update_state( coco_sobject *sobject,
           {
             legs_out
               = legs - COCO_AKIMBO_PART + COCO_MIN_SQUAT_PARTS;
+            coco_cookie( "legs_out=%d due to squat/land\n", (int) legs_out );
             COCO_SOBJECT_DX( sobject ) = 0;
             COCO_MECH_SQUATTING_DOWN( sobject ) = COCO_TRUE;
           }
@@ -2022,10 +2025,7 @@ coco_mech_update_state( coco_sobject *sobject,
           }
         else
           {
-            legs_out 
-              = (legs>COCO_LEFTY_LEG_PART)
-              ? (COCO_MIN_IDLE_PARTS + COCO_LEFTY_LEG_PART)
-              :  COCO_MIN_IDLE_PARTS;
+            legs_out = COCO_MIN_IDLE_PARTS + lefty;
             COCO_SOBJECT_DX( sobject ) = 0;
           }
 
@@ -2060,8 +2060,8 @@ coco_mech_update_state( coco_sobject *sobject,
     else if (COCO_LAND==leg_action)
       {
         COCO_SOBJECT_DX( sobject ) = 0;
-        if ((legs == COCO_MAX_SQUAT_PARTS)
-            || (legs == COCO_MAX_SQUAT_PARTS + COCO_LEFTY_LEG_PART))
+        if ((legs == COCO_MAX_SQUAT_PARTS-1)
+            || (legs == COCO_MAX_SQUAT_PARTS-1 + COCO_LEFTY_LEG_PART))
           {
             legs_out = legs-1;
             COCO_MECH_SQUATTING_DOWN( sobject ) = COCO_FALSE;
@@ -2086,6 +2086,8 @@ coco_mech_update_state( coco_sobject *sobject,
                              COCO_MAX_WALK_PARTS ));
   assert( COCO_BETWEENA( 0, legs_out, COCO_MAX_LEG_PARTS ) );
   COCO_MECH_LEG_RASTER_INDEX( sobject ) = legs_out;
+  coco_cookie( "legs %d->%d, leg_action=%d\n", (int)legs, (int)legs_out,
+                leg_action );
   return coco_sobject_update_state( sobject, cl->super, sstate );
 }
 

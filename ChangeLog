@@ -1,5 +1,7 @@
 2001-05-30  David Morse  <dm@bomberlan.net>
 
+	* server.c (coco_mech_update_state): fix various animation quirks.
+
 	* client.c: start game right after [p] in glx-copter-commander
 
 	* graphics.c (coco_draw_raster_texmap): workaround to
