@@ -4,16 +4,16 @@ ________________________________________________________________
 
 Short form:
 
-
   cd copter-commander-VERSION
-  emacs Makefile                # adjust variables if needed
+  emacs Makefile                # adjust "*** VARIABLES ***" section
   make                          # check for errors
   make install
-
-Then try the command "copter-commander"
+  copter-commander              # should work
 
 Then tell coco-devel@lists.sourceforge.net what you think.  We need
-LOTS more feedback.
+LOTS more feedback.  Also, we need an autoconf/automake guru to
+autoconfiscate this puppy, and ports to the other OSes.  Also, an
+artist!  Okay, end shameless plugs.
 
 ________________________________________________________________
 
@@ -27,7 +27,7 @@ below.
 
 If you go gnome, you also need the gtk-gl-area library installed.  See
 http://www.student.oulu.fi/~jlof/gtkglarea, or in most distros just
-install the package.
+install the package.  Its an easy configure/make/make-install.
 
 Copter commander performance depends heavily on the performance of
 three of its libraries.  The most important is OpenGL -- hardware
@@ -36,7 +36,7 @@ http://www.speakeasy.org/~morse/copter-commander/opengl.html.  Second
 is sound - try to get OpenAL going (www.openal.org), its pretty easy
 to install and has better quality and speed than ESD.  Last, and least
 important, is the input library, which defaults to X but can use GII,
-which can theoretically be faster than X11 using
+which can theoretically be faster than X11 using the env. variable
 GII_INPUT=input-linux-evdev.
 
 If you have done the "make", and don't want to do the "make install"

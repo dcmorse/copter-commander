@@ -375,6 +375,8 @@ struct timeval coco_ideal_frame_rate = { 0,  71429 };
 /* struct timeval coco_ideal_frame_rate = { 0, 100000 }; */
 /* 5 fps */
 /* struct timeval coco_ideal_frame_rate = { 0, 200000 }; */
+/* 3 fps */
+/* struct timeval coco_ideal_frame_rate = { 0, 333333 }; */
 
 /* SEE ALSO "IDEAL_FRAMES_PER_SECOND" IN coco.h, WHICH MUST BE SYNCED */
 
