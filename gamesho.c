@@ -1,6 +1,6 @@
 /*
  * Copter Commander - A 2d network helicopter game
- * Copyright (C) 20001  David Morse
+ * Copyright (C) 2001  David Morse
  * 
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -457,20 +457,20 @@ const int coco_ncomp_names = ((sizeof( coco_comp_names ))/(sizeof( char * )));
 
 const char *coco_major_missions[] = {
   "Welcome to Copter Boot Camp!",
-  "Ferry men to checkpoint charlie.",
-  "Enemy armor advancing on checkpoint charlie.  Take 'em out, quick!",
+  "Ferry men to Checkpoint Charlie.",
+  "Enemy armor advancing on Checkpoint Charlie.  Take 'em out, quick!",
   "Knock out the enemy gun to the west.",          
   "Enemy Command Crawler sighted.  Take it out!",          
 };
 
 const char *coco_minor_missions[] = {
   "Practice manuvering your copter using the mouse.  Try not to crash.",
-  "Order men with `M'.",
+  "Order a squad of men by holding down `M'.",
   "Let your men climb into your copter by landing on the ground in front of them.",
-  "Fly to the field in from of Checkpoint Charlie.",
+  "Fly to the field in front of Checkpoint Charlie.",
   "Press SPACE to drop your infantry.  Either be on the ground, or real high up.",
   "Wait for them to walk inside.",
-  "Good Work!.",
+  "Good Work!",
   "Fly to your pillbox.",
   "Fly to the enemy.",
   "Use SHIFT for guns, `Z` for bombs.",
@@ -485,9 +485,9 @@ const char *coco_minor_missions[] = {
 
 struct coco_tutorial_info coco_tutorial_infos[COCO_TUTORIAL_INFO_SIZE] =
 {
-  { "boot-camp", coco_setup_boot_camp, 0, 0, coco_write_boot_camp },
-  { "first-blood", coco_setup_first_blood, 1, 0, NULL },
-  { "hammer-blow", coco_setup_hammer_blow, 2, 0, NULL },
+  { "boot-camp", 0, 0, coco_update_boot_camp },
+  { "first-blood", 1, 0, NULL },
+  { "hammer-blow", 2, 0, NULL },
 };
 
 int coco_sky_option = -1; /* as interpreted by enum coco_sky_colors */

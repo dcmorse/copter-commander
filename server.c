@@ -1,6 +1,6 @@
 /*
  * Copter Commander - A 2d network helicopter game
- * Copyright (C) 20001  David Morse
+ * Copyright (C) 2001  David Morse
  * 
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -1632,6 +1632,26 @@ coco_copter_start_coords( coco_sstate *sstate, coco_nationality nat,
 }
 
 
+struct coco_tutorial_objectives
+coco_update_tutorial( coco_sstate *sstate )
+{
+  int i;
+  struct coco_tutorial_objectives to;
+
+  if (coco_tutorial && coco_tutorial->update)
+    for (i=0; i<COCO_MAX_PLAYERS; i++)
+      if (coco_players[i].in_use)
+        {
+          coco_sobject *cam = coco_find_camera( sstate, i, COCO_FALSE );
+          return coco_tutorial->update( sstate, cam, i );
+        }
+    
+  to.minor_mission = to.major_mission = 255;
+  to.angle_on = COCO_FALSE;
+  return to;
+}
+
+
 /* returns true if the game is over */
 coco_bool
 coco_sstate_update( coco_sstate *sstate )
@@ -1705,6 +1725,7 @@ coco_sstate_update( coco_sstate *sstate )
           coco_ground_collide( sobject, COCO_SOBJECT_CL( sobject ), sstate );
       }
   }
+  sstate->tutorial_objectives = coco_update_tutorial( sstate );
   {  
     int i;
     /* warp in new copters for human players*/
@@ -2283,25 +2304,6 @@ coco_server_exec( void )
   coco_server_loop( tcpfd, out_udpfd, in_udpfd, in_udp_port );
 }
 
-/* ________________________________________________________________ */
-
-void
-coco_setup_boot_camp( coco_sstate *sstate )
-{
-}
-
-void
-coco_setup_first_blood( coco_sstate *sstate )
-{
-}
-
-void
-coco_setup_hammer_blow( coco_sstate *sstate )
-{
-}
-
-
-
 /* _Bottling up the game state for udp___________________________________ */
 
 
@@ -2474,26 +2476,25 @@ coco_point_arrow_at_sobject( coco_sobject *at, coco_sstate *sstate,
 
 #define COCO_BOOT_CAMP_INFANTRY 3
 
-void 
-coco_write_boot_camp( struct coco_cstate_serial_header *str,
-                      coco_sstate *sstate, 
-                      coco_sobject *cam_object_or_null,
-                      int player_index )
+struct coco_tutorial_objectives
+coco_update_boot_camp( coco_sstate *sstate, 
+                       coco_sobject *cam_object_or_null,
+                       int player_index )
 {
   static int major_mission = 0;
   static int minor_mission = 0;
   coco_bool angle_on = COCO_FALSE;
-  coco_angle angle;
+  coco_angle angle = 0;
   coco_nationality nat = coco_players[player_index].nationality;
 
   switch (major_mission) {
   case 0:
-    if (sstate->time >= COCO_IDEAL_FRAMES_PER_SECOND * 6)
+    if (sstate->time >= COCO_IDEAL_FRAMES_PER_SECOND * 10)
       {
         major_mission = 1;
         minor_mission = 1;
       }
-    else if (sstate->time >= COCO_IDEAL_FRAMES_PER_SECOND * 3)
+    else if (sstate->time >= COCO_IDEAL_FRAMES_PER_SECOND * 5)
       {
         coco_sobject *pill;
         minor_mission = 7; /* fly to your pillbox */
@@ -2563,30 +2564,63 @@ coco_write_boot_camp( struct coco_cstate_serial_header *str,
             else minor_mission = 1;
           }
         break;
+#define COCO_FIND_AROUND_CC( n ) \
+  coco_find_sobject_in_range( sstate, COCO_INFANTRY_CLASS, \
+                              COCO_FALSE, \
+                              n, \
+                              nat, \
+                              COCO_SOBJECT_X( bunker ) + 50, \
+                              COCO_SOBJECT_X( bunker ) + 350)
       case 3: /* fly to CC */
+      case 4: /* press space */
         angle_on = COCO_TRUE;
-        angle = coco_point_arrow_at( COCO_SOBJECT_X( bunker ) + 200, COCO_GROUND_Y,
-                                     sstate, cam_object_or_null, player_index );
+        angle = coco_point_arrow_at( COCO_SOBJECT_X( bunker ) + 200,
+                                     COCO_GROUND_Y,
+                                     sstate, cam_object_or_null,
+                                     player_index );
         if (cam_object_or_null)
           {
-            coco_gnum delta
-              = COCO_SOBJECT_X( cam_object_or_null ) - COCO_SOBJECT_X( bunker ) - 200;
-            if (abs( delta ) < 150)
-              minor_mission = 4;
-          }
-        break;
-      case 4: /* drop them off */
-        if (cam_object_or_null)
-          {
-            coco_gnum delta
-              = COCO_SOBJECT_X( cam_object_or_null ) - COCO_SOBJECT_X( bunker ) - 200;
-            if (!(abs( delta ) < 150))
-              minor_mission = 3;
+            if (COCO_FIND_AROUND_CC( COCO_BOOT_CAMP_INFANTRY - defenders ))
+              minor_mission = 5;
+            else if ((0 < (COCO_BOOT_CAMP_INFANTRY - defenders - troopers))
+                     && !COCO_FIND_AROUND_CC( COCO_BOOT_CAMP_INFANTRY 
+                                              - defenders - troopers ))
+              minor_mission = 1;
+            else
+              {
+                coco_gnum delta
+                  = COCO_SOBJECT_X( cam_object_or_null )
+                  - COCO_SOBJECT_X( bunker ) - 200;
+                if (abs( delta ) < 150)
+                  minor_mission = 4;
+                else minor_mission = 3;
+              }
           }
         break;
       case 5: /* let them walk in */
+        if (defenders == COCO_BOOT_CAMP_INFANTRY)
+          minor_mission = 6;
+        else if (!COCO_FIND_AROUND_CC( COCO_BOOT_CAMP_INFANTRY - defenders ))
+          minor_mission = 1;
         break;
+#undef COCO_FIND_AROUND_CC
       case 6: /* good job */
+        {
+          static coco_bool congratulations_on = COCO_FALSE;
+          static coco_u32 congratulations_time;
+          if (!congratulations_on)
+            {
+              congratulations_on = COCO_TRUE;
+              congratulations_time
+                = COCO_U32_ADD_N_MODULAR( sstate->time,
+                                          3 * COCO_IDEAL_FRAMES_PER_SECOND );
+            }
+          else if (sstate->time == congratulations_time)
+            {
+              major_mission = 2;
+              minor_mission = 8;
+            }
+        }
         break;
       };
     }
@@ -2595,29 +2629,14 @@ coco_write_boot_camp( struct coco_cstate_serial_header *str,
     break;
   }
 
-  str->major_mission = major_mission;
-  str->minor_mission = minor_mission;
-  str->angle_on = angle_on;
-  str->angle = angle;
-}
-
-
-
-void
-coco_tutorial_write_mission_objectives( struct coco_cstate_serial_header *str,
-                                        coco_sstate *sstate, 
-                                        coco_sobject *cam_object_or_null,
-                                        int player_index )
-{
-  if ((coco_tutorial==NULL)
-      || (coco_tutorial->write_mission_objectives==NULL))
-    {
-      str->angle_on = COCO_FALSE;
-      str->major_mission = str->minor_mission = 255;
-    }
-  else
-    coco_tutorial->write_mission_objectives( str, sstate, cam_object_or_null,
-                                             player_index );
+  {
+    struct coco_tutorial_objectives to;
+    to.major_mission = major_mission;
+    to.minor_mission = minor_mission;
+    to.angle_on = angle_on;
+    to.angle = angle;
+    return to;
+  }
 }
 
 
@@ -2641,8 +2660,10 @@ coco_write_cstate_serial_header( struct coco_cstate_serial_header *str,
   str->board_w = sstate->board_w;
   str->dx = cam_object_or_null ? COCO_SOBJECT_DX( cam_object_or_null ) : 0;
   str->dy = cam_object_or_null ? COCO_SOBJECT_DY( cam_object_or_null ) : 0;
-  coco_tutorial_write_mission_objectives( str, sstate, 
-                                          cam_object_or_null, player_index );
+  str->major_mission = sstate->tutorial_objectives.major_mission;
+  str->minor_mission = sstate->tutorial_objectives.minor_mission;
+  str->angle_on      = sstate->tutorial_objectives.angle_on;
+  str->angle         = sstate->tutorial_objectives.angle;
   if (cam_object_or_null 
       && coco_sobject_subtype_p( COCO_SOBJECT_CL( cam_object_or_null ),
                                  COCO_COPTER_CLASS ))

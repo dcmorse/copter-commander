@@ -1,5 +1,5 @@
 ;;;;; Copter Commander - A 2d network helicopter game
-;;;;; Copyright (C) 20001  David Morse
+;;;;; Copyright (C) 2001  David Morse
 ;;;;; 
 ;;;;; This program is free software; you can redistribute it and/or modify
 ;;;;; it under the terms of the GNU General Public License as published by

@@ -1,3 +1,7 @@
+2001-05-16  David Morse  <dm@bomberlan.net>
+
+	* language.c (coco_map_directory): add call to closedir();
+
 2001-05-13  David Morse  <dm@bomberlan.net>
 
 	* background-rescue-raiders.c (coco_draw_background): Make

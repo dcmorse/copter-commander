@@ -1,6 +1,6 @@
 /*
  * Copter Commander - A 2d network helicopter game
- * Copyright (C) 20001  David Morse
+ * Copyright (C) 2001  David Morse
  * 
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -1426,6 +1426,15 @@ struct coco_nomination_status {
 };
 
 
+struct coco_tutorial_objectives {
+  unsigned char major_mission; /* 255 = off */
+  unsigned char minor_mission; /* 255 = off */
+  coco_bool angle_on;
+  coco_angle angle;
+};
+
+
+
 /* Holds the state of the game on the server */
 struct coco_sstate_struct {
   coco_bool game_in_progress;
@@ -1451,6 +1460,7 @@ struct coco_sstate_struct {
   coco_sobject_cl *favorite_copter_class[COCO_MAX_PLAYERS];
   struct coco_nomination_status nominations[COCO_MAX_NOMINATIONS];
   unsigned char nominations_cursor;
+  struct coco_tutorial_objectives tutorial_objectives;
 };
 
 #define COCO_SSTATE_OBJECT_REF( sstate, obj_idx ) ((sstate)->sobjects + (obj_idx))
@@ -1467,14 +1477,10 @@ coco_sstate *coco_get_sstate( void );
 coco_gnum coco_get_board_w( void );
 void coco_server_exec( void );
 
-void coco_setup_boot_camp( coco_sstate *sstate );
-void coco_setup_first_blood( coco_sstate *sstate );
-void coco_setup_hammer_blow( coco_sstate *sstate );
-
-void coco_write_boot_camp( struct coco_cstate_serial_header *str,
-                                     coco_sstate *sstate, 
-                                     coco_sobject *cam_object_or_null,
-                                     int player_index );
+struct coco_tutorial_objectives 
+coco_update_boot_camp( coco_sstate *sstate, 
+                       coco_sobject *cam_object_or_null,
+                       int player_index );
 
 
 coco_sobject *coco_sstate_allocate_sobject( coco_sstate *sstate );
@@ -1608,13 +1614,11 @@ extern unsigned long coco_command_line_right_comps;
 
 struct coco_tutorial_info {
   char *name;
-  void (* setup)(coco_sstate *); /* not used -- delete */
   int left_comps;
   int right_comps;
-  void (* write_mission_objectives)( struct coco_cstate_serial_header *str,
-                                     coco_sstate *sstate, 
-                                     coco_sobject *cam_object_or_null,
-                                     int player_index );
+  struct coco_tutorial_objectives (* update)( coco_sstate *sstate, 
+                                              coco_sobject *cam_object_or_null,
+                                              int player_index );
 };
 
 #define COCO_TUTORIAL_INFO_SIZE 3

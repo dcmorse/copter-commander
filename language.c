@@ -1,6 +1,6 @@
 /*
  * Copter Commander - A 2d network helicopter game
- * Copyright (C) 20001  David Morse
+ * Copyright (C) 2001  David Morse
  * 
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -335,6 +335,7 @@ coco_map_directory( const char *directory,
           if (fn( entry->d_name, data ))
             break;
         }
+      closedir( dir );
       return 0;
     }
 }
