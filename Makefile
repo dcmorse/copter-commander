@@ -356,6 +356,10 @@ c-header.strlit: c-header.txt string-literalize.sh
 
 globals.o: COPYING.strlit manual.strlit keybindings.strlit
 
+tiff-compile: tiff-compile.c raster.h c-header.strlit
+	${CC} ${CFLAGS_UNANSI} -I${COCO_LIBTIFF_INCLUDE_DIRECTORY} \
+	  -o $@ $@.c -L${COCO_LIBTIFF_LIB_DIRECTORY} -ltiff
+
 sizeof: sizeof.c
 	${CC} ${CFLAGS} -o sizeof sizeof.c
 
@@ -365,7 +369,7 @@ endian: endian.c
 clean:
 	rm -f rstr-*/built *-rstr/*.o *.o \
 	  copter-commander glx-copter-commander \
-	  config-time.h *.strlit endian sizeof
+	  config-time.h *.strlit endian sizeof tiff-compile 
 
 distclean: clean
 	rm -f object-time.h object-time.lisp \
