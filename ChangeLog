@@ -1,5 +1,9 @@
 2002-01-04  David Morse  <svref@yahoo.com>
 
+	* client.c (coco_play_intro_movie_frame): use coco_product_copyright.
+
+	* globals.c: update copyright for 2002.
+
 	* INSTALL: spiffed up.
 
 	* Makefile: tidy up a bit.

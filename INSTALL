@@ -51,10 +51,15 @@ ________________________________________________________________
 
 Making due with glx-copter-commander:
 
-Two executables are made: copter-commander, linked against gnome
-libraries, and glx-copter-commander, linked against bare X and OpenGL.
-This version has an obfuscated UI, but its easy to build on wierd systems
-without gnome, say, Irix.  
+glx-copter-commander is missing all but the most basic UI for creating
+and joining games, using the command line as a crutch.  It is not
+recommened for serious play.  It is mainly there for people to decide
+if they like the gameplay enough to hassle with the library
+dependancies, before they actually have to go through the hassle.  It
+is also easier to port -- It was the first version to run on alpha,
+for example.
+
+Instead of "make", do "make glx-copter-commander".
 
 Most of your setup you do with the command line.  First start a server:
 
@@ -69,7 +74,7 @@ The client and host may run on the same machine without appreciable
 slowdown.
 
 Once the client has come up, press return.  This will start the game,
-or join an in progress game.
+or join an in-progress game.
 
 ________________________________________________________________
 

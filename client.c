@@ -1822,7 +1822,7 @@ coco_play_intro_movie_frame( coco_bool advance_frame, coco_bool rewind )
                            "shell of the enemy Headquarters\n"
                            "Crawler and win the game!\n"
                            "\n"
-                           "Copyright 2001 David Morse.\n"
+                           "%s\n"
                            "Portions Copyright 1998, 1999, 2000\n"
                            "Tim Janik and Red Hat.\n"
                            "\n"
@@ -1831,6 +1831,7 @@ coco_play_intro_movie_frame( coco_bool advance_frame, coco_bool rewind )
                            "law.  You may redistribute copies of\n"
                            "%s under the terms of\n"
                            "the GNU General Public License.  %s\n",
+			   coco_product_copyright,
                            coco_product_name, coco_product_name,
                            coco_gnu_info_string );
                   coco_font_string_dimensions( buf, -1, &coco_default_font,

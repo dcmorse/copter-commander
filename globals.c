@@ -43,7 +43,7 @@ int coco_command_line_inhibit_double_buffer = COCO_FALSE;/* not coco_bool to app
 
 const char *coco_product_authors[]
  = { "David Morse <copter-commander-devel@bomberlan.net>", NULL };
-const char *coco_product_copyright = "Copyright 2001 David Morse.";
+const char *coco_product_copyright = "Copyright 2001, 2002 David Morse.";
 const char *coco_product_description
  = "A 2d network helicopter game.\n";
 const char *coco_product_description_windbag
