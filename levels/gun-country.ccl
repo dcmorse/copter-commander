@@ -2,7 +2,7 @@
 
 (define-coco-level gun-country
     1 0                                 ; coco-version
-    1                                   ; level-version
+    2                                   ; level-version
     4000                                ; width
     ((ggpb (pillbox (- board-w (w pillbox)) good-guys 0 gghq))
      (gghq (headquarters (right-center headquarters 500) good-guys ggpb))
@@ -15,13 +15,16 @@
      (nil  (traffic-sign (left-center traffic-sign -300) 0))
      (nil  (traffic-sign (right-center traffic-sign -300) 0))
 
-     ;; center cluster
+     ;; center cluster - put a repair spot for aa gun right on top
+     ;; of the bunker.
+     (nil (gun-rubble (/ (- board-w (w gun-rubble)) 2) aa-gun))
      (nil (bunker (/ (- board-w (w bunker)) 2) bad-guys 0))
      (nil (at-gun (+ (/ (- board-w (w at-gun)) 2) 120) good-guys))
      (nil (at-gun (- (/ (- board-w (w at-gun)) 2) 120) bad-guys))
 
 
      ;; left side guns
+
      (nil (aa-gun (left-center aa-gun 1700) bad-guys))
      (nil (aa-gun (left-center aa-gun 1600) good-guys))
      (nil (aa-gun (left-center aa-gun 1500) bad-guys))
@@ -31,7 +34,7 @@
      (nil (aa-gun (left-center aa-gun 1100) bad-guys))
      (nil (aa-gun (left-center aa-gun 1000) good-guys))
      (nil (aa-gun (left-center aa-gun 900) bad-guys))
-
+ 
      ;; right side guns
      (nil (aa-gun (right-center aa-gun 1700) good-guys))
      (nil (aa-gun (right-center aa-gun 1600) bad-guys))

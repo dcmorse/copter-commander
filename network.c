@@ -55,7 +55,7 @@ coco_get_protocol( char *name )
 }
 
 
-/* shutdown_too should be true if its a connected (i.e. tcp) stream */
+/* shutdown_too should be true if its a connected (tcp) stream */
 void 
 coco_close_fd( int fd, coco_bool shutdown_too )
 {
@@ -389,6 +389,7 @@ coco_cstate_serial_header_hton( struct coco_cstate_serial_header *str )
   str->dashinfo.missiles      = COCO_U32_HTON( str->dashinfo.missiles );
   str->dashinfo.rockets       = COCO_U32_HTON( str->dashinfo.rockets );
   str->dashinfo.paratroopers  = COCO_U32_HTON( str->dashinfo.paratroopers );
+  str->dashinfo.engitroopers  = COCO_U32_HTON( str->dashinfo.engitroopers );
   str->dashinfo.copters       = COCO_U32_HTON( str->dashinfo.copters );
   str->dashinfo.funds         = COCO_U32_HTON( str->dashinfo.funds );
   str->dashinfo.fuel          = COCO_U32_HTON( str->dashinfo.fuel );
@@ -409,6 +410,7 @@ coco_cstate_serial_header_ntoh( struct coco_cstate_serial_header *str )
   str->dashinfo.missiles      = COCO_U32_NTOH( str->dashinfo.missiles );
   str->dashinfo.rockets       = COCO_U32_NTOH( str->dashinfo.rockets );
   str->dashinfo.paratroopers  = COCO_U32_NTOH( str->dashinfo.paratroopers );
+  str->dashinfo.engitroopers  = COCO_U32_NTOH( str->dashinfo.engitroopers );
   str->dashinfo.copters       = COCO_U32_NTOH( str->dashinfo.copters );
   str->dashinfo.funds         = COCO_U32_NTOH( str->dashinfo.funds );
   str->dashinfo.fuel          = COCO_U32_NTOH( str->dashinfo.fuel );

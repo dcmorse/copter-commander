@@ -1,3 +1,7 @@
+2001-03-15  David Morse  <dm@bomberlan.net>
+
+	*  : Add engineer airlift capability.
+
 2001-03-13  David Morse  <dm@bomberlan.net>
 
 	* levels/gun-country.ccl: Created.  Also fixed centering bug on

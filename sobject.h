@@ -1112,6 +1112,7 @@ struct coco_bubble_copter {
   unsigned char missiles;
   unsigned char rockets;
   unsigned char paratroopers;
+  unsigned short engitroopers;
   unsigned short fuel;
   coco_bool missile_cooldown;
   coco_u32 missile_cooldown_time;
@@ -1148,6 +1149,7 @@ struct coco_cobra {
   unsigned char missiles;
   unsigned char rockets;
   unsigned char paratroopers;
+  unsigned short engitroopers;
   unsigned short fuel;
   coco_bool missile_cooldown;
   coco_u32 missile_cooldown_time;
@@ -1184,6 +1186,7 @@ struct coco_copter {
   unsigned char missiles;
   unsigned char rockets;
   unsigned char paratroopers;
+  unsigned short engitroopers;
   unsigned short fuel;
   coco_bool missile_cooldown;
   coco_u32 missile_cooldown_time;
@@ -1525,6 +1528,7 @@ coco_sobject *coco_firetruck_automatic_init_by_list( coco_sobject *inst, coco_so
 #define COCO_COPTER_MISSILES( clss ) ((clss)->copter.missiles)
 #define COCO_COPTER_ROCKETS( clss ) ((clss)->copter.rockets)
 #define COCO_COPTER_PARATROOPERS( clss ) ((clss)->copter.paratroopers)
+#define COCO_COPTER_ENGITROOPERS( clss ) ((clss)->copter.engitroopers)
 #define COCO_COPTER_FUEL( clss ) ((clss)->copter.fuel)
 #define COCO_COPTER_MISSILE_COOLDOWN( clss ) ((clss)->copter.missile_cooldown)
 #define COCO_COPTER_MISSILE_COOLDOWN_TIME( clss ) ((clss)->copter.missile_cooldown_time)

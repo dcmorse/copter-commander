@@ -613,6 +613,7 @@ struct coco_dashboard_info {
   coco_u32 missiles;
   coco_u32 rockets;
   coco_u32 paratroopers;
+  coco_u32 engitroopers;
   coco_u32 copters;
   coco_u32 funds;
   coco_u32 fuel;

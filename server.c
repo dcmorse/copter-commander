@@ -1058,18 +1058,23 @@ coco_copter_drop_trooper_on_ground_maybe( coco_sobject *sobject,
 
 {
   unsigned char troopers = COCO_COPTER_PARATROOPERS( sobject );
-  if (troopers > 0)
+  unsigned char engineers = COCO_COPTER_ENGITROOPERS( sobject );
+  if ((troopers > 0) || (engineers > 0))
     {
       coco_sobject *inf = coco_sstate_allocate_sobject( sstate );
       if (inf)
         {
           coco_nationality nat = COCO_SOBJECT_NATIONALITY( sobject );
           coco_gnum x0, x1, y;
-          COCO_COPTER_PARATROOPERS( sobject ) = troopers - 1;
+          if (troopers > 0)
+            COCO_COPTER_PARATROOPERS( sobject ) = troopers - 1;
+          else
+            COCO_COPTER_ENGITROOPERS( sobject ) = engineers - 1;
           coco_get_collision_recti( sobject, &x0, &x1, &y, &y );
           coco_init_infantry_from_ground
-            ( inf, COCO_INFANTRY_CLASS,
-              (nat==COCO_GOOD_GUYS) 
+            ( inf, 
+              (troopers > 0) ? COCO_INFANTRY_CLASS : COCO_ENGINEER_CLASS,
+              (nat == COCO_GOOD_GUYS) 
               ? (x0 - COCO_INFANTRY_CLASS->canonical_w - 1) 
               : (x1 + 1),
               nat );
@@ -1935,6 +1940,7 @@ coco_write_cstate_serial_header( struct coco_cstate_serial_header *str,
       str->dashinfo.missiles     = COCO_COPTER_MISSILES( cam_object_or_null );
       str->dashinfo.rockets      = COCO_COPTER_ROCKETS( cam_object_or_null );
       str->dashinfo.paratroopers = COCO_COPTER_PARATROOPERS( cam_object_or_null );
+      str->dashinfo.engitroopers = COCO_COPTER_ENGITROOPERS( cam_object_or_null );
       str->dashinfo.fuel         = COCO_COPTER_FUEL( cam_object_or_null );
     }
   else

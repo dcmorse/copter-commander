@@ -1670,13 +1670,17 @@ coco_copter_drop_paratrooper( coco_sobject *sobject,
                               coco_sstate *sstate )
 {
   unsigned char ntroopers = COCO_COPTER_PARATROOPERS( sobject );
-  if (ntroopers > 0)
+  unsigned char nengineers = COCO_COPTER_ENGITROOPERS( sobject );
+  if ((ntroopers > 0) || (nengineers > 0))
     {
       coco_sobject *troop 
         = coco_drop_paratrooper( sobject, cla->super, sstate );
       if (troop)
         {
-          COCO_COPTER_PARATROOPERS( sobject ) = ntroopers - 1;
+          if (ntroopers > 0)
+            COCO_COPTER_PARATROOPERS( sobject ) = ntroopers - 1;
+          else 
+            COCO_COPTER_ENGITROOPERS( sobject ) = nengineers - 1;
           return troop;
         }
     }
@@ -2184,17 +2188,35 @@ coco_copter_friendly_collision( coco_sobject *obj1,
 {
   unsigned char paratroopers = COCO_COPTER_PARATROOPERS( obj1 );
   *stat1 = *stat2 = COCO_FALSE;
-  if ((paratroopers < COCO_SOBJECT_MAX_INTERNAL_INFANTRY( obj1 ))
-      && COCO_COPTER_LANDED_P( obj1 )
+  if (COCO_COPTER_LANDED_P( obj1 )
       && (!COCO_COPTER_LANDED_ON_PAD_P( obj1 ))
-      && coco_sobject_subtype_p( COCO_SOBJECT_CL( obj2 ),
-                                 COCO_INFANTRY_CLASS ))
+      && (COCO_COPTER_ENGITROOPERS( obj1 ) < 1))
     {
-      *stat2 = COCO_TRUE;
-      COCO_COPTER_PARATROOPERS( obj1 ) = paratroopers + 1;
-      coco_sobject_delete( obj2, COCO_SOBJECT_CL( obj2 ), sstate );
+      coco_bool delete2 = COCO_FALSE;
+      coco_bool is_engineer = coco_sobject_subtype_p( COCO_SOBJECT_CL( obj2 ),
+                                                      COCO_ENGINEER_CLASS );
+      if ((0 == paratroopers) && is_engineer)
+        {
+          delete2 = COCO_TRUE;
+          COCO_COPTER_ENGITROOPERS( obj1 )++;
+        }
+      else if ((paratroopers < COCO_SOBJECT_MAX_INTERNAL_INFANTRY( obj1 ))
+               && (!is_engineer)
+               && coco_sobject_subtype_p( COCO_SOBJECT_CL( obj2 ),
+                                          COCO_INFANTRY_CLASS ))
+        {
+          delete2 = COCO_TRUE;
+          COCO_COPTER_PARATROOPERS( obj1 ) = paratroopers + 1;
+        }
+
+      if (delete2)
+        {
+          *stat2 = COCO_TRUE;
+          coco_sobject_delete( obj2, COCO_SOBJECT_CL( obj2 ), sstate );
+          return;
+        }
     }
-  else coco_friendly_collision( obj1, obj1cl->super, obj2, sstate, stat1, stat2 );
+  coco_friendly_collision( obj1, obj1cl->super, obj2, sstate, stat1, stat2 );
 }
 
 

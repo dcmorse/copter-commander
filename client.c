@@ -770,7 +770,13 @@ coco_draw_dashboard( struct coco_cstate *cstate, int cfps )
           sprintf( buf, "%2d/%d", val, maxval );
           coco_draw_color( COCO_COLOR_DASHBOARD_FG );
         }
-      else
+      else if ((4==i)&&(dashinfo->engitroopers > 0))
+        { /* paratrooper gauge */
+          coco_u32 engitroopers = dashinfo->engitroopers;
+          coco_draw_color( COCO_COLOR_DASHBOARD_FULL );
+          sprintf( buf, "%d+%d", val, engitroopers );
+        }
+      else 
         {
           sprintf( buf, "%d", val );
           coco_draw_color( ((maxval>=0)&&(val>=maxval))

@@ -3839,6 +3839,7 @@ coco_init_copter( coco_sobject * inst, coco_sobject_cl * cl, signed char camera_
   inst->copter.missiles = COCO_SOBJECT_MAX_MISSILES( inst );
   inst->copter.rockets = COCO_SOBJECT_MAX_ROCKETS( inst );
   inst->copter.paratroopers = 0;
+  inst->copter.engitroopers = 0;
   inst->copter.fuel = COCO_SOBJECT_MAX_FUEL(inst);
   inst->copter.missile_cooldown = COCO_FALSE;
   inst->copter.next_missilebeat_on_pad = 0;

@@ -317,6 +317,7 @@
    ("missiles"      "COCO_SOBJECT_MAX_MISSILES( inst )" "unsigned char")
    ("rockets"      "COCO_SOBJECT_MAX_ROCKETS( inst )" "unsigned char")
    ("paratroopers" "0"                                "unsigned char")
+   ("engitroopers" "0"                                "unsigned short")
    ("fuel"         "COCO_SOBJECT_MAX_FUEL(inst)"      "unsigned short")
    ("missile_cooldown" "COCO_FALSE" "coco_bool")
    ;; when to set missile_cooldown to false again
