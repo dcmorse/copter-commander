@@ -22,6 +22,7 @@
   (;; four chars star the day off right
    ("in_use"       nil         "coco_bool") ; written only by the allocator
    ("camera_index" "-1"        "signed char")
+   ("comp_index"   "-1"        "signed char")
    ("facing"       :arg        "coco_facing")
    ("new_flag"     "COCO_TRUE" "coco_bool") ; true iff we're just made
    ;; now all the important ints
@@ -206,7 +207,8 @@
 
 (c-define-generic-function "sobject_to_cobject" "sobject" "void"
                            (("cobject" "coco_cobject *")
-                            ("cam_left" "coco_gnum")))
+                            ("cam_left" "coco_gnum")
+                            ("network_byte_order" "coco_bool")))
 
 (c-define-method "sobject_to_cobject" "sobject"
                  "coco_rasteroid_to_cobject")

@@ -67,7 +67,7 @@ struct coco_sobject_class_ {
   coco_color_index (* sobject_blip_color_index)( coco_sobject *, coco_sobject_cl * , int , coco_sstate * );
   coco_bool (* ground_trooper_target_p)( coco_sobject *, coco_sobject_cl * , coco_sobject * );
   void (* sobject_neutral_building_collide)( coco_sobject *, coco_sobject_cl * , coco_sobject * );
-  void (* sobject_to_cobject)( coco_sobject *, coco_sobject_cl * , coco_cobject * , coco_gnum );
+  void (* sobject_to_cobject)( coco_sobject *, coco_sobject_cl * , coco_cobject * , coco_gnum , coco_bool );
   void (* ground_collide)( coco_sobject *, coco_sobject_cl * , coco_sstate * );
   coco_health (* effective_damage)( coco_sobject *, coco_sobject_cl * , coco_sobject * );
   void (* friendly_collision)( coco_sobject *, coco_sobject_cl * , coco_sobject * , coco_sstate * , coco_bool * , coco_bool * );
@@ -182,6 +182,7 @@ struct coco_explosion {
   coco_sobject_cl * cl;
   coco_bool in_use;
   signed char camera_index;
+  signed char comp_index;
   coco_facing facing;
   coco_bool new_flag;
   unsigned int index;
@@ -205,6 +206,7 @@ struct coco_small_metal_shrapnel {
   coco_sobject_cl * cl;
   coco_bool in_use;
   signed char camera_index;
+  signed char comp_index;
   coco_facing facing;
   coco_bool new_flag;
   unsigned int index;
@@ -229,6 +231,7 @@ struct coco_med_metal_shrapnel {
   coco_sobject_cl * cl;
   coco_bool in_use;
   signed char camera_index;
+  signed char comp_index;
   coco_facing facing;
   coco_bool new_flag;
   unsigned int index;
@@ -253,6 +256,7 @@ struct coco_big_metal_shrapnel {
   coco_sobject_cl * cl;
   coco_bool in_use;
   signed char camera_index;
+  signed char comp_index;
   coco_facing facing;
   coco_bool new_flag;
   unsigned int index;
@@ -277,6 +281,7 @@ struct coco_metal_shrapnel {
   coco_sobject_cl * cl;
   coco_bool in_use;
   signed char camera_index;
+  signed char comp_index;
   coco_facing facing;
   coco_bool new_flag;
   unsigned int index;
@@ -301,6 +306,7 @@ struct coco_shrapnel {
   coco_sobject_cl * cl;
   coco_bool in_use;
   signed char camera_index;
+  signed char comp_index;
   coco_facing facing;
   coco_bool new_flag;
   unsigned int index;
@@ -324,6 +330,7 @@ struct coco_spark {
   coco_sobject_cl * cl;
   coco_bool in_use;
   signed char camera_index;
+  signed char comp_index;
   coco_facing facing;
   coco_bool new_flag;
   unsigned int index;
@@ -349,6 +356,7 @@ struct coco_missile {
   coco_sobject_cl * cl;
   coco_bool in_use;
   signed char camera_index;
+  signed char comp_index;
   coco_facing facing;
   coco_bool new_flag;
   unsigned int index;
@@ -374,6 +382,7 @@ struct coco_rocket {
   coco_sobject_cl * cl;
   coco_bool in_use;
   signed char camera_index;
+  signed char comp_index;
   coco_facing facing;
   coco_bool new_flag;
   unsigned int index;
@@ -397,6 +406,7 @@ struct coco_abstract_missile {
   coco_sobject_cl * cl;
   coco_bool in_use;
   signed char camera_index;
+  signed char comp_index;
   coco_facing facing;
   coco_bool new_flag;
   unsigned int index;
@@ -420,6 +430,7 @@ struct coco_bomb {
   coco_sobject_cl * cl;
   coco_bool in_use;
   signed char camera_index;
+  signed char comp_index;
   coco_facing facing;
   coco_bool new_flag;
   unsigned int index;
@@ -444,6 +455,7 @@ struct coco_tank_bullet {
   coco_sobject_cl * cl;
   coco_bool in_use;
   signed char camera_index;
+  signed char comp_index;
   coco_facing facing;
   coco_bool new_flag;
   unsigned int index;
@@ -468,6 +480,7 @@ struct coco_rifle_bullet {
   coco_sobject_cl * cl;
   coco_bool in_use;
   signed char camera_index;
+  signed char comp_index;
   coco_facing facing;
   coco_bool new_flag;
   unsigned int index;
@@ -492,6 +505,7 @@ struct coco_bullet {
   coco_sobject_cl * cl;
   coco_bool in_use;
   signed char camera_index;
+  signed char comp_index;
   coco_facing facing;
   coco_bool new_flag;
   unsigned int index;
@@ -516,6 +530,7 @@ struct coco_munition {
   coco_sobject_cl * cl;
   coco_bool in_use;
   signed char camera_index;
+  signed char comp_index;
   coco_facing facing;
   coco_bool new_flag;
   unsigned int index;
@@ -539,6 +554,7 @@ struct coco_engineer {
   coco_sobject_cl * cl;
   coco_bool in_use;
   signed char camera_index;
+  signed char comp_index;
   coco_facing facing;
   coco_bool new_flag;
   unsigned int index;
@@ -564,6 +580,7 @@ struct coco_infantry {
   coco_sobject_cl * cl;
   coco_bool in_use;
   signed char camera_index;
+  signed char comp_index;
   coco_facing facing;
   coco_bool new_flag;
   unsigned int index;
@@ -589,6 +606,7 @@ struct coco_firetruck {
   coco_sobject_cl * cl;
   coco_bool in_use;
   signed char camera_index;
+  signed char comp_index;
   coco_facing facing;
   coco_bool new_flag;
   unsigned int index;
@@ -613,6 +631,7 @@ struct coco_tank {
   coco_sobject_cl * cl;
   coco_bool in_use;
   signed char camera_index;
+  signed char comp_index;
   coco_facing facing;
   coco_bool new_flag;
   unsigned int index;
@@ -636,6 +655,7 @@ struct coco_demo_van {
   coco_sobject_cl * cl;
   coco_bool in_use;
   signed char camera_index;
+  signed char comp_index;
   coco_facing facing;
   coco_bool new_flag;
   unsigned int index;
@@ -659,6 +679,7 @@ struct coco_ground_vehicle {
   coco_sobject_cl * cl;
   coco_bool in_use;
   signed char camera_index;
+  signed char comp_index;
   coco_facing facing;
   coco_bool new_flag;
   unsigned int index;
@@ -682,6 +703,7 @@ struct coco_ground_unit {
   coco_sobject_cl * cl;
   coco_bool in_use;
   signed char camera_index;
+  signed char comp_index;
   coco_facing facing;
   coco_bool new_flag;
   unsigned int index;
@@ -705,6 +727,7 @@ struct coco_gun_rubble {
   coco_sobject_cl * cl;
   coco_bool in_use;
   signed char camera_index;
+  signed char comp_index;
   coco_facing facing;
   coco_bool new_flag;
   unsigned int index;
@@ -731,6 +754,7 @@ struct coco_at_gun {
   coco_sobject_cl * cl;
   coco_bool in_use;
   signed char camera_index;
+  signed char comp_index;
   coco_facing facing;
   coco_bool new_flag;
   unsigned int index;
@@ -755,6 +779,7 @@ struct coco_aa_gun {
   coco_sobject_cl * cl;
   coco_bool in_use;
   signed char camera_index;
+  signed char comp_index;
   coco_facing facing;
   coco_bool new_flag;
   unsigned int index;
@@ -779,6 +804,7 @@ struct coco_gun {
   coco_sobject_cl * cl;
   coco_bool in_use;
   signed char camera_index;
+  signed char comp_index;
   coco_facing facing;
   coco_bool new_flag;
   unsigned int index;
@@ -803,6 +829,7 @@ struct coco_headquarters {
   coco_sobject_cl * cl;
   coco_bool in_use;
   signed char camera_index;
+  signed char comp_index;
   coco_facing facing;
   coco_bool new_flag;
   unsigned int index;
@@ -828,6 +855,7 @@ struct coco_landing_pad {
   coco_sobject_cl * cl;
   coco_bool in_use;
   signed char camera_index;
+  signed char comp_index;
   coco_facing facing;
   coco_bool new_flag;
   unsigned int index;
@@ -851,6 +879,7 @@ struct coco_pillbox {
   coco_sobject_cl * cl;
   coco_bool in_use;
   signed char camera_index;
+  signed char comp_index;
   coco_facing facing;
   coco_bool new_flag;
   unsigned int index;
@@ -876,6 +905,7 @@ struct coco_bunker {
   coco_sobject_cl * cl;
   coco_bool in_use;
   signed char camera_index;
+  signed char comp_index;
   coco_facing facing;
   coco_bool new_flag;
   unsigned int index;
@@ -900,6 +930,7 @@ struct coco_hut {
   coco_sobject_cl * cl;
   coco_bool in_use;
   signed char camera_index;
+  signed char comp_index;
   coco_facing facing;
   coco_bool new_flag;
   unsigned int index;
@@ -925,6 +956,7 @@ struct coco_traffic_sign {
   coco_sobject_cl * cl;
   coco_bool in_use;
   signed char camera_index;
+  signed char comp_index;
   coco_facing facing;
   coco_bool new_flag;
   unsigned int index;
@@ -948,6 +980,7 @@ struct coco_building {
   coco_sobject_cl * cl;
   coco_bool in_use;
   signed char camera_index;
+  signed char comp_index;
   coco_facing facing;
   coco_bool new_flag;
   unsigned int index;
@@ -971,6 +1004,7 @@ struct coco_balloon_line {
   coco_sobject_cl * cl;
   coco_bool in_use;
   signed char camera_index;
+  signed char comp_index;
   coco_facing facing;
   coco_bool new_flag;
   unsigned int index;
@@ -996,6 +1030,7 @@ struct coco_balloon {
   coco_sobject_cl * cl;
   coco_bool in_use;
   signed char camera_index;
+  signed char comp_index;
   coco_facing facing;
   coco_bool new_flag;
   unsigned int index;
@@ -1021,6 +1056,7 @@ struct coco_balloon_part {
   coco_sobject_cl * cl;
   coco_bool in_use;
   signed char camera_index;
+  signed char comp_index;
   coco_facing facing;
   coco_bool new_flag;
   unsigned int index;
@@ -1044,6 +1080,7 @@ struct coco_cloud {
   coco_sobject_cl * cl;
   coco_bool in_use;
   signed char camera_index;
+  signed char comp_index;
   coco_facing facing;
   coco_bool new_flag;
   unsigned int index;
@@ -1067,6 +1104,7 @@ struct coco_smoke {
   coco_sobject_cl * cl;
   coco_bool in_use;
   signed char camera_index;
+  signed char comp_index;
   coco_facing facing;
   coco_bool new_flag;
   unsigned int index;
@@ -1090,6 +1128,7 @@ struct coco_bubble_copter {
   coco_sobject_cl * cl;
   coco_bool in_use;
   signed char camera_index;
+  signed char comp_index;
   coco_facing facing;
   coco_bool new_flag;
   unsigned int index;
@@ -1127,6 +1166,7 @@ struct coco_cobra {
   coco_sobject_cl * cl;
   coco_bool in_use;
   signed char camera_index;
+  signed char comp_index;
   coco_facing facing;
   coco_bool new_flag;
   unsigned int index;
@@ -1164,6 +1204,7 @@ struct coco_copter {
   coco_sobject_cl * cl;
   coco_bool in_use;
   signed char camera_index;
+  signed char comp_index;
   coco_facing facing;
   coco_bool new_flag;
   unsigned int index;
@@ -1201,6 +1242,7 @@ struct coco_inviso_camera {
   coco_sobject_cl * cl;
   coco_bool in_use;
   signed char camera_index;
+  signed char comp_index;
   coco_facing facing;
   coco_bool new_flag;
   unsigned int index;
@@ -1224,6 +1266,7 @@ struct coco_camera {
   coco_sobject_cl * cl;
   coco_bool in_use;
   signed char camera_index;
+  signed char comp_index;
   coco_facing facing;
   coco_bool new_flag;
   unsigned int index;
@@ -1247,6 +1290,7 @@ struct coco_sndobject {
   coco_sobject_cl * cl;
   coco_bool in_use;
   signed char camera_index;
+  signed char comp_index;
   coco_facing facing;
   coco_bool new_flag;
   unsigned int index;
@@ -1271,6 +1315,7 @@ struct coco_every_sobject {
   coco_sobject_cl * cl;
   coco_bool in_use;
   signed char camera_index;
+  signed char comp_index;
   coco_facing facing;
   coco_bool new_flag;
   unsigned int index;
@@ -1368,7 +1413,7 @@ coco_ground_trooper_target_p( coco_sobject * inst, coco_sobject_cl * cl, coco_so
 void
 coco_sobject_neutral_building_collide( coco_sobject * inst, coco_sobject_cl * cl, coco_sobject * building );
 void
-coco_sobject_to_cobject( coco_sobject * inst, coco_sobject_cl * cl, coco_cobject * cobject, coco_gnum cam_left );
+coco_sobject_to_cobject( coco_sobject * inst, coco_sobject_cl * cl, coco_cobject * cobject, coco_gnum cam_left, coco_bool network_byte_order );
 void
 coco_ground_collide( coco_sobject * inst, coco_sobject_cl * cl, coco_sstate * sstate );
 coco_health
@@ -1541,6 +1586,7 @@ coco_sobject *coco_firetruck_automatic_init_by_list( coco_sobject *inst, coco_so
 #define COCO_SOBJECT_CL( clss ) ((clss)->every.cl)
 #define COCO_SOBJECT_IN_USE( clss ) ((clss)->every.in_use)
 #define COCO_SOBJECT_CAMERA_INDEX( clss ) ((clss)->every.camera_index)
+#define COCO_SOBJECT_COMP_INDEX( clss ) ((clss)->every.comp_index)
 #define COCO_SOBJECT_FACING( clss ) ((clss)->every.facing)
 #define COCO_SOBJECT_NEW_FLAG( clss ) ((clss)->every.new_flag)
 #define COCO_SOBJECT_INDEX( clss ) ((clss)->every.index)

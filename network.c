@@ -173,6 +173,7 @@ coco_message_structrures_correct_size()
    * fprintf( stderr, "sizeof: %d\n", sizeof( struct coco_message_play ));
    * fprintf( stderr, "sizeof: %d\n", sizeof( struct coco_message_chat ));
    * fprintf( stderr, "sizeof: %d\n", sizeof( struct coco_message_talk ));
+   * fprintf( stderr, "sizeof: %d\n", sizeof( struct coco_message_nominate ));
    * fprintf( stderr, "sizeof: %d\n", sizeof( struct coco_message_game ));
    * fprintf( stderr, "sizeof: %d\n", sizeof( struct coco_message_quit ));
    * fprintf( stderr, "sizeof: %d\n", sizeof( struct coco_message_full ));

@@ -177,7 +177,6 @@ struct coco_cstate {
   coco_u32 cobjects_length;
   struct coco_cblip *cblips;
   coco_u32 cblips_length;
-  struct coco_cfx_event *cfx_events;
   coco_nationality game_over_nationality;
   coco_gnum camera_x;
   coco_gnum board_w;
@@ -272,7 +271,8 @@ coco_read_cstate( udpfd )
                                 coco_errno_string( errno ) );
       else if (desired_buff_size > recv_result)
         {
-          coco_warn_printf( "Only recv'ed %d bytes, but expected at least %d.\n"
+          coco_warn_printf( "Only recv'ed %d bytes, but expected at"
+                            " least %d.\n"
                             "Chucking this packet and continuing with fingers"
                             " crossed.\n",
                             recv_result, desired_buff_size );
@@ -306,8 +306,6 @@ coco_read_cstate( udpfd )
       cstate->cblips
         = (struct coco_cblip *)(cstate->cobjects + cobject_count);
       cstate->cblips_length = cblip_count;
-      cstate->cfx_events 
-        = (struct coco_cfx_event *) (cstate->cblips + cblip_count);
       cstate->dashinfo = header.dashinfo;
 
 
@@ -1167,6 +1165,26 @@ coco_key_press( coco_key key, char *string_or_null,
               sprintf( notice, "Alpha Blend %s", 
                        coco_blend_alpha ? "ON" : "OFF" );
               coco_display_notice( notice );
+            }
+          return;
+        case '[': /* add grey comp */
+        case ']': /* add green comp */
+          if (coco_get_bit( keystate, COCO_KEY_CONTROL ))
+            {
+              struct coco_stream *str = coco_get_server_message_stream();
+              if (str != NULL)
+                {
+                  union coco_message msg;
+                  msg.every.type = COCO_MESSAGE_NOMINATE;
+                  msg.nominate.serial = -1; /* unknown yet */
+                  msg.nominate.action_code
+                    = ((key == '[')
+                       ? COCO_NOMINATE_ADD_BAD_GUY_COMP
+                       : COCO_NOMINATE_ADD_GOOD_GUY_COMP);
+                  msg.nominate.act_object = 0; /* unused, but init anyway */
+                  msg.nominate.vote = COCO_TRUE;
+                  coco_write_message( str, &msg );
+                }
             }
           return;
             

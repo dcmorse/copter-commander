@@ -1,3 +1,11 @@
+2001-03-24  David Morse  <dm@bomberlan.net>
+
+	* Start for computer controlled players: "comps".
+
+	* server.c (coco_format_sstate_to_buffer): When camera==NULL, view
+	the landing pad area.
+	(coco_format_sstate_to_buffer): take a bunch more arguments.
+
 2001-03-21  David Morse  <dm@bomberlan.net>
 
 	* openal-sound.c (COCO_AL_SOURCE_X): Unswap L-R speakers

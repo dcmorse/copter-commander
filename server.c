@@ -31,8 +31,13 @@
 #include "coco.h"
 #include "rasters.h"       /* for raster dimensions */
 
-void *coco_format_sstate_to_buffer( coco_sstate *sstate, int player_index, 
-                                    size_t *buffer_size );
+void *
+coco_format_sstate_to_buffer( coco_sstate *sstate, int p_or_c_index, 
+                              coco_bool is_comp, coco_bool network_byte_order,
+                              size_t *buffer_size, /* written nonnull */
+                              coco_cobject **cobjects, /* written nonnull */
+                              struct coco_cblip **cblips ); /* written nonnull */
+
 
 void coco_add_hazard_pay( coco_sstate *sstate );
 
@@ -148,11 +153,24 @@ coco_sstate_allocate_sobject( coco_sstate *sstate )
   else return NULL;
 }
 
+void
+coco_schedule_comp_respawn( int comp_index, coco_sstate *sstate )
+{
+  sstate->comp_respawn[comp_index] = COCO_TRUE;
+  sstate->comp_respawn_times[comp_index]
+    = COCO_U32_ADD_N_MODULAR( sstate->time, 
+                              COCO_IDEAL_FRAMES_PER_SECOND
+                              * COCO_RESPAWN_SECONDS );
+  coco_cookie( "scheduling comp %d respawn\n", comp_index );
+}
+
+
 void 
 coco_sstate_delete_sobject( coco_sstate *sstate, 
                             coco_sobject *sobject )
 {
   signed char cam_index = COCO_SOBJECT_CAMERA_INDEX( sobject );
+  signed char comp_index = COCO_SOBJECT_COMP_INDEX( sobject );
   unsigned int index = COCO_SOBJECT_INDEX( sobject );
   int fill_index = sstate->sobject_fill_index;
   coco_bool inviso_cam_p
@@ -173,6 +191,8 @@ coco_sstate_delete_sobject( coco_sstate *sstate,
                                   COCO_IDEAL_FRAMES_PER_SECOND
                                   * COCO_RESPAWN_SECONDS );
     }
+  if (-1 != comp_index)
+    coco_schedule_comp_respawn( comp_index, sstate );
 }
 
 coco_sstate *
@@ -189,16 +209,22 @@ coco_init_sstate( coco_sstate *sstate, coco_gnum width )
       sstate->respawn[i] = COCO_FALSE;
       sstate->favorite_copter_class[i] = COCO_COBRA_CLASS;
     }
+  for (i=0; i < COCO_MAX_COMPS; i++)
+    {
+      sstate->comp_respawn[i] = COCO_FALSE;
+    }
   for (i=0; i < 2; i++)
     {
       /* pad_index will be initialized later */
       sstate->teams[i].landing_pad_index = -1;
-      sstate->teams[i].reserve_copters = 3;
       sstate->teams[i].summon_enable = COCO_TRUE;
     }
   for (i=0; i < COCO_MAX_PLAYERS; i++)
     /* these will be initialized later too */
     sstate->camera_indicies[i] = -1;
+  for (i=0; i < COCO_MAX_NOMINATIONS; i++)
+    sstate->nominations[i].action_code = COCO_NOMINATE_NOT_IN_USE;
+  sstate->nominations_cursor = 0;
   return sstate;
 }
 
@@ -474,6 +500,158 @@ coco_send_play_and_mark_thusly( int player_index )
 }
 
 
+struct coco_comp coco_comps[COCO_MAX_COMPS];
+
+void
+coco_init_comps( void )
+{
+  int i;
+  for (i=0; i<COCO_MAX_COMPS; i++)
+    coco_comps[i].in_use = COCO_FALSE;
+}
+
+
+void
+coco_add_comp( coco_nationality nat, coco_sstate *sstate )
+{
+  static char *comp_names[] = {
+    "Pik Pocket",
+    "BioBear",
+    "Cyber Chicken",
+    "Damage Jackal",
+    "Armor Fiend",
+    "Magna Mauler",
+    "HotPoker",
+    "The Road Warrior",
+    "HammerTime",
+    "Mr Funky",
+    "Count Chocula",
+    "WitchDoctor",
+    "Beastly Thing",
+    "Funky Monkey",
+    "Krusty",
+  };
+  coco_bool found = COCO_FALSE;
+  int i; 
+  for (i=0; i<COCO_MAX_COMPS; i++)
+    if (!coco_comps[i].in_use)
+      {
+        char *name = comp_names[rand()
+                               % (sizeof( comp_names )/sizeof( char * ))];
+        coco_comps[i].nationality = nat;
+        coco_comps[i].funds = 0;
+        coco_comps[i].copters = 0;
+        strncpy( coco_comps[i].name, name, COCO_PLAYER_NAME_MAX-1 );
+        coco_comps[i].name[COCO_PLAYER_NAME_MAX-1] = '\0';
+        coco_comps[i].in_use = COCO_TRUE;
+        coco_schedule_comp_respawn( i, sstate );
+        found = COCO_TRUE;
+        break;
+      }
+  if (!found)
+    coco_warn_printf( "Could not add comp because there are already %d\n",
+                      COCO_MAX_COMPS );
+}
+
+void
+coco_handle_nominate_message( struct coco_message_nominate *msg, 
+                              coco_sstate *sstate, int player_idx )
+{
+  int cursor;
+  struct coco_nomination_status *status;
+  if (-1 == msg->serial)
+    {
+      /* new nomination */
+      int i;
+
+      cursor = ++(sstate->nominations_cursor);
+      status = sstate->nominations + cursor;
+
+      status->action_code = msg->action_code;
+      status->act_object = msg->act_object;
+      for (i=0; i<COCO_MAX_PLAYERS; i++)
+        status->votes[i] = COCO_FALSE;
+      status->votes[player_idx] = msg->vote;
+    }
+  else
+    {
+      /* existing nominations */
+      cursor = msg->serial;
+      status = sstate->nominations + cursor;
+      if ((status->action_code == msg->action_code)
+          && (status->act_object == msg->act_object))
+        status->votes[player_idx] = msg->vote;
+      else coco_cookie( "Stale vote from player %d for nomination "
+                        "0x%x ignored", player_idx, cursor );
+    }
+  /* review votes */
+  {
+    int votes_for = 0;
+    int votes_against = 0;
+    int i;
+    coco_bool passing;
+    unsigned char code = msg->action_code;
+
+    for (i=0; i<COCO_MAX_PLAYERS; i++)
+      if (coco_players[i].in_use)
+        {
+          if (status->votes[i])
+            votes_for++;
+          else 
+            votes_against++;
+        }
+    passing = (votes_for > votes_against);
+
+    coco_cookie( "After vote %s for player %d, tally is %d for,"
+                 " %d against, looking to %s\n",
+                 msg->vote ? "FOR" : "AGAINST", player_idx, 
+                 votes_for, votes_against, passing ? "PASS" : "FAIL" );
+
+    if (passing && ((code == COCO_NOMINATE_ADD_GOOD_GUY_COMP)
+                    || (code == COCO_NOMINATE_ADD_BAD_GUY_COMP)))
+      {
+        coco_nationality nat = (code == COCO_NOMINATE_ADD_GOOD_GUY_COMP)
+          ? COCO_GOOD_GUYS : COCO_BAD_GUYS;
+        coco_bool one_opp_player = COCO_FALSE;
+        coco_bool one_opp_favors = COCO_FALSE;
+        int i;
+        for (i=0; i<COCO_MAX_PLAYERS; i++)
+          if (coco_players[i].in_use 
+              && (coco_players[i].nationality!=nat))
+            {
+              one_opp_player = COCO_TRUE;
+              if (status->votes[i])
+                {
+                  one_opp_favors = COCO_TRUE;
+                  break;
+                }
+            }
+        passing &= (one_opp_favors || ! one_opp_player);
+
+        coco_cookie( "After doing the representation test, passing = %s\n",
+                     passing ? "PASS" : "FAIL" );
+      }
+    if (passing)
+      switch (code) {
+      case COCO_NOMINATE_ADD_GOOD_GUY_COMP:
+      case COCO_NOMINATE_ADD_BAD_GUY_COMP:
+        { 
+          coco_nationality nat = (code==COCO_NOMINATE_ADD_GOOD_GUY_COMP)
+            ? COCO_GOOD_GUYS : COCO_BAD_GUYS;
+          coco_add_comp( nat, sstate );
+        }
+        break;
+      case COCO_NOMINATE_BOOT_COMP:
+        coco_warn_printf( "Comp booting is not implemented.\n" );
+        break;
+      default:
+        coco_warn_printf( "Unrecognised code in "
+                          "coco_handle_nominate_message: %d.\n", code );
+        break;
+      }
+  }
+}
+
 /* returns true iff server should be kept up. */
 coco_bool
 coco_handle_server_message( int player_index )
@@ -531,6 +709,10 @@ coco_handle_server_message( int player_index )
             }
         }
         break;
+      case COCO_MESSAGE_NOMINATE:
+        coco_handle_nominate_message( &(message.nominate), coco_get_sstate(),
+                                      player_index );
+        break;
       case COCO_MESSAGE_CHAT:
         {
           unsigned int players;
@@ -569,6 +751,9 @@ coco_handle_server_message( int player_index )
     return coco_send_everyone_game_message();
   return COCO_TRUE; 
 }
+
+
+
 
 /* returns true iff server should be kept up. */
 static coco_bool
@@ -1155,124 +1340,137 @@ coco_copter_update_state( coco_sobject *sobject,
                           coco_sstate *sstate )
 {
   signed char camera_index = COCO_SOBJECT_CAMERA_INDEX( sobject );
+  signed char comp_index = COCO_SOBJECT_COMP_INDEX( sobject );
+  struct coco_keyboard_pointer_state *input;
   if (COCO_COPTER_MISSILE_COOLDOWN( sobject )
       && (sstate->time == COCO_COPTER_MISSILE_COOLDOWN_TIME( sobject )))
     COCO_COPTER_MISSILE_COOLDOWN( sobject ) = COCO_FALSE;
-  if (camera_index >= 0)
+
+  if (camera_index>=0)
+    input = coco_remote_input_states + camera_index;
+  else if ((comp_index>=0)
+           &&(comp_index<COCO_MAX_COMPS)
+           &&coco_comps[comp_index].in_use)
+    input = &(coco_comps[comp_index].kpstate);
+  else 
     {
-      struct coco_keyboard_pointer_state *input 
-        = coco_remote_input_states + camera_index;
-      /* have to put weapons release before the x/y/dx/dy etc
-         tweakers, because dy may be positive, y may be at the top of
-         the screen, and they may drop a bomb.  Clip-to-screen will
-         later move our dy back to 0, but in the meantime we'll have
-         released a bomb with a positive dy at the top of the screen.
-         This looks silly.  */
-      if (!COCO_COPTER_LANDED_P( sobject ))
-        {
-          if (coco_get_bit( input->key_state, COCO_MPOINTER )
-              || coco_get_bit( input->key_state, COCO_KEY_SHIFT ))
-            coco_fire_bullet( sobject, COCO_SOBJECT_CL( sobject ), sstate, NULL );
-          if (coco_get_bit( input->key_state, COCO_RPOINTER )
-              || coco_get_bit( input->key_state, COCO_KEY_TO_CHAR( 'z' ) ))
-            coco_drop_bomb( sobject, COCO_SOBJECT_CL( sobject ), sstate );
-          if (coco_get_bit( input->key_state, COCO_KEY_TO_CHAR( 'c' ) ))
-            coco_launch_rocket( sobject, COCO_SOBJECT_CL( sobject ), sstate );
-          if (coco_get_bit( input->key_state, COCO_KEY_SPACE ))
-            coco_drop_paratrooper( sobject, COCO_SOBJECT_CL( sobject ),
-                                   sstate );
-          if (coco_get_bit( input->key_state, COCO_CHAR_TO_KEY( 'x' ) ))
-            coco_button_maybe_launch_missile( sobject, sstate );
-        }
-      coco_copter_smoke_maybe( sobject, sstate );
-      {
-        coco_bool landed_p = COCO_COPTER_LANDED_P( sobject );
-        int ri = COCO_SOBJECT_RASTER_INDEX( sobject );
-
-        /* y axis */
-        coco_gnum dy_max = COCO_SOBJECT_DY_MAX( sobject );
-        coco_gnum y_goal = (COCO_COPTER_FUEL( sobject )>0)
-          ? COCO_CLAMP( 0, input->pointer_y, COCO_VIEWABLE_H )
-          : 0;
-        coco_gnum dy_goal = (y_goal - COCO_SOBJECT_Y( sobject )) >> 2;
-        coco_gnum mdy_max = landed_p ? 0 : -dy_max;
-        coco_gnum dy_final = COCO_CLAMP( mdy_max, dy_goal, dy_max );
-
-        /* angle */
-        coco_i32 px = COCO_CLAMP( -COCO_OFFICIAL_WINDOW_W>>1, 
-                                  input->pointer_x,
-                                  COCO_OFFICIAL_WINDOW_W>>1 );
-        coco_angle rest_angle = (ri&1) ? 0 : 128;
-        float angle_goal = rest_angle - (((float) px) 
-                                         * COCO_COPTER_MAX_ANGLE_OF_ATTACK 
-                                         / (COCO_OFFICIAL_WINDOW_W>>1)); 
-        coco_angle angle_final 
-          = landed_p ? rest_angle : ((int) angle_goal)&255;
-
-        /* x axis */
-        coco_gnum dx = COCO_SOBJECT_DX( sobject );
-        coco_gnum dx_max = COCO_SOBJECT_DX_MAX( sobject );
-        coco_gnum ddx_raw = COCO_SOBJECT_X_FORCE( sobject );
-        coco_gnum dx_goal
-          = (coco_gnum) (((float) dx_max) * px
-                         / ((float) (COCO_OFFICIAL_WINDOW_W>>1)));
-        /* accell takes 2x as long as decel */
-        coco_gnum ddx_vectored = ((dx_goal <= 0) == (dx <= 0))
-          ? (ddx_raw>>1)
-          : ddx_raw;
-        coco_gnum dx_unclipped = (dx_goal <= dx) 
-          ? COCO_MAX( (dx - ddx_vectored), dx_goal )
-          : COCO_MIN( (dx + ddx_vectored), dx_goal );
-        coco_gnum mdx_max = -dx_max;
-        coco_gnum dx_final = landed_p ? 0 
-          : COCO_CLAMP( mdx_max, dx_unclipped, dx_max );
-        /* this new code for x axis just feels wrong
-           coco_gnum dx = COCO_SOBJECT_DX( sobject );
-           coco_gnum dx_max = COCO_SOBJECT_DX_MAX( sobject );
-           coco_gnum engine_force = COCO_SOBJECT_X_FORCE( sobject );
-           coco_gnum drag_force = dx>>5;
-           coco_gnum foo = COCO_CLAMP( -50, (int) pa_final, 50 );
-           coco_gnum ddx = ((((int) pa_final)) * engine_force / (127))
-           - drag_force;
-           coco_gnum dx_unclamped = dx + ddx;
-           coco_gnum dx_final = COCO_CLAMP( -dx_max, dx_unclamped, dx_max );
-        */
-        /* landed */
-        if ((COCO_SOBJECT_Y( sobject ) == COCO_GROUND_Y)
-            && (dy_final <= 0)
-            && (angle_final <= (rest_angle
-                                + COCO_COPTER_MAX_LANDING_ANGLE_OF_ATTACK))
-            && (angle_final >= (rest_angle
-                                - COCO_COPTER_MAX_LANDING_ANGLE_OF_ATTACK))
-            && (COCO_COPTER_FUEL( sobject ) > 0))
-          {
-            COCO_COPTER_LANDED_ON_PAD_P( sobject ) = COCO_FALSE;
-            landed_p = COCO_TRUE;
-            dx_final = dy_final = 0;
-          }
-        else if (dy_final > 0) 
-          landed_p = COCO_FALSE;
-        /* note how if we're on pad, y>COCO_GROUND_Y, then we might just
-           stay landed_p */
-      
-        /* begin non-local side-effects */
-        COCO_SOBJECT_DX( sobject ) = dx_final;
-        COCO_SOBJECT_DY( sobject ) = dy_final;
-        COCO_SOBJECT_ANGLE( sobject ) = angle_final;
-        COCO_COPTER_LANDED_P( sobject ) = landed_p;
-        if (landed_p)
-          {
-            if (COCO_COPTER_LANDED_ON_PAD_P( sobject ))
-              coco_copter_pad_update( sobject, COCO_SOBJECT_CL( sobject ),
-                                      sstate );
-            else if (coco_get_bit( input->key_state, COCO_KEY_SPACE ))
-              coco_copter_drop_trooper_on_ground_maybe( sobject, sstate );
-          }
-        else
-          COCO_COPTER_FUEL( sobject ) 
-            = COCO_MAX( 1, COCO_COPTER_FUEL( sobject ) ) - 1;
-      }
+      coco_warn_printf( "Copter %d neither player nor comp\n", 
+                        COCO_SOBJECT_INDEX( sobject ) );
+      goto get_out;
     }
+  /* have to put weapons release before the x/y/dx/dy etc
+     tweakers, because dy may be positive, y may be at the top of
+     the screen, and they may drop a bomb.  Clip-to-screen will
+     later move our dy back to 0, but in the meantime we'll have
+     released a bomb with a positive dy at the top of the screen.
+     This looks silly.  */
+  if (!COCO_COPTER_LANDED_P( sobject ))
+    {
+      if (coco_get_bit( input->key_state, COCO_MPOINTER )
+          || coco_get_bit( input->key_state, COCO_KEY_SHIFT ))
+        coco_fire_bullet( sobject, COCO_SOBJECT_CL( sobject ), sstate, NULL );
+      if (coco_get_bit( input->key_state, COCO_RPOINTER )
+          || coco_get_bit( input->key_state, COCO_KEY_TO_CHAR( 'z' ) ))
+        coco_drop_bomb( sobject, COCO_SOBJECT_CL( sobject ), sstate );
+      if (coco_get_bit( input->key_state, COCO_KEY_TO_CHAR( 'c' ) ))
+        coco_launch_rocket( sobject, COCO_SOBJECT_CL( sobject ), sstate );
+      if (coco_get_bit( input->key_state, COCO_KEY_SPACE ))
+        coco_drop_paratrooper( sobject, COCO_SOBJECT_CL( sobject ),
+                               sstate );
+      if (coco_get_bit( input->key_state, COCO_CHAR_TO_KEY( 'x' ) ))
+        coco_button_maybe_launch_missile( sobject, sstate );
+    }
+  coco_copter_smoke_maybe( sobject, sstate );
+  {
+    coco_bool landed_p = COCO_COPTER_LANDED_P( sobject );
+    int ri = COCO_SOBJECT_RASTER_INDEX( sobject );
+
+    /* y axis */
+    coco_gnum dy_max = COCO_SOBJECT_DY_MAX( sobject );
+    coco_gnum y_goal = (COCO_COPTER_FUEL( sobject )>0)
+      ? COCO_CLAMP( 0, input->pointer_y, COCO_VIEWABLE_H )
+      : 0;
+    coco_gnum dy_goal = (y_goal - COCO_SOBJECT_Y( sobject )) >> 2;
+    coco_gnum mdy_max = landed_p ? 0 : -dy_max;
+    coco_gnum dy_final = COCO_CLAMP( mdy_max, dy_goal, dy_max );
+
+    /* angle */
+    coco_i32 px = COCO_CLAMP( -COCO_OFFICIAL_WINDOW_W>>1, 
+                              input->pointer_x,
+                              COCO_OFFICIAL_WINDOW_W>>1 );
+    coco_angle rest_angle = (ri&1) ? 0 : 128;
+    float angle_goal = rest_angle - (((float) px) 
+                                     * COCO_COPTER_MAX_ANGLE_OF_ATTACK 
+                                     / (COCO_OFFICIAL_WINDOW_W>>1)); 
+    coco_angle angle_final 
+      = landed_p ? rest_angle : ((int) angle_goal)&255;
+
+    /* x axis */
+    coco_gnum dx = COCO_SOBJECT_DX( sobject );
+    coco_gnum dx_max = COCO_SOBJECT_DX_MAX( sobject );
+    coco_gnum ddx_raw = COCO_SOBJECT_X_FORCE( sobject );
+    coco_gnum dx_goal
+      = (coco_gnum) (((float) dx_max) * px
+                     / ((float) (COCO_OFFICIAL_WINDOW_W>>1)));
+    /* accell takes 2x as long as decel */
+    coco_gnum ddx_vectored = ((dx_goal <= 0) == (dx <= 0))
+      ? (ddx_raw>>1)
+      : ddx_raw;
+    coco_gnum dx_unclipped = (dx_goal <= dx) 
+      ? COCO_MAX( (dx - ddx_vectored), dx_goal )
+      : COCO_MIN( (dx + ddx_vectored), dx_goal );
+    coco_gnum mdx_max = -dx_max;
+    coco_gnum dx_final = landed_p ? 0 
+      : COCO_CLAMP( mdx_max, dx_unclipped, dx_max );
+    /* this new code for x axis just feels wrong
+       coco_gnum dx = COCO_SOBJECT_DX( sobject );
+       coco_gnum dx_max = COCO_SOBJECT_DX_MAX( sobject );
+       coco_gnum engine_force = COCO_SOBJECT_X_FORCE( sobject );
+       coco_gnum drag_force = dx>>5;
+       coco_gnum foo = COCO_CLAMP( -50, (int) pa_final, 50 );
+       coco_gnum ddx = ((((int) pa_final)) * engine_force / (127))
+       - drag_force;
+       coco_gnum dx_unclamped = dx + ddx;
+       coco_gnum dx_final = COCO_CLAMP( -dx_max, dx_unclamped, dx_max );
+    */
+    /* landed */
+    if ((COCO_SOBJECT_Y( sobject ) == COCO_GROUND_Y)
+        && (dy_final <= 0)
+        && (angle_final <= (rest_angle
+                            + COCO_COPTER_MAX_LANDING_ANGLE_OF_ATTACK))
+        && (angle_final >= (rest_angle
+                            - COCO_COPTER_MAX_LANDING_ANGLE_OF_ATTACK))
+        && (COCO_COPTER_FUEL( sobject ) > 0))
+      {
+        COCO_COPTER_LANDED_ON_PAD_P( sobject ) = COCO_FALSE;
+        landed_p = COCO_TRUE;
+        dx_final = dy_final = 0;
+      }
+    else if (dy_final > 0) 
+      landed_p = COCO_FALSE;
+    /* note how if we're on pad, y>COCO_GROUND_Y, then we might just
+       stay landed_p */
+      
+    /* begin non-local side-effects */
+    COCO_SOBJECT_DX( sobject ) = dx_final;
+    COCO_SOBJECT_DY( sobject ) = dy_final;
+    COCO_SOBJECT_ANGLE( sobject ) = angle_final;
+    COCO_COPTER_LANDED_P( sobject ) = landed_p;
+    if (landed_p)
+      {
+        if (COCO_COPTER_LANDED_ON_PAD_P( sobject ))
+          coco_copter_pad_update( sobject, COCO_SOBJECT_CL( sobject ),
+                                  sstate );
+        else if (coco_get_bit( input->key_state, COCO_KEY_SPACE ))
+          coco_copter_drop_trooper_on_ground_maybe( sobject, sstate );
+      }
+    else
+      COCO_COPTER_FUEL( sobject ) 
+        = COCO_MAX( 1, COCO_COPTER_FUEL( sobject ) ) - 1;
+  }
+  if (comp_index>=0) coco_cookie( "(%d,%d)\n", 
+                                  input->pointer_x, input->pointer_y );
+ get_out:
   return coco_sobject_update_state( sobject, cl->super, sstate );
 }
 
@@ -1285,7 +1483,8 @@ coco_copter_start_coords( coco_sstate *sstate, coco_nationality nat,
     = COCO_SSTATE_OBJECT_REF
     ( sstate,
       sstate->teams[((int)nat)-COCO_GOOD_GUYS].landing_pad_index );
-  coco_sobject_cl *cla = sstate->favorite_copter_class[player_index];
+  coco_sobject_cl *cla = (player_index>=0) 
+    ? (sstate->favorite_copter_class[player_index]) : COCO_COBRA_CLASS;
   coco_mini_rectangle mr = cla->collision_rectangle;
   if (x_return)
     *x_return = COCO_SOBJECT_X( pad )
@@ -1371,10 +1570,12 @@ coco_sstate_update( coco_sstate *sstate )
           coco_ground_collide( sobject, COCO_SOBJECT_CL( sobject ), sstate );
       }
   }
-  {  /* warp in new copters */
+  {  
     int i;
+    /* warp in new copters for human players*/
     for (i=0; i<COCO_MAX_PLAYERS; i++)
-      if (coco_players[i].sent_play_message 
+      if (coco_players[i].in_use
+          && coco_players[i].sent_play_message 
           && sstate->respawn[i]
           && (sstate->time == sstate->respawn_times[i]))
         {
@@ -1417,10 +1618,54 @@ coco_sstate_update( coco_sstate *sstate )
                                y, nat ));
         }
     /* ah, if they've not decided to play yet, put this off for a nanosecond */
-    else if (sstate->respawn[i]
-             && (sstate->time == sstate->respawn_times[i]))
-      sstate->respawn_times[i] 
-        = COCO_U32_ADD_MODULAR( sstate->respawn_times[i] );
+      else if (sstate->respawn[i]
+               && (sstate->time == sstate->respawn_times[i]))
+        sstate->respawn_times[i] 
+          = COCO_U32_ADD_MODULAR( sstate->respawn_times[i] );
+
+    for (i=0; i<COCO_MAX_COMPS; i++)
+      if (coco_comps[i].in_use)
+        coco_cookie( "comp %d: %d %d %d==%d\n",
+                     i, coco_comps[i].in_use,
+                     sstate->comp_respawn[i],
+                     sstate->time, sstate->comp_respawn_times[i] );
+    /* warp in new copters for comps */
+    for (i=0; i<COCO_MAX_COMPS; i++)
+      if (coco_comps[i].in_use
+          && sstate->comp_respawn[i]
+          && (sstate->time == sstate->comp_respawn_times[i]))
+        {
+          coco_gnum x, y;
+          coco_sobject *copter;
+          coco_bool spare_copter_p = (coco_comps[i].copters > 0);
+          coco_nationality nat = coco_comps[i].nationality;
+          coco_sobject_cl *fcc;
+
+          coco_cookie( "respawning for comp %d\n" );
+
+          sstate->comp_respawn[i] = COCO_FALSE;
+          if (spare_copter_p)
+            coco_comps[i].copters--;
+          else
+            coco_comps[i].funds
+              = COCO_MIN( coco_comps[i].funds
+                          - COCO_BUBBLE_COPTER_CLASS->cost, 
+                          0 );
+          fcc = spare_copter_p ? COCO_COBRA_CLASS : COCO_BUBBLE_COPTER_CLASS;
+          coco_copter_start_coords( sstate, nat, -1, &x, &y );
+          copter = coco_sstate_allocate_sobject( sstate );
+          if (NULL==copter)
+            { /* put it off and try to recover. */
+              sstate->comp_respawn[i] = COCO_TRUE;
+              sstate->comp_respawn_times[i] =
+                COCO_U32_ADD_MODULAR( sstate->time );
+              coco_warn_printf( "not enough memory to respawn comp\n" );
+            }
+          coco_init_copter( copter, fcc,
+                            -1, (COCO_GOOD_GUYS==nat)?-1:1, 
+                            x, y, nat );
+          COCO_SOBJECT_COMP_INDEX( copter ) = i;
+        }
   }
   COCO_DO_SSTATE_OBJECTS( sobject, sstate, {
     COCO_SOBJECT_NEW_FLAG( sobject ) = COCO_FALSE;
@@ -1798,10 +2043,28 @@ coco_server_loop( int listenfd, int out_udpfd,
             if (coco_players[i].in_use && (-1!=coco_udp_ports[i]))
               {
                 size_t size;
-                void *buf = coco_format_sstate_to_buffer( sstate, i, &size );
+                void *buf
+                  = coco_format_sstate_to_buffer( sstate, i, COCO_FALSE,
+                                                  COCO_TRUE, &size,
+                                                  NULL, NULL );
                 if (!coco_send_cstate( out_udpfd, i, buf, size ))
                   if (!coco_handle_player_quit( i ))
                     coco_server_shutdown( listenfd, out_udpfd, in_udpfd );
+              }
+          /* have the comps do their thing */
+          for (i=0; i<COCO_MAX_COMPS; i++)
+            if (coco_comps[i].in_use)
+              {
+                size_t size;
+                coco_cobject *cobjs;
+                struct coco_cblip *cblips;
+                void *buf;
+                buf = coco_format_sstate_to_buffer( sstate, i, COCO_TRUE,
+                                                    COCO_FALSE, &size,
+                                                    &cobjs, &cblips );
+                coco_comp_think( coco_comps + i,
+                                 buf, cobjs, cblips, 
+                                 &(coco_comps[i].kpstate) );
               }
         }
     }
@@ -1822,6 +2085,7 @@ coco_server_exec( void )
     coco_fatal_printf( COCO_ERROR_BAD_LEVEL,
                        "Problem loading level \"%s\"\n",
                        level_error );
+  coco_init_comps();
   coco_server_setup( &tcpfd, &out_udpfd, &in_udpfd, &in_udp_port );
   coco_server_loop( tcpfd, out_udpfd, in_udpfd, in_udp_port );
 }
@@ -1832,87 +2096,102 @@ coco_server_exec( void )
 
 void
 coco_metal_shrapnel_to_cobject( coco_sobject *sobject, coco_sobject_cl *cl,
-                                coco_cobject *cobject, coco_gnum cam_left )
+                                coco_cobject *cobject, coco_gnum cam_left,
+                                coco_bool nbo )
 {
   /* call-next-method */
-  coco_sobject_to_cobject( sobject, cl->super, cobject, cam_left );
+  coco_sobject_to_cobject( sobject, cl->super, cobject, cam_left, nbo );
   cobject->metal_shrapnel.color = COCO_METAL_SHRAPNEL_COLOR_INDEX( sobject );
 }
 
 void
 coco_sndobject_to_cobject( coco_sobject *sobject, coco_sobject_cl *cl,
-                           coco_cobject *cobject, coco_gnum cam_left )
+                           coco_cobject *cobject, coco_gnum cam_left,
+                           coco_bool nbo )
 {
   /* call-next-method */
-  coco_sobject_to_cobject( sobject, cl->super, cobject, cam_left );
+  coco_sobject_to_cobject( sobject, cl->super, cobject, cam_left, nbo );
   cobject->sound.sound_type = COCO_SNDOBJECT_SOUND( sobject );
 }
 
 
 void
 coco_y_angle_to_cobject( coco_sobject *sobject, coco_sobject_cl *cl,
-                         coco_cobject *cobject, coco_gnum cam_left )
+                         coco_cobject *cobject, coco_gnum cam_left,
+                         coco_bool nbo )
 {
   /* call-next-method */
-  coco_sobject_to_cobject( sobject, cl->super, cobject, cam_left );
+  coco_sobject_to_cobject( sobject, cl->super, cobject, cam_left, nbo );
   cobject->a.angle = COCO_SOBJECT_ANGLE( sobject );
 }
 
 void 
 coco_rasteroid_to_cobject( coco_sobject *sobject, coco_sobject_cl *cl,
-                           coco_cobject *cobject, coco_gnum cam_left )
+                           coco_cobject *cobject, coco_gnum cam_left,
+                           coco_bool nbo )
 {
+  coco_cnum x, y;
   COCO_COBJECT_CL_INDEX( cobject ) = COCO_SOBJECT_CL_INDEX( sobject );
   cobject->r.raster_index = COCO_SOBJECT_RASTER_INDEX( sobject );
-  COCO_COBJECT_X( cobject )
-    = COCO_CNUM_HTON( (coco_cnum) (COCO_SOBJECT_X( sobject ) - cam_left) );
-  cobject->y.y = COCO_CNUM_HTON( (coco_cnum) COCO_SOBJECT_Y( sobject ) );
+  y = COCO_SOBJECT_Y( sobject );
+  x = COCO_SOBJECT_X( sobject ) - cam_left;
+  COCO_COBJECT_X( cobject ) = nbo ? COCO_CNUM_HTON( x ) : x;
+  cobject->y.y              = nbo ? COCO_CNUM_HTON( y ) : y;
 }
 
 void 
 coco_spark_to_cobject( coco_sobject *sobject, coco_sobject_cl *cl,
-                       coco_cobject *cobject, coco_gnum cam_left )
+                       coco_cobject *cobject, coco_gnum cam_left,
+                       coco_bool nbo )
 {
+  coco_cnum x, y;
   COCO_COBJECT_CL_INDEX( cobject ) = COCO_SOBJECT_CL_INDEX( sobject );
   cobject->spark.dy = COCO_SPARK_SPARK_DY( sobject );
   cobject->spark.dx = COCO_SPARK_SPARK_DX( sobject );
-  COCO_COBJECT_X( cobject )
-    = COCO_CNUM_HTON ( (coco_cnum) (COCO_SOBJECT_X( sobject ) - cam_left) );
-  cobject->y.y = COCO_CNUM_HTON( (coco_cnum) COCO_SOBJECT_Y( sobject ) );
+  x = COCO_SOBJECT_X( sobject ) - cam_left;
+  y = COCO_SOBJECT_Y( sobject );
+  COCO_COBJECT_X( cobject ) = nbo ? COCO_CNUM_HTON( x ) : x;
+  cobject->y.y              = nbo ? COCO_CNUM_HTON( y ) : y;
 }
 
 
 void 
 coco_ground_rasteroid_to_cobject( coco_sobject *sobject, coco_sobject_cl *cl,
-                                  coco_cobject *cobject, coco_gnum cam_left )
+                                  coco_cobject *cobject, coco_gnum cam_left,
+                                  coco_bool nbo )
 {
+  coco_cnum x;
   COCO_COBJECT_CL_INDEX( cobject ) = COCO_SOBJECT_CL_INDEX( sobject );
   cobject->r.raster_index = COCO_SOBJECT_RASTER_INDEX( sobject );
-  COCO_COBJECT_X( cobject )
-    = COCO_CNUM_HTON( (coco_cnum) (COCO_SOBJECT_X( sobject ) - cam_left) );
+  x = COCO_SOBJECT_X( sobject ) - cam_left;
+  COCO_COBJECT_X( cobject ) = nbo ? COCO_CNUM_HTON( x ) : x;
 }
 
 void 
 coco_gun_tank_to_cobject( coco_sobject *sobject, coco_sobject_cl *cl,
-                          coco_cobject *cobject, coco_gnum cam_left )
+                          coco_cobject *cobject, coco_gnum cam_left,
+                          coco_bool nbo )
 {
   /* call-next-method, which had best be ground_rasteroid. */
-  coco_sobject_to_cobject( sobject, cl->super, cobject, cam_left );
+  coco_sobject_to_cobject( sobject, cl->super, cobject, cam_left, nbo );
   COCO_COBJECT_ANGLE( cobject ) = COCO_SOBJECT_ANGLE( sobject );
 }
 
 
 void 
 coco_balloon_line_to_cobject( coco_sobject *sobject, coco_sobject_cl *cl,
-                              coco_cobject *cobject, coco_gnum cam_left )
+                              coco_cobject *cobject, coco_gnum cam_left,
+                              coco_bool nbo )
 {
+  coco_cnum x, y;
   coco_gnum h = COCO_SOBJECT_H( sobject );
   cobject->yh.hibyte = h & (255<<8);
   cobject->yh.lobyte = h & 255;
   COCO_COBJECT_CL_INDEX( cobject ) = COCO_SOBJECT_CL_INDEX( sobject );
-  COCO_COBJECT_X( cobject )
-    = COCO_CNUM_HTON ( (coco_cnum) (COCO_SOBJECT_X( sobject ) - cam_left) );
-  cobject->y.y = COCO_CNUM_HTON( (coco_cnum) COCO_SOBJECT_Y( sobject ) );
+  x = COCO_SOBJECT_X( sobject ) - cam_left;
+  y = COCO_SOBJECT_Y( sobject );
+  COCO_COBJECT_X( cobject ) = nbo ? COCO_CNUM_HTON ( x ) : x;
+  cobject->y.y              = nbo ? COCO_CNUM_HTON( y ) : y;
 }
 
 
@@ -1956,26 +2235,61 @@ coco_write_cstate_serial_header( struct coco_cstate_serial_header *str,
 
 
 /* return a pointer to an internal buffer of client state to send */
+/* p_or_c_index is either player index or comp index, depending on is_comp */
 void *
-coco_format_sstate_to_buffer( coco_sstate *sstate, int player_index, 
-                              size_t *buffer_size )
+coco_format_sstate_to_buffer( coco_sstate *sstate, int p_or_c_index, 
+                              coco_bool is_comp, coco_bool network_byte_order,
+                              size_t *buffer_size, /* written nonnull */
+                              coco_cobject **cobjects, /* written nonnull */
+                              struct coco_cblip **cblips ) /* written nonnull */
 {
   static void *send_buffer = NULL;
   static int send_buffer_size = 0;
 
   int send_buffer_desired_size;
   coco_gnum board_w = sstate->board_w;
-  int cam_idx = sstate->camera_indicies[player_index];
-  coco_sobject *cam_object
-    = (-1==cam_idx) ? NULL : COCO_SSTATE_OBJECT_REF( sstate, cam_idx );
+  int cam_idx;
+  coco_sobject *cam_object;
   coco_u32 cobject_count = 0;
   coco_u32 cblip_count = 0;
   coco_gnum cam_x, cam_left, cam_right;
 
+  if (is_comp)
+    {
+      cam_idx = -1;
+      COCO_DO_SSTATE_OBJECTS( sobject, sstate, {
+        if (p_or_c_index == COCO_SOBJECT_COMP_INDEX( sobject ))
+          {
+            cam_idx = COCO_SOBJECT_INDEX( sobject );
+            goto done; /* don't use break inside DO_SSTATE_OBJECTS */
+          }
+      });
+    done:
+      ;
+    }
+  else cam_idx = sstate->camera_indicies[p_or_c_index]; 
+  cam_object = (-1==cam_idx)
+    ? NULL
+    : COCO_SSTATE_OBJECT_REF( sstate, cam_idx );
+
   if (cam_object == NULL)
     {
-      cam_x = cam_right = 0;
-      cam_left = board_w;
+      if (is_comp)
+        { /* they don't need to see anything */
+          cam_x = cam_right = 0;
+          cam_left = board_w; 
+        }
+      else
+        {
+          coco_gnum dummy;
+          coco_copter_start_coords( sstate,
+                                    coco_players[p_or_c_index].nationality,
+                                    p_or_c_index, 
+                                    &cam_x, &dummy );
+          /* cam_left is still a little wrong. */
+          cam_left = cam_x - (COCO_OFFICIAL_WINDOW_W>>1);
+          cam_right = cam_left + COCO_OFFICIAL_WINDOW_W;
+        }
     }
   else
     {
@@ -2002,7 +2316,7 @@ coco_format_sstate_to_buffer( coco_sstate *sstate, int player_index,
                                  cam_left, cam_right, cam_object ))
       cobject_count++;
     ci = coco_sobject_blip_color_index( sobject, COCO_SOBJECT_CL( sobject ), 
-                                        player_index, sstate );
+                                        p_or_c_index, sstate );
     /* initialize scratch blip cache */
     COCO_SOBJECT_SCRATCH_BLIP( sobject ) = ci;
     /* Only written if its visible */
@@ -2021,15 +2335,17 @@ coco_format_sstate_to_buffer( coco_sstate *sstate, int player_index,
     }
 
   coco_write_cstate_serial_header( send_buffer, sstate, cam_object,
-                                   player_index,
+                                   p_or_c_index,
                                    cobject_count, cblip_count, cam_left );
-  coco_cstate_serial_header_hton( send_buffer );
+  if (network_byte_order)
+    coco_cstate_serial_header_hton( send_buffer );
 
   {
+    struct coco_cblip *cblip_ptr;
     coco_cobject *cobject_ptr
       = (coco_cobject *)
       (((struct coco_cstate_serial_header *) send_buffer) + 1);
-    struct coco_cblip *cblip_ptr;
+    if (cobjects) *cobjects = cobject_ptr;
     /* OBJECTS */
     COCO_DO_SSTATE_OBJECTS( sobject, sstate, 
     {
@@ -2038,29 +2354,27 @@ coco_format_sstate_to_buffer( coco_sstate *sstate, int player_index,
                                    cam_left, cam_right, cam_object ))
         {
           coco_sobject_to_cobject( sobject, COCO_SOBJECT_CL( sobject ),
-                                   cobject_ptr, cam_left );
+                                   cobject_ptr, cam_left, network_byte_order );
           cobject_ptr++;
         }
     });
     /* BLIPS */
     cblip_ptr = (struct coco_cblip *) cobject_ptr;
+    if (cblips) *cblips = cblip_ptr;
     COCO_DO_SSTATE_OBJECTS( sobject, sstate, 
     {
       coco_color_index ci = COCO_SOBJECT_SCRATCH_BLIP( sobject );
-      /* computer ais might read "transparent" thing's coordinates, and
+      /* cheating clients might read "transparent" thing's coordinates, and
          gain classified info.  To prevent that we'll not send them. */
       if (ci != COCO_INDEX_TRANSPARENT)
         {
+          coco_rxnum x;
+          coco_rynum y;
           cblip_ptr->color_index = ci;
-          cblip_ptr->x
-            = COCO_RXNUM_HTON( (coco_rxnum)
-                               (COCO_OFFICIAL_WINDOW_W
-                                * COCO_SOBJECT_X( sobject )
-                                / board_w) );
-          cblip_ptr->y
-            = COCO_RYNUM_HTON( (coco_rynum)
-                               ((COCO_RADAR_H * COCO_SOBJECT_Y( sobject ))
-                                / COCO_VIEWABLE_H));
+          x = (COCO_OFFICIAL_WINDOW_W * COCO_SOBJECT_X( sobject )) / board_w;
+          y = (COCO_RADAR_H * COCO_SOBJECT_Y( sobject )) / COCO_VIEWABLE_H;
+          cblip_ptr->x = network_byte_order ? COCO_RXNUM_HTON( x ) : x;
+          cblip_ptr->y = network_byte_order ? COCO_RYNUM_HTON( y ) : y;
           cblip_ptr++;
         }
     });
@@ -2069,8 +2383,8 @@ coco_format_sstate_to_buffer( coco_sstate *sstate, int player_index,
   /*
   coco_cookie( "Turn %d: sending %d objects and %d blips to \"%s\".\n", 
                sstate->time, cobject_count, cblip_count,
-               coco_players[player_index].name ); */
-  *buffer_size = send_buffer_desired_size;
+               coco_players[p_or_c_index].name ); */
+  if (buffer_size) *buffer_size = send_buffer_desired_size;
   return send_buffer;
 }
 

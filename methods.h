@@ -202,41 +202,48 @@ void coco_copter_delete( coco_sobject *sobject,
 
 void 
 coco_sndobject_to_cobject( coco_sobject *sobject, coco_sobject_cl *cl,
-                           coco_cobject *cobject, coco_gnum cam_left );
+                           coco_cobject *cobject, coco_gnum cam_left,
+                           coco_bool nbo );
 
 
 void 
 coco_spark_to_cobject( coco_sobject *sobject, coco_sobject_cl *cl,
-                       coco_cobject *cobject, coco_gnum cam_left );
+                       coco_cobject *cobject, coco_gnum cam_left,
+                       coco_bool nbo );
 
 void 
 coco_gun_tank_to_cobject( coco_sobject *sobject, coco_sobject_cl *cl,
-                          coco_cobject *cobject, coco_gnum cam_left );
+                          coco_cobject *cobject, coco_gnum cam_left,
+                          coco_bool nbo );
 
 
 void 
 coco_balloon_line_to_cobject( coco_sobject *sobject, coco_sobject_cl *cl,
-                              coco_cobject *cobject, coco_gnum cam_left );
+                              coco_cobject *cobject, coco_gnum cam_left,
+                              coco_bool nbo );
 
 
 void
 coco_y_angle_to_cobject( coco_sobject *sobject, coco_sobject_cl *cl,
-                         coco_cobject *cobject, coco_gnum cam_left );
+                         coco_cobject *cobject, coco_gnum cam_left,
+                         coco_bool nbo );
 
 
 void coco_rasteroid_to_cobject( coco_sobject *sobject, coco_sobject_cl *cl,
                                 coco_cobject *cobject,
-                                coco_gnum cam_left );
+                                coco_gnum cam_left, coco_bool nbo  );
 
 void coco_ground_rasteroid_to_cobject( coco_sobject *sobject,
                                        coco_sobject_cl *cl,
                                        coco_cobject *cobject,
-                                       coco_gnum cam_left );
+                                       coco_gnum cam_left,
+                                       coco_bool nbo );
 
 void coco_metal_shrapnel_to_cobject( coco_sobject *sobject,
                                      coco_sobject_cl *cl,
                                      coco_cobject *cobject,
-                                     coco_gnum cam_left );
+                                     coco_gnum cam_left,
+                                     coco_bool nbo );
 
 
 unsigned char coco_every_sobject_raster_flip_index( coco_sobject *sobject,

@@ -3634,13 +3634,13 @@ coco_sobject_neutral_building_collide( coco_sobject * inst, coco_sobject_cl * cl
 }
 
 void
-coco_sobject_to_cobject( coco_sobject * inst, coco_sobject_cl * cl, coco_cobject * cobject, coco_gnum cam_left )
+coco_sobject_to_cobject( coco_sobject * inst, coco_sobject_cl * cl, coco_cobject * cobject, coco_gnum cam_left, coco_bool network_byte_order )
 {
   do
    {
-     void (* method)( coco_sobject *, coco_sobject_cl * , coco_cobject * , coco_gnum ) = cl->sobject_to_cobject;
+     void (* method)( coco_sobject *, coco_sobject_cl * , coco_cobject * , coco_gnum , coco_bool ) = cl->sobject_to_cobject;
      if (method)
-       { method( inst, cl, cobject, cam_left ); return; }
+       { method( inst, cl, cobject, cam_left, network_byte_order ); return; }
      cl = cl->super;
    }
   while (cl);
@@ -3790,6 +3790,7 @@ coco_init_sobject( coco_sobject * inst, coco_sobject_cl * cl, coco_facing facing
 {
   inst->every.cl = cl;
   inst->every.camera_index = -1;
+  inst->every.comp_index = -1;
   inst->every.facing = facing;
   inst->every.new_flag = COCO_TRUE;
   inst->every.x = x;

@@ -649,6 +649,7 @@ struct coco_stream {
 
 #define COCO_MAX_TEAM_PLAYERS 2
 #define COCO_MAX_PLAYERS 4
+#define COCO_MAX_COMPS 16
 #define COCO_PLAYER_NAME_MAX 25 /* limit on player names, incl. null */
 
 
@@ -664,6 +665,7 @@ struct coco_stream {
 #define COCO_MESSAGE_NAME 'N' /* set human readable player name */
 #define COCO_MESSAGE_JOIN 'J' /* join the specified nationality  */
 #define COCO_MESSAGE_CHAT 'C' /* chat to certain players */
+#define COCO_MESSAGE_NOMINATE 'M' /* voting procedure */
 
 /* server to client */
 #define COCO_MESSAGE_TALK 'T' /* rebroadcast of player comments */
@@ -702,6 +704,24 @@ struct coco_message_chat {
   coco_u32 players;         /* bit vector, in network byte order */
   char message[COCO_CHAT_MAX];
 };
+
+#define COCO_NOMINATE_NOT_IN_USE        0 /* only in sstate */
+#define COCO_NOMINATE_ADD_GOOD_GUY_COMP 1 /* act_object unused */
+#define COCO_NOMINATE_ADD_BAD_GUY_COMP  2 /* act_object unused */
+#define COCO_NOMINATE_BOOT_COMP         3 /* act_object == player_id */
+
+#define COCO_MAX_NOMINATIONS 10 /* because there are 10 digit keys on kbd */
+
+struct coco_message_nominate {
+  unsigned char type;
+  /* serial number of action [0-COCO_MAX_NOMINATIONS), or -1 if not yet
+     assigned. */
+  signed char serial; 
+  unsigned char action_code; /* COCO_NOMINATE_* above */
+  unsigned char act_object;  /* interpretation varies by action_code */
+  coco_bool vote;
+};
+
 
 struct coco_message_talk {
   unsigned char type;        /* takes a word with pad */
@@ -744,6 +764,7 @@ union coco_message {
   struct coco_message_join join;
   struct coco_message_play play;
   struct coco_message_chat chat;
+  struct coco_message_nominate nominate;
   struct coco_message_talk talk;
   struct coco_message_game game;
   struct coco_message_quit quit;
@@ -1264,8 +1285,14 @@ struct coco_team {
   int landing_pad_index;
   coco_bool summon_enable;       /* true if can summon */
   coco_u32 summon_disable_until; /* a time */
-  int reserve_copters;
 };
+
+struct coco_nomination_status {
+  unsigned char action_code; /* COCO_NOMINATE_* above */
+  unsigned char act_object;  /* interpretation varies by action_code */
+  coco_bool votes[COCO_MAX_PLAYERS];
+};
+
 
 /* Holds the state of the game on the server */
 struct coco_sstate_struct {
@@ -1286,8 +1313,11 @@ struct coco_sstate_struct {
   int camera_indicies[COCO_MAX_PLAYERS]; /* -1 if currently no cam */
   coco_bool respawn[COCO_MAX_PLAYERS];
   coco_u32 respawn_times[COCO_MAX_PLAYERS];
+  coco_bool comp_respawn[COCO_MAX_COMPS];
+  coco_u32 comp_respawn_times[COCO_MAX_COMPS];
   coco_sobject_cl *favorite_copter_class[COCO_MAX_PLAYERS];
-
+  struct coco_nomination_status nominations[COCO_MAX_NOMINATIONS];
+  unsigned char nominations_cursor;
 };
 
 #define COCO_SSTATE_OBJECT_REF( sstate, obj_idx ) ((sstate)->sobjects + (obj_idx))
@@ -1353,6 +1383,26 @@ coco_bool coco_subtract_funds_available( int player_index, float funds );
 void
 coco_make_snd( coco_sound_type sound, coco_sstate *sstate, 
                coco_gnum x, coco_gnum y );
+
+struct coco_comp {
+  coco_bool in_use;
+  coco_nationality nationality;
+  float funds;
+  coco_u32 copters;
+  struct coco_keyboard_pointer_state kpstate;
+  char name[COCO_PLAYER_NAME_MAX];
+};
+
+
+/* comp.c */
+
+void
+coco_comp_think( struct coco_comp *self, 
+                 struct coco_cstate_serial_header *cstate,
+                 coco_cobject *cobjs,
+                 struct coco_cblip *cblips,
+                 struct coco_keyboard_pointer_state *state_return );
+
 
 /* late gamesho.c */
 void coco_sobject_weapon_hardpoint_coords( coco_sobject *sobject,
