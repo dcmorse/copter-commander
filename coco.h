@@ -501,6 +501,9 @@ coco_bool coco_get_inhibit_refresh( void );
 /* window.c -- this is a virtual source file possibly implemented in
    either of gnome-window.c or glx-window.c */
 
+#define COCO_BAD_GUYS_PRETTY_NAME "Left"
+#define COCO_GOOD_GUYS_PRETTY_NAME "Right"
+
 extern coco_bool coco_start_game_asap;
 extern const char *coco_gui_description_string; /* GLX or Gnome */
 extern coco_bool coco_use_keyboard_for_gui_p;

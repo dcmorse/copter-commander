@@ -17,6 +17,7 @@
  * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
  */
 
+#define _BSD_SOURCE /* hack to get strncasecmp under glibc */
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
@@ -215,9 +216,9 @@ coco_process_server_arguments( int argc, char **argv )
 static coco_nationality
 coco_parse_nationality( char *str )
 {
-  if (0==strcmp( str, "left" ))
+  if (0==strcasecmp( str, COCO_BAD_GUYS_PRETTY_NAME ))
     return COCO_BAD_GUYS;
-  else if (0==strcmp( str, "right" ))
+  else if (0==strcasecmp( str, COCO_GOOD_GUYS_PRETTY_NAME ))
     return COCO_GOOD_GUYS;
   else return COCO_NEUTRAL;
 }

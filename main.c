@@ -50,11 +50,19 @@ coco_run_sanity_checks( void )
                        test );
 }
 
+
+void
+coco_console_eval( const char *line );
+
+
 int
 main(int argc, char **argv)
 {
   int server;
   
+  coco_console_eval( "/side left" );
+  return 0;
+
   coco_run_name = argv[0];
 
   coco_run_sanity_checks();

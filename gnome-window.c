@@ -123,9 +123,6 @@ running the app - you might try something like:
 #define COCO_JOIN_DIALOG_X_PAD 5
 #define COCO_PORT_EDITOR_INTERNAL_PAD 5
 
-#define COCO_BAD_GUYS_PRETTY_NAME "Left"
-#define COCO_GOOD_GUYS_PRETTY_NAME "Right"
-
 #define COCO_UI_PAD_HORIZONTAL 5
 #define COCO_UI_PAD_VERTICAL 5
 
