@@ -999,7 +999,7 @@ extern int coco_sky_option; /* as interpreted by enum coco_sky_colors */
 /* also change coco_ideal_frame_rate in gamesho.c */
 extern struct timeval coco_ideal_frame_rate;
 #define COCO_IDEAL_FRAMES_PER_SECOND 14
-#define COCO_RESPAWN_SECONDS 4
+#define COCO_RESPAWN_SECONDS 2
 #define COCO_RESPAWN_BASE_SNAP_SECONDS 1
 
 coco_mini_point coco_tank_hardpoints[COCO_TANK_RASTER_COUNT];
@@ -1071,6 +1071,9 @@ extern const int coco_ncomp_names;
 
 extern const char *coco_major_missions[];
 extern const char *coco_minor_missions[];
+
+void coco_mech_raster_setup( void );
+
 
 /* sound.c -- a virtual source file supported by (at least) mute-sound.c
    and openal-sound.c */
@@ -1360,15 +1363,15 @@ struct coco_mech_part {
 
 /* mech parts */
 #define COCO_MAX_TORSO_PARTS 24
-#define COCO_MAX_LEG_PARTS 38
-#define COCO_LEFTY_LEG_PART 19
+#define COCO_MAX_LEG_PARTS 40
+#define COCO_LEFTY_LEG_PART 20
 #define COCO_MIN_IDLE_PARTS 0
 #define COCO_MAX_IDLE_PARTS 6
 #define COCO_MIN_SQUAT_PARTS 6
 #define COCO_MAX_SQUAT_PARTS 10
 #define COCO_MIN_WALK_PARTS 10
-#define COCO_MAX_WALK_PARTS 18
-#define COCO_AKIMBO_PART 18
+#define COCO_MAX_WALK_PARTS 19
+#define COCO_AKIMBO_PART 19
 
 struct coco_mech_part coco_torso_parts[COCO_MAX_TORSO_PARTS];
 struct coco_mech_part coco_leg_parts[COCO_MAX_LEG_PARTS];
@@ -1419,10 +1422,10 @@ coco_u32 coco_draw_frame_number;
    which is slower. */
 #define COCO_COPTER_DX_MAX 22
 #define COCO_COPTER_DY_MAX 14
-#define COCO_MECH_WALKING_DX_MAX 10
-#define COCO_MECH_JUMPING_DX_MAX 18
+#define COCO_MECH_WALKING_DX_MAX 14
+#define COCO_MECH_JUMPING_DX_MAX 20
 #define COCO_MECH_JUMPING_DDX_MAX 2
-#define COCO_MECH_DY_MAX 20
+#define COCO_MECH_DY_MAX 30
 #define COCO_MECH_GRAVITY 3
 #define COCO_MECH_CAPACITANCE 100
 #define COCO_MECH_POWER 2

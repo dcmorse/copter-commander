@@ -17,6 +17,7 @@
  * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
  */
 
+#include <assert.h>
 #include "coco.h"
 #include "rasters.h"
 
@@ -569,33 +570,80 @@ coco_color COCO_COLOR_FONT = COCO_COLOR_LIGHT_BLUE;
    #define COCO_AKIMBO_PART 18
 */
 
+/* One day should maybe crop these guys down to the bare minimum,
+   but for now many rasters are generous.  */
 struct coco_mech_part coco_torso_parts[COCO_MAX_TORSO_PARTS] = {
   { &coco_torso00_raster,  0,  0, 0 },
   { &coco_torso01_raster,  0,  0, 0 },
-  { &coco_torso02_raster,  0,  0, 0 },
-  { &coco_torso03_raster,  0,  0, 0 },
-  { &coco_torso04_raster,  0,  0, 0 },
-  { &coco_torso05_raster,  0,  0, 0 },
-  { &coco_torso06_raster, -1,  0, 0 },
-  { &coco_torso07_raster, -2,  0, 0 },
-  { &coco_torso08_raster, -2,  0, 0 },
-  { &coco_torso09_raster, -3,  0, 0 },
-  { &coco_torso10_raster, -3,  0, 0 },
-  { &coco_torso11_raster, -3,  0, 0 },
-  { &coco_torso12_raster, -3,  0, 0 },
-  { &coco_torso13_raster, -2, -4, 0 },
-  { &coco_torso14_raster, -1, -5, 0 },
-  { &coco_torso15_raster, -1, -5, 0 },
-  { &coco_torso16_raster, -1, -5, 0 },
-  { &coco_torso17_raster,  0, -5, 0 },
-  { &coco_torso18_raster,  0, -5, 0 },
-  { &coco_torso19_raster,  1, -5, 0 },
-  { &coco_torso20_raster,  1, -5, 0 },
-  { &coco_torso21_raster,  2, -5, 0 },
-  { &coco_torso22_raster,  2, -4, 0 },
-  { &coco_torso23_raster,  1, -2, 0 },
+  { &coco_torso02_raster,  2,  0, 0 },
+  { &coco_torso03_raster,  8,  0, 0 },
+  { &coco_torso04_raster,  6,  0, 0 },
+  { &coco_torso05_raster,  4,  0, 0 },
+  { &coco_torso06_raster,  0,  0, 0 },
+  { &coco_torso07_raster, -4,  0, 0 },
+  { &coco_torso08_raster, -6,  0, 0 },
+  { &coco_torso09_raster, -8,  0, 0 },
+  { &coco_torso10_raster, -7,  0, 0 },
+  { &coco_torso11_raster, -6,  0, 0 },
+  { &coco_torso12_raster, -6,  0, 0 },
+  { &coco_torso13_raster, -4, -8, 0 },
+  { &coco_torso14_raster, -2, -11, 0 },
+  { &coco_torso15_raster, -2, -13, 0 },
+  { &coco_torso16_raster, -2, -14, 0 },
+  { &coco_torso17_raster,  0, -14, 0 },
+  { &coco_torso18_raster,  0, -15, 0 },
+  { &coco_torso19_raster,  2, -15, 0 },
+  { &coco_torso20_raster,  2, -14, 0 },
+  { &coco_torso21_raster,  4, -12, 0 },
+  { &coco_torso22_raster,  4, -9, 0 },
+  { &coco_torso23_raster,  2, -4, 0 },
 };
 
+struct coco_mech_part coco_leg_parts[COCO_MAX_LEG_PARTS] = {
+  /* these guys' integers mirror their lefty equivalents */
+  { &coco_legs_idle_0_raster  },
+  { &coco_legs_idle_0_raster  },
+  { &coco_legs_idle_0_raster  },
+  { &coco_legs_idle_5_raster  },
+  { &coco_legs_idle_5_raster  },
+  { &coco_legs_idle_5_raster  },
+  { &coco_legs_squat_0_raster },
+  { &coco_legs_squat_1_raster },
+  { &coco_legs_squat_2_raster },
+  { &coco_legs_squat_3_raster },
+  { &coco_legs_walk_0_raster  },
+  { &coco_legs_walk_1_raster  },
+  { &coco_legs_walk_2_raster  },
+  { &coco_legs_walk_3_raster  },
+  { &coco_legs_walk_4_raster  },
+  { &coco_legs_walk_5_raster  },
+  { &coco_legs_walk_6_raster  },
+  { &coco_legs_walk_7_raster  },
+  { &coco_legs_walk_8_raster  },
+  { &coco_legs_akimbo_raster  },
+  { &coco_legs_left_idle_0_raster,  4, -2, 32 },
+  { &coco_legs_left_idle_0_raster,  4, -2, 32 },
+  { &coco_legs_left_idle_0_raster,  4, -2, 32 },
+  { &coco_legs_left_idle_5_raster,  4, -2, 30 },
+  { &coco_legs_left_idle_5_raster,  4, -2, 30 },
+  { &coco_legs_left_idle_5_raster,  4, -2, 30 },
+  { &coco_legs_left_squat_0_raster, 8, -2, 38 },
+  { &coco_legs_left_squat_1_raster, 8, -2, 34 },
+  { &coco_legs_left_squat_2_raster, 4, -2, 28 },
+  { &coco_legs_left_squat_3_raster, 0, -2, 26 },
+  { &coco_legs_left_walk_0_raster, 10,  0, 30 },
+  { &coco_legs_left_walk_1_raster, 10,  0, 30 },
+  { &coco_legs_left_walk_2_raster, 16,  0, 30 },
+  { &coco_legs_left_walk_3_raster,  6,  0, 30 },
+  { &coco_legs_left_walk_4_raster, 12,  0, 30 },
+  { &coco_legs_left_walk_5_raster, 10,  0, 30 },
+  { &coco_legs_left_walk_6_raster, 10,  0, 30 },
+  { &coco_legs_left_walk_7_raster, 16,  0, 30 },
+  { &coco_legs_left_walk_8_raster, 16,  0, 30 },
+  { &coco_legs_left_akimbo_raster,  8,  3, 30 },
+};
+
+/*  ORIGINAL
 struct coco_mech_part coco_leg_parts[COCO_MAX_LEG_PARTS] = {
   { &coco_legs_idle_0_raster,  0, -1, 16 },
   { &coco_legs_idle_0_raster,  0, -1, 16 },
@@ -616,7 +664,7 @@ struct coco_mech_part coco_leg_parts[COCO_MAX_LEG_PARTS] = {
   { &coco_legs_walk_6_raster,  0, -1, 15 },
   { &coco_legs_walk_7_raster,  0, -1, 15 },
   { &coco_legs_akimbo_raster,  0, -1, 15 },
-  /* mirror that of above */
+  /+ mirror that of above +/
   { &coco_legs_left_idle_0_raster,  0, -1, 16 },
   { &coco_legs_left_idle_0_raster,  0, -1, 16 },
   { &coco_legs_left_idle_0_raster,  0, -1, 16 },
@@ -637,6 +685,42 @@ struct coco_mech_part coco_leg_parts[COCO_MAX_LEG_PARTS] = {
   { &coco_legs_left_walk_7_raster,  0, -1, 15 },
   { &coco_legs_left_akimbo_raster,  0, -1, 15 },
 };
+
+p
+
+ */
+
+/* this function could be done at compile time, but its very fast in any
+   case. */
+void 
+coco_mech_raster_setup( void )
+{
+  int i, j;
+  coco_gnum cw = COCO_MECH_CLASS->canonical_w;
+  coco_gnum cw2 = cw >> 1;
+  for (i=0, j=COCO_LEFTY_LEG_PART; i<COCO_LEFTY_LEG_PART; i++, j++)
+    {
+      coco_gnum rw = coco_leg_parts[j].r->w;
+      coco_gnum dx = coco_leg_parts[j].dx;
+      coco_gnum dy = coco_leg_parts[j].dy;
+      coco_gnum dh = coco_leg_parts[j].dh;
+      /* center mech on legs */
+      dx = coco_leg_parts[j].dx = dx - cw2 + 6;
+      coco_leg_parts[i].dx = (- rw) + cw - dx;
+      assert( abs( coco_leg_parts[j].dx ) < 1000 );
+      assert( abs( coco_leg_parts[i].dx ) < 1000 );
+      /* copy other values */
+      coco_leg_parts[i].dy = dy;
+      coco_leg_parts[i].dh = dh;
+    }
+  for (i=0; i<COCO_MAX_TORSO_PARTS; i++)
+    {
+      coco_torso_parts[i].dx -= cw2;
+    }
+}
+
+
+
 
 /* if adding to this be sure to change the count constant in sobject.lisp */
 coco_sobject_cl *coco_aa_targetable_classes[] = {

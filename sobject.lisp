@@ -484,15 +484,15 @@
    ("dx_max"       "COCO_MECH_JUMPING_DX_MAX")
    ("dy_max"       "COCO_MECH_DY_MAX")
    ("x_force"      "4") ; only used when flying, otherwise accell is instant??
-   ("health_max"   "4")
+   ("health_max"   "7")
    ("torso_raster_index" "0" "unsigned char")
    ("leg_raster_index" "COCO_MIN_IDLE_PARTS" "unsigned char")
    ("clip_to_board" "COCO_TRUE")
    ;;("raster_index" "0") ;; doesn't use normal raster facility
    ("shrapnel_count" "8")
    ;; copter is now abstract class, with individual model classes below it
-   ("canonical_w"  "17") ;; never reset
-   ("canonical_h"  "32") ;; never reset, sampled 32, 28, 35.
+   ("canonical_w"  "34") ;; never reset
+   ("canonical_h"  "60") ;; never reset
    ;;("rasters"      "coco_copter_rasters")
    ("raster_count" "0")
    ("cobject_guess_nationality_fn" "coco_mech_guess_nationality")

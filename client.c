@@ -733,13 +733,24 @@ coco_mech_draw( coco_cobject *cobject, coco_sobject_cl *cla )
   unsigned char li = COCO_COBJECT_MECH_LEG_RASTER_INDEX( cobject );
   struct coco_mech_part *tp;
   struct coco_mech_part *lp;
+  coco_gnum lpdx, lpdy;
 
   /* added safety */
   ti = COCO_MIN( COCO_MAX_TORSO_PARTS-1, ti );
   li = COCO_MIN( COCO_MAX_LEG_PARTS-1, li );
 
+  coco_draw_color( COCO_COLOR_WHITE );
+  /*
+    to see where it really is
+  coco_draw_rectangle( x, y, 
+                       x+COCO_MECH_CLASS->canonical_w,
+                       y+COCO_MECH_CLASS->canonical_h );
+  */
   lp = coco_leg_parts+li;
-  coco_draw_raster( x+lp->dx, y+lp->dy, lp->r );
+  lpdx = lp->dx;
+  lpdy = lp->dy;
+  coco_draw_raster( x+lpdx, y+lpdy, lp->r );
+  coco_cookie( "ti=%d\n", (int) ti );
   tp = coco_torso_parts+ti;
   coco_draw_raster( x+tp->dx, y+tp->dy+lp->dh, tp->r );
 }

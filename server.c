@@ -1793,7 +1793,7 @@ coco_make_mech_jet_exhaust( coco_sobject *mech, coco_sstate *sstate,
       else if (x<0)
         jx = mw;
       else
-        jx = -rw;
+        jx = - rw;
 
       jx += COCO_SOBJECT_X( mech ) + COCO_SOBJECT_DX( mech );
       jy =  COCO_SOBJECT_Y( mech ) + COCO_SOBJECT_DY( mech ) - r->h;
@@ -1956,7 +1956,6 @@ coco_mech_update_state( coco_sobject *sobject,
   { 
     coco_gnum dx = COCO_SOBJECT_DX( sobject );
     /* dx_want_sorta only used for picking leg raster */
-    coco_gnum dx_want_sorta = (dx + (run*COCO_MECH_JUMPING_DDX_MAX));
     /* handle jumping movement */
     if (jump)
       {
@@ -1984,11 +1983,12 @@ coco_mech_update_state( coco_sobject *sobject,
         dydt = COCO_MIN( thrust, dydt );
         COCO_SOBJECT_DY( sobject ) = dy + dydt;
         legs_out 
-          = (dx_want_sorta < 0)
+          = (run < 0)
           ? (COCO_AKIMBO_PART + COCO_LEFTY_LEG_PART)
-          : ((dx_want_sorta > 0)
+          : ((run > 0)
              ? COCO_AKIMBO_PART
-             : (lefty + COCO_AKIMBO_PART) );
+             : (COCO_MECH_SQUATTING_DOWN( sobject ) = COCO_TRUE,
+                (lefty + COCO_MIN_SQUAT_PARTS)) );
         COCO_MECH_ENERGY( sobject ) 
           = ((e==effective_e)?(e - dydt):(e-(dydt>>1)) );
         jumped_strength = 1 + (dydt >= 5);
@@ -1998,6 +1998,7 @@ coco_mech_update_state( coco_sobject *sobject,
     if ((COCO_SOBJECT_Y( sobject ) > COCO_GROUND_Y+1)
         && !landed_p)
       {
+        coco_cookie( "here %d\n", run );
         if (run)
           {
             coco_gnum dxroom;
@@ -2030,7 +2031,7 @@ coco_mech_update_state( coco_sobject *sobject,
                 && (COCO_SOBJECT_Y( sobject ) + dh >= COCO_GROUND_Y))
               {
                 legs_out = squati;
-                COCO_SOBJECT_Y( sobject ) += dh;
+                /* COCO_SOBJECT_Y( sobject ) += dh; */
                 COCO_MECH_SQUATTING_DOWN( sobject ) = COCO_TRUE;
               }
             /* flying friction */

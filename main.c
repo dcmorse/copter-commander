@@ -60,6 +60,8 @@ main(int argc, char **argv)
   coco_run_name = argv[0];
 
   coco_run_sanity_checks();
+  /* someday found catchall very-early-setup function */
+  coco_mech_raster_setup();
 
   server = ((argc > 1) && (0==strcmp( "server", argv[1] )));
   if (server)
