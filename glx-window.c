@@ -370,7 +370,7 @@ coco_handle_ui_events( void )
     }
   /* coco_poll_pointer(); */
   if (need_redraw && !coco_get_inhibit_refresh())
-    coco_refresh_window( COCO_FALSE );
+    coco_refresh_window();
 }
 
 void 

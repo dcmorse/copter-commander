@@ -54,7 +54,7 @@ COCO_MINOR_VERSION=0
 # Copter Commander will (barely) run out of the source directlory, but you
 # must use the file browser to find the levels, and it won't find its sound
 # files.
-COCO_INSTALL_DIRECTORY=/usr/local
+COCO_INSTALL_DIRECTORY=/home/dm/cvs
 COCO_BIN_DIRECTORY=${COCO_INSTALL_DIRECTORY}/bin
 COCO_SHARE_DIRECTORY=${COCO_INSTALL_DIRECTORY}/share/copter-commander/${COCO_MAJOR_VERSION}.${COCO_MINOR_VERSION}
 COCO_DOC_DIRECTORY=${COCO_SHARE_DIRECTORY}/doc
@@ -81,6 +81,10 @@ COCO_GTKGLAREA_INCLUDE_DIRECTORY=/usr/include
 # should be as shown, if not, consider making a symlink)
 COCO_GL_LIB_DIRECTORY=/usr/lib
 COCO_GL_INCLUDE_DIRECTORY=/usr/include
+
+# LibTIFF image library
+COCO_LIBTIFF_LIB_DIRECTORY=/usr/lib
+COCO_LIBTIFF_INCLUDE_DIRECTORY=/usr/include
 
 # Sound Support
 # Select the sound technique that works for you, valid values are 
@@ -152,7 +156,7 @@ HDR_FILES = forward-sobject.h methods.h sobject.h coco.h raster.h \
 GAME_C_FILES = language.c clsho.c simple-command-line.c graphics.c network.c \
                gamesho.c methods.c \
                background-${COCO_APPEARANCE_BASE}.c client.c sobject.c \
-	       server.c ccl.c globals.c main.c
+	       screenshot.c server.c ccl.c globals.c main.c
 
 # Gnome GUI files
 # (note how they cleverly start with "gnome-", so I can easily pass extra flags.)
@@ -291,6 +295,10 @@ esd-%.o: esd-%.c
           -I${COCO_ESD_INCLUDE_DIRECTORY} \
 	  `gnome-config --cflags gnomeui`
 
+screenshot.o: screenshot.c 
+	${CC} ${CFLAGS} -c screenshot.c -o $@ \
+          -I${COCO_LIBTIFF_INCLUDE_DIRECTORY}
+
 # build other objects the standard way
 %.o: %.c 
 	${CC} ${CFLAGS} -c $*.c -o $@ \
@@ -303,6 +311,7 @@ ${ALL_OBJ_FILES}: ${HDR_FILES} Makefile ${COCO_RASTER_DIRECTORY}/built
 GNOME_LINK_LINE=\
 ${CC} ${CFLAGS} -o $@ ${GAME_OBJ_FILES} ${GNOME_OBJ_FILES} ${USED_SOUND_OBJ_FILES} ${COCO_RASTER_DIRECTORY}/*.o \
 ${COCO_BASIC_LIBS} \
+-L${COCO_LIBTIFF_LIB_DIRECTORY} -ltiff \
 -L${COCO_GL_LIB_DIRECTORY} -lGL \
 `gnome-config --libs gnome gnomeui` \
 -L${COCO_GTKGLAREA_LIB_DIRECTORY} -lgtkgl
@@ -311,15 +320,18 @@ ${COCO_BASIC_LIBS} \
 copter-commander: ${GAME_OBJ_FILES} ${GNOME_OBJ_FILES} ${USED_SOUND_OBJ_FILES} ${COCO_RASTER_DIRECTORY}/built 
 	${GNOME_LINK_LINE} ${COCO_SOUND_LINK_LINE}
 
+
 GLX_LINK_LINE=\
 ${CC} ${CFLAGS} -o $@ ${GAME_OBJ_FILES} ${GLX_OBJ_FILES} ${USED_SOUND_OBJ_FILES} ${COCO_RASTER_DIRECTORY}/*.o \
 ${COCO_BASIC_LIBS} \
+-L${COCO_LIBTIFF_LIB_DIRECTORY} -ltiff \
 -L${COCO_X11_LIB_DIRECTORY} -lX11 -lXext \
 -L${COCO_GL_LIB_DIRECTORY} -lGL
 
 glx-copter-commander: ${GAME_OBJ_FILES} ${GLX_OBJ_FILES} ${USED_SOUND_OBJ_FILES} ${COCO_RASTER_DIRECTORY}/built 
 ifeq (${COCO_SOUND},esd)
-	${GLX_LINK_LINE} ${COCO_SOUND_LINK_LINE}  `gnome-config --libs gnome gnomeui`
+	${GLX_LINK_LINE} ${COCO_SOUND_LINK_LINE} \
+	`gnome-config --libs gnome gnomeui`
 else
 	${GLX_LINK_LINE} ${COCO_SOUND_LINK_LINE}
 endif
@@ -395,8 +407,8 @@ install:
 	  ${COCO_DOC_DIRECTORY} \
 	  ${COCO_LEVEL_DIRECTORY} \
 	  ${COCO_SOUND_DIRECTORY}
-	install -C copter-commander ${COCO_BIN_DIRECTORY}
-	install -C glx-copter-commander ${COCO_BIN_DIRECTORY}
-	install -C -m u=rw,go=r keybindings.txt manual.txt ${COCO_DOC_DIRECTORY} 
-	install -C -m u=rw,go=r levels/*.ccl ${COCO_LEVEL_DIRECTORY}
-	install -C -m u=rw,go=r sounds/*.wav ${COCO_SOUND_DIRECTORY}
+	install copter-commander ${COCO_BIN_DIRECTORY}
+	install glx-copter-commander ${COCO_BIN_DIRECTORY}
+	install -m u=rw,go=r keybindings.txt manual.txt ${COCO_DOC_DIRECTORY} 
+	install -m u=rw,go=r levels/*.ccl ${COCO_LEVEL_DIRECTORY}
+	install -m u=rw,go=r sounds/*.wav ${COCO_SOUND_DIRECTORY}

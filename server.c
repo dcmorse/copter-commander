@@ -299,7 +299,7 @@ coco_server_setup( int *tcpfd, int *out_udpfd,
   sockaddr.sin_family = PF_INET;
   sockaddr.sin_port = htons( coco_port );
   sockaddr.sin_addr.s_addr = htonl( INADDR_ANY );
-  if (-1==bind( listenfd, &sockaddr, sizeof( sockaddr ) ))
+  if (-1==bind( listenfd, (struct sockaddr*)&sockaddr, sizeof( sockaddr ) ))
     coco_fatal_printf( COCO_ERROR_NETWORK_BROKEN,
                        "Bind failed with errno=%d: %s\n",
                        errno, coco_errno_string( errno ) );
@@ -1504,7 +1504,7 @@ coco_send_cstate( int udpfd, int plr_index, void *cstate_buf, size_t buf_size )
   */
 
   sendto_result = sendto( udpfd, cstate_buf, buf_size, 0,
-                          &sockaddr, sizeof( sockaddr ) );
+                          (struct sockaddr*)&sockaddr, sizeof( sockaddr ) );
   if (-1 == sendto_result)
     switch (errno) {
     case EAGAIN:
@@ -1572,7 +1572,7 @@ coco_read_client_packet( int udpfd, coco_sstate *sstate )
 
   while (1) {
     recv_result = recvfrom( udpfd, &pkt, sizeof( pkt ), 0,
-                            &sockaddr, &sockaddr_size ); 
+                            (struct sockaddr*)&sockaddr, &sockaddr_size ); 
     if (recv_result != sizeof( pkt ))
       {
         if (-1 == recv_result)
@@ -1721,10 +1721,9 @@ coco_server_loop( int listenfd, int out_udpfd,
 {
   struct timeval next_update, next_update_delta, now;
   static struct timeval time_zero = { 0, 0 };
-  struct timezone tz;
   int i, maxfd;
   fd_set readset;
-  gettimeofday( &next_update, &tz );
+  gettimeofday( &next_update, NULL);
   coco_add_timevals( &next_update, &next_update, &coco_ideal_frame_rate );
   maxfd = COCO_MAX( listenfd, in_udpfd );
   while (1)
@@ -1741,7 +1740,7 @@ coco_server_loop( int listenfd, int out_udpfd,
             FD_SET( fd, &readset );
             maxfd = COCO_MAX( fd, maxfd );
           }
-      gettimeofday( &now, &tz );
+      gettimeofday( &now, NULL );
       coco_subtract_timevals( &next_update_delta, &next_update, &now );
       /* coco_cookie( "%d %d ", next_update_delta.tv_sec, 
          next_update_delta.tv_usec ); */
@@ -1779,7 +1778,7 @@ coco_server_loop( int listenfd, int out_udpfd,
                   coco_server_shutdown( listenfd, out_udpfd, in_udpfd );
               }
           }
-      gettimeofday( &now, &tz );
+      gettimeofday( &now, NULL );
       if (sstate->game_in_progress && timercmp( &next_update, &now, <= ))
         { 
           struct sockaddr_in sockaddr;

@@ -31,6 +31,8 @@
 #include <GL/gl.h>              /* sadly I decided to use GL here, though
                                    I'd like to just use graphics.c
                                    functions. */
+#include <time.h>              /* for all the time functions */
+#include <sys/socket.h>
 
 #include "coco.h"
 #include "background.h"
@@ -841,7 +843,7 @@ coco_cstate_draw( struct coco_cstate *cstate )
 {
   coco_bool grabbed;
   static struct timeval now, delta, last = { 0, 0 };
-  struct timezone tz;
+  /*  struct timezone tz;*/
   int i;
   coco_znum z;
   coco_clear_window_color( COCO_COLOR_BACKGROUND );
@@ -874,7 +876,7 @@ coco_cstate_draw( struct coco_cstate *cstate )
   coco_draw_line( 0, COCO_RADAR_Y-1, coco_real_window_w, COCO_RADAR_Y-1 );
   coco_draw_line( 0,                  COCO_RADAR_Y+COCO_RADAR_H, 
                   coco_real_window_w, COCO_RADAR_Y+COCO_RADAR_H );
-  gettimeofday( &now, &tz );
+  gettimeofday( &now, NULL );
   coco_subtract_timevals( &delta, &now, &last );
   last = now;
   coco_draw_dashboard( cstate, (int)(1000000 / delta.tv_usec) );
@@ -1007,12 +1009,57 @@ coco_strsplice( char *body, int cursor, const char *middle )
 
 
 
+char *
+coco_generate_screenshot_fname( char *base, int *counter )
+{
+  char *buf = coco_malloc( 40 );
+  sprintf( buf, "/home/dm/tmp/%s%03d.tif", base, ++(*counter) );
+  return buf;
+}
+
+static coco_bool coco_recording_movie = COCO_FALSE;
+static int coco_movie_number = 0;
+static int coco_movie_frame = 0;
+
 void 
 coco_key_press( coco_key key, char *string_or_null, 
                 coco_key_state_ref keystate )
 {
   /* coco_cookie( "coco_key_press enter, key = '%c', state=%d\n", (char) key,
      coco_get_client_state() ); */
+
+
+  /* global bindings */
+  if ((COCO_CHAR_TO_KEY( 'c' ) == key)
+      && coco_get_bit( keystate, COCO_KEY_CONTROL ))
+    { /* screenshot feature */
+      static int counter = 0;
+      char buf[100];
+      char *fname = coco_generate_screenshot_fname( "screen", &counter );
+      if (coco_screenshot( fname ))
+        sprintf( buf, "Screenshot saved to \"%s\"", fname );
+      else sprintf( buf, "Screenshot to \"%s\" FAILED!", fname );
+      coco_display_notice( buf );
+      coco_free( fname );
+      return;
+    }
+  else if ((COCO_CHAR_TO_KEY( 'm' ) == key)
+      && coco_get_bit( keystate, COCO_KEY_CONTROL ))
+    {
+      coco_cookie( "RECORDING\n" );
+      if (coco_recording_movie)
+        {
+          coco_recording_movie = COCO_FALSE;
+          coco_display_notice( "Movie saved\n" );
+        }
+      else
+        {
+          coco_recording_movie = COCO_TRUE;
+          coco_movie_frame = 0;
+          coco_movie_number++;
+        }
+      return;
+    }
 
   /* mode-local bindings */
   switch (coco_get_client_state()) {
@@ -1086,12 +1133,8 @@ coco_key_press( coco_key key, char *string_or_null,
                                 coco_in_game_chat_cursor, string_or_null );
             return;
           }
-        {
-          struct timeval now;
-          struct timezone tz;
-          gettimeofday( &now, &tz );
-          coco_chat_cursor_last_blink = now.tv_sec;
-        }
+	coco_chat_cursor_last_blink = time(NULL);
+        
         return; /* don't send any key, e.g. shift! */
       }
     else /* not chatting */
@@ -1149,8 +1192,22 @@ coco_key_release( coco_key key, coco_key_state_ref keystate )
   coco_write_client2server_packet_maybe();
 }
 
+void
+coco_record_movie_frame_maybe( void )
+{
+  if (coco_recording_movie)
+    {
+      char *fname;
+      char buf[30];
+      sprintf( buf, "movie-%d-", coco_movie_number );
+      fname = coco_generate_screenshot_fname( buf, &coco_movie_frame );
+      coco_screenshot( fname );
+      coco_free( fname );
+    }
+}
+
 void 
-coco_refresh_window( coco_bool no_swap )
+coco_refresh_window()
 {
   /* code to limit the framerate.
   static struct timeval last = { 0, 0 };
@@ -1165,7 +1222,8 @@ coco_refresh_window( coco_bool no_swap )
     }
     last = now; */
   coco_draw_window();
-  if (!no_swap) coco_swap_buffer();
+  coco_swap_buffer();
+  coco_record_movie_frame_maybe();
 }
 
 void
@@ -1713,7 +1771,7 @@ coco_handle_client_message( struct coco_stream *str,
                                   ntohs(message.port.port ), COCO_TRUE);
               coco_cookie( "\n" );
 #endif
-              if (-1 == connect( udpfd, &sockaddr, sizeof( sockaddr ) ))
+              if (-1 == connect( udpfd, (struct sockaddr*)&sockaddr, sizeof( sockaddr ) ))
                 coco_fatal_printf( COCO_ERROR_NETWORK_BROKEN,
                                    "Udp connect() failed with errno=%d: %s\n",
                                    errno, coco_errno_string( errno ) );
@@ -1862,9 +1920,7 @@ coco_client_loop( void )
           /* coco_cookie( "Read new cstate %ssuccessfully\n", cstate ? "" : "un" ); */
           /* Naw: if (NULL == cstate) cstate = coco_get_cstate(); */
           coco_time_cookie( "draw" );
-          coco_refresh_window( COCO_TRUE );
-          coco_time_cookie( "swap" );
-          coco_swap_buffer();
+          coco_refresh_window();
 #ifdef COCO_DEBUG
           coco_warn_gl_errors("outer loop");
 #endif /* COCO_DEBUG */
@@ -1973,7 +2029,7 @@ coco_client_connect_to_server( enum coco_network_error *err_return,
   coco_cookie( "\n" );
 #endif
 
-  if (-1==connect( hailfd, &sockaddr, sizeof( sockaddr ) ))
+  if (-1==connect( hailfd, (struct sockaddr*) &sockaddr, sizeof( sockaddr ) ))
     {
       coco_assign_network_error( COCO_NETERROR_CONNECT_TCP,
                                  err_return, err_arg_return );
@@ -2088,8 +2144,7 @@ int coco_talk_display_ptr = 0;
 void
 coco_note_talk( void *null, union coco_message *message )
 {
-  struct timeval now;
-  struct timezone tz;
+
   int ptr = coco_talk_display_ptr;
   coco_u32 plr = COCO_U32_NTOH( message->talk.from_player );
   strcpy( coco_talk_display_talk_buffer[ptr], message->talk.message );

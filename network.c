@@ -58,6 +58,9 @@ coco_get_protocol( char *name )
 void 
 coco_close_fd( int fd )
 {
+  if ((shutdown( fd, SHUT_RDWR) == -1))
+    coco_warn_printf( "shutdown failed with errno=%d: %s\n", errno, 
+                       coco_errno_string( errno ) );
   if (-1==close( fd ))
     coco_warn_printf( "close failed with errno=%d: %s\n", errno, 
                        coco_errno_string( errno ) );

@@ -1576,7 +1576,7 @@ coco_launch_rocket( coco_sobject *sobject, coco_sobject_cl *cl,
           coco_sobject_weapon_hardpoint_coords( sobject, &x, &y );
           coco_init_rocket( rocket, COCO_ROCKET_CLASS, facing, x, y,
                             COCO_SOBJECT_DX( sobject ), 
-                            (-120/COCO_IDEAL_FRAMES_PER_SECOND),
+                            -8.5,
                             COCO_SOBJECT_NATIONALITY( sobject ),
                             (facing>0)
                             ? COCO_ROCKET_RIGHT_ANGLE

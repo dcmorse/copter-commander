@@ -885,6 +885,7 @@ coco_bubble_copter_weapon_hardpoints[COCO_COPTER_RASTER_COUNT];
 coco_mini_point 
 coco_bubble_copter_center_of_mass[COCO_COPTER_RASTER_COUNT];
 
+/* also change coco_ideal_frame_rate in gamesho.c */
 extern struct timeval coco_ideal_frame_rate;
 #define COCO_IDEAL_FRAMES_PER_SECOND 14
 #define COCO_RESPAWN_SECONDS 4
@@ -953,6 +954,9 @@ extern float coco_game_sound_durations[COCO_GAME_SOUNDS_SIZE];
 
 extern coco_gnum coco_game_fx_radius[COCO_GAME_SOUNDS_SIZE];
 
+/* screenshot.c */
+coco_bool coco_screenshot( char *file_name );
+
 /* client.c */
 
 /* These may change if the user figures out how to resize despite our best
@@ -984,7 +988,7 @@ void coco_key_press( coco_key key, char *string_or_null,
 void coco_key_release( coco_key key, coco_key_state_ref keystate );
 /* void coco_key_hold( coco_key key ); Not implemented or called */
 
-void coco_refresh_window( coco_bool no_swap );
+void coco_refresh_window();
 void coco_init_starscape( void );
 
 /* super light version of coco_sobject to save network bandwidth */

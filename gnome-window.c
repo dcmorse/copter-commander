@@ -138,7 +138,7 @@ coco_draw_callback( GtkWidget *widget, GdkEventExpose *event )
 {
   /* Draw only last expose. */
   if (event->count <= 0)
-    coco_refresh_window( COCO_FALSE );
+    coco_refresh_window();
   return TRUE;
 }
 

@@ -231,8 +231,7 @@ coco_real_time_cookie( char *label )
   else if (index < COCO_MAX_TIME_COOKIES)
     {
       int string_size;
-      struct timezone tz;
-      gettimeofday( times + index, &tz );
+      gettimeofday( times + index, NULL);
       string_size = strlen( label )+1;
       memcpy( labels[index], label, 
               COCO_MIN( COCO_MAX_TIME_COOKIE_LABEL-1, string_size ) );
