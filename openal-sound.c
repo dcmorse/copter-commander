@@ -269,6 +269,7 @@ coco_init_sound_system( void )
   coco_allocate_dedicated_sources( COCO_SOUND_COPTER_CANNON, 4 );
   coco_allocate_dedicated_sources( COCO_SOUND_ROCKET_HIT, 4 );
   coco_allocate_dedicated_sources( COCO_SOUND_BOMB_HIT, 8 );
+  coco_allocate_dedicated_sources( COCO_SOUND_RIFLE, 1 );
 }
 
 void

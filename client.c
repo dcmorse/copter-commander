@@ -984,7 +984,8 @@ coco_query_disconnected( void )
 }
 
 
-/* HACK for NVIDIA driver, that corrupts textures */
+/* HACK for NVIDIA 0.95 driver, that corrupts textures.  Apperantly fixed
+   in 0.96 */
 void
 coco_reload_textures( void )
 {

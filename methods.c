@@ -1857,8 +1857,8 @@ coco_building_hostile_collision( coco_sobject *building,
 {
   if (coco_sobject_subtype_p( COCO_SOBJECT_CL( obj2 ), COCO_BUILDING_CLASS ))
     *stat1 = *stat2 = COCO_FALSE;
-  coco_hostile_collision( building, building_cl->super, obj2, sstate,
-                          stat1, stat2 );
+  else coco_hostile_collision( building, building_cl->super, obj2, sstate,
+                               stat1, stat2 );
 }
 
 
