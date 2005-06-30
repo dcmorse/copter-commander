@@ -45,7 +45,7 @@ are:
  * Demolition Van        - 2 funds
  * Anti Aircraft Truck   - 3 funds
  * Tank                  - 4 funds
- * Civvie Helicopter     - 4 funds, should you run out of Gunships
+ * Civvie Helicopter     - 2 funds, should you run out of Gunships
  * Helicopter Gunship    - 20 funds
 
 More funds can be obtained by destroying enemy units and engaging in

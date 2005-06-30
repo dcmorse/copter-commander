@@ -20,6 +20,7 @@
 
 #include <math.h> /* sin and cos */
 #include <GL/gl.h>
+#include <string.h> 		/* memcpy and strcmp */
 #include <assert.h>
 #include "coco.h"
 #include "rasters.h"

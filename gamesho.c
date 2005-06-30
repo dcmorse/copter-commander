@@ -18,6 +18,7 @@
  */
 
 #include <assert.h>
+#include <stdlib.h> /* for abs() */
 #include "coco.h"
 #include "rasters.h"
 

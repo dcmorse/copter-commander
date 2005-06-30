@@ -40,7 +40,7 @@
 # If your name is David Morse, you probably want to compile with
 # make COCO_OPTIMIZATION_FLAGS=-"g -DCOCO_DEBUG" COCO_LEVEL_DIRECTORY=/home/dm/coco/levels COCO_SOUND_DIRECTORY=/home/dm/coco/sounds COCO_SOUND=openal copter-commander
 # or on shadow
-# make COCO_OPTIMIZATION_FLAGS=-"g -DCOCO_DEBUG" COCO_LEVEL_DIRECTORY=/roam/dm/coco/levels COCO_SOUND_DIRECTORY=/roam/dm/coco/sounds COCO_OPENAL_INCLUDE_DIRECTORY=/usr/yokel/include COCO_OPENAL_LIB_DIRECTORY=/usr/yokel/lib COCO_SOUND=openal copter-commander
+# make COCO_OPTIMIZATION_FLAGS=-"g -DCOCO_DEBUG" COCO_LEVEL_DIRECTORY=/roam/dm/coco/levels COCO_SOUND_DIRECTORY=/roam/dm/coco/sounds COCO_SOUND=openal copter-commander
 # or if with gii
 # make COCO_OPTIMIZATION_FLAGS=-"g -DCOCO_DEBUG" COCO_LEVEL_DIRECTORY=/home/dm/coco/levels COCO_SOUND_DIRECTORY=/home/dm/coco/sounds COCO_SOUND=openal copter-commander COCO_GII_INCLUDE_DIRECTORY=/usr/local/include COCO_GII_LIB_DIRECTORY=/usr/local/lib COCO_USE_GII=1
 #
@@ -107,9 +107,9 @@ COCO_LIBTIFF_INCLUDE_DIRECTORY=/usr/include
 COCO_SOUND=esd
 
 # OpenAL sound library (only used if COCO_SOUND=openal)
-COCO_OPENAL_LIB_DIRECTORY=/usr/local/lib
+COCO_OPENAL_LIB_DIRECTORY=/usr/lib
 COCO_OPENAL_LIBS=-lopenal
-COCO_OPENAL_INCLUDE_DIRECTORY=/usr/local/include
+COCO_OPENAL_INCLUDE_DIRECTORY=/usr/include
 
 # ESD sound library (only used if COCO_SOUND=esd)
 COCO_ESD_LIB_DIRECTORY=/usr/lib

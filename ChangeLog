@@ -1,3 +1,45 @@
+2005-06-30  David Morse  <svref@yahoo.com>
+
+	* server.c (coco_copter_update_state): added support for maximum
+	copter angle change rate (max_angular_velocity)
+
+	* sobject.lisp ("sobject"): ditto
+
+2005-02-22  David Morse  <svref@yahoo.com>
+
+	* sobject.lisp ("cobra"): Cost from 20 to 15.  Refund from 4 to 5.
+	("cargo_copter"): Refund from 4 to 5.  Change 10 rockets to 6 missiles!
+	("mech"): Refund from ? to 5.
+
+	* manual.txt: Adjusted unit costs.
+
+	* sobject.lisp ("bubble_copter"): cost from 5 to 2 (Comp AI
+	couldn't cope with the constant drain of cost 5), also refund from
+	2 to 5.
+
+	* server.c (coco_add_comp): Comps start with funds and fancy
+	copters, like human players.
+	(coco_subtract_funds_available): suck funds down to 0 when
+	overdrawing.
+
+	* methods.c (coco_headquarters_launch_missile): missiles start
+	with initial upwards velocity.
+
+	* server.c (coco_sstate_update): Fix bug with comps getting
+	negative funds when they die alot
+
+2005-02-21  David Morse  <svref@yahoo.com>
+
+	* coco.h: Support for AIs that spend money.
+
+	* server.c (coco_add_comp): Support for AIs that spend money.
+
+	* coco.h (struct coco_message_game): Fix i,j <=> j,i indexing bug
+	leading to corrupt player names.
+
+	* sobject.lisp ("at_gun"): Fix bug whereby AT guns don't fire at
+	ground vehicles, introduced when adding mechs.
+
 2002-02-26  David Morse  <dm@bomberlan.net>
 
 	* server.c (coco_get_collision_recti): fix facing bug.  Related to

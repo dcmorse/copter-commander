@@ -1638,6 +1638,7 @@ coco_headquarters_launch_missile( coco_sobject *sobject, coco_sobject_cl *cla,
       if (missile)
         {
           int i;
+	  COCO_SOBJECT_DY( missile ) += 5; /* launch missile upwards */
           COCO_SOBJECT_LOCKED_ON_TIME( target ) = time;
           COCO_HEADQUARTERS_SMOKE_COUNTDOWN( sobject ) = 5;
           for (i=0; i<COCO_SMOKE_RASTER_COUNT; i++)

@@ -839,7 +839,7 @@ struct coco_message_game {
   unsigned char your_player_id;
   char game_status_string[COCO_GAME_STATUS_SIZE];
   coco_nationality nationalities[COCO_MAX_PLAYERS]; /* neutral if not in_use */
-  char names[COCO_PLAYER_NAME_MAX][COCO_MAX_PLAYERS];
+  char names[COCO_MAX_PLAYERS][COCO_PLAYER_NAME_MAX];
 };
 
 struct coco_message_version {
@@ -1701,7 +1701,7 @@ coco_hut_init_by_list( coco_sobject *sobject, coco_sobject_cl *cla,
 
 void coco_add_funds( int p_or_c_index, coco_bool is_comp, float funds );
 coco_bool coco_subtract_funds_available( int player_index, coco_bool is_comp, 
-                                         float funds );
+                                         float funds, coco_bool partial_ok );
 
 
 
@@ -1725,10 +1725,14 @@ struct coco_comp {
   coco_gnum overgun;         /* small y offset gunning emy copter */
   coco_bool refuelling;      /* go refuel and rearm */
   coco_gnum goto_area;       /* low priority x-coordinate to fly to */
+  int buy_index;	     /* [0..COCO_COMP_BUY_INDEX_MAX) */
 };
+
+#define COCO_COMP_BUY_INDEX_MAX 8
 
 struct coco_comp coco_comps[COCO_MAX_COMPS];
 
+/* PORC = Player OR Comp */
 #define COCO_PORC_COPTERS( index, is_comp ) ((is_comp) ? coco_comps[index].copters : coco_players[index].copters)
 #define COCO_PORC_FUNDS( index, is_comp ) ((is_comp) ? coco_comps[index].funds : coco_players[index].funds)
 #define COCO_PORC_NATIONALITY( index, is_comp ) ((is_comp) ? coco_comps[index].nationality : coco_players[index].nationality)
@@ -1764,6 +1768,21 @@ coco_copter_velocity_offset_old_skool( coco_sobject *camera,
                                        coco_sobject_cl *cla,
                                        coco_sstate *sstate );
 
+
+/* keymap moved to here from server so that comp.c can see it -dm 02-21-2005 */
+struct coco_unit_order_keymap { 
+  coco_key key;
+  coco_sobject_cl *cl;
+  coco_sobject *(* init_fn)
+       ( coco_sobject *, coco_sobject_cl *, coco_gnum, coco_nationality);
+} ;
+
+#define COCO_UNIT_ORDER_KEYMAP_LENGTH 5
+
+extern const struct coco_unit_order_keymap coco_unit_order_keymap[];
+
+#define COCO_GAME_START_FUNDS 16
+#define COCO_GAME_START_COPTERS 3
 
 /* dashboard.c */
 struct coco_dashboard_item {

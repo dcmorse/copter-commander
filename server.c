@@ -256,7 +256,7 @@ coco_init_sstate( coco_sstate *sstate, coco_gnum width )
   for (i=0; i < COCO_MAX_PLAYERS; i++)
     {
       sstate->respawn[i] = COCO_FALSE;
-      sstate->favorite_copter_class[i] = COCO_CARGO_COPTER_CLASS; /* COCO_COBRA_CLASS; */
+      sstate->favorite_copter_class[i] = COCO_COBRA_CLASS;
     }
   for (i=0; i < COCO_MAX_COMPS; i++)
     {
@@ -450,8 +450,8 @@ coco_handle_connection_request( int listenfd,
               }
             else
               {
-                coco_players[i].funds = 16;
-                coco_players[i].copters = 3;
+                coco_players[i].funds = COCO_GAME_START_FUNDS;
+                coco_players[i].copters = COCO_GAME_START_COPTERS;
               }
             if (sstate_or_null)
               {
@@ -567,12 +567,13 @@ coco_add_comp( coco_nationality nat, coco_sstate *sstate )
       {
         unsigned char name_index = (name_offset + i) % coco_ncomp_names;
         coco_comps[i].nationality = nat;
-        coco_comps[i].funds = 0;
-        coco_comps[i].copters = 0;
+        coco_comps[i].funds = sstate->game_in_progress ? 0 : COCO_GAME_START_FUNDS;
+        coco_comps[i].copters = sstate->game_in_progress ? 0 : COCO_GAME_START_COPTERS;
         coco_comps[i].queue_remove = COCO_FALSE;
         coco_comps[i].name_index = name_index;
         coco_comps[i].in_use = COCO_TRUE;
         coco_comps[i].goto_area = sstate->board_w>>1;
+        coco_comps[i].buy_index = rand() % COCO_COMP_BUY_INDEX_MAX;
         coco_schedule_comp_respawn_maybe( i, sstate );
         coco_send_everyone_compflux_message();
         found = COCO_TRUE;
@@ -736,6 +737,7 @@ coco_handle_nominate_message( struct coco_message_nominate *msg,
   }
 }
 
+
 /* returns true iff server should be kept up. */
 coco_bool
 coco_handle_server_message( int player_index )
@@ -764,7 +766,8 @@ coco_handle_server_message( int player_index )
         return coco_handle_player_quit( player_index );
         break;
       case COCO_MESSAGE_NAME:
-        coco_cookie( "Client changing name to \"%s\".\n", message.name.name );
+        coco_cookie( "Client changing name to \"%s\" @ %p.\n", 
+		     message.name.name, (void *) player->name );
         memcpy( player->name, message.name.name, COCO_PLAYER_NAME_MAX );
         need_game_refresh = 1;
         break;
@@ -966,7 +969,6 @@ coco_sstate_execute_collision( coco_sstate *sstate,
   nata = COCO_SOBJECT_NATIONALITY( obja );
   natb = COCO_SOBJECT_NATIONALITY( objb );
 
-  coco_cookie( "Collision %s-%s\n", COCO_SOBJECT_NAME( obja ), COCO_SOBJECT_NAME( objb ) );
   if ((nata != natb) || (nata == COCO_NEUTRAL))
     coco_hostile_collision( obja, COCO_SOBJECT_CL( obja ), objb,
                             sstate, stata, statb );
@@ -1323,7 +1325,7 @@ coco_summon_unit_maybe( coco_sstate *sstate, coco_sobject_cl *cl,
   coco_summon_places( summoner, sstate, nationality, &summon_enable,
                       &summon_disable_until );
   if (*summon_enable 
-      && coco_subtract_funds_available( p_or_c_index, is_comp, cl->cost ))
+      && coco_subtract_funds_available( p_or_c_index, is_comp, cl->cost, COCO_FALSE ))
     {
       coco_sobject *unit = coco_sstate_allocate_sobject( sstate );
       if (unit)
@@ -1398,25 +1400,7 @@ coco_infantry_init_from_ground_by_list( coco_sobject *inst,
   return coco_init_infantry_from_ground( inst, cla, arguments[0], arguments[1] );
 }
 
-
-
-struct coco_unit_order_keymap { 
-  coco_key key;
-  coco_sobject_cl *cl;
-  coco_sobject *(* init_fn)
-       ( coco_sobject *, coco_sobject_cl *, coco_gnum, coco_nationality);
-} ;
-
-
-#define COCO_UNIT_ORDER_KEYMAP_LENGTH 5
-
-coco_bool 
-coco_camera_update_state( coco_sobject *sobject, 
-                          coco_sobject_cl *cl, 
-                          coco_sstate *sstate )
-{
-  const static struct coco_unit_order_keymap 
-    bindings[COCO_UNIT_ORDER_KEYMAP_LENGTH] 
+const struct coco_unit_order_keymap coco_unit_order_keymap[COCO_UNIT_ORDER_KEYMAP_LENGTH] 
     = {{ COCO_CHAR_TO_KEY( 'v' ), COCO_DEMO_VAN_CLASS, &coco_init_demo_van },
        { COCO_CHAR_TO_KEY( 't' ), COCO_TANK_CLASS, &coco_init_tank },
        { COCO_CHAR_TO_KEY( 'a' ), COCO_FIRETRUCK_CLASS, &coco_init_firetruck },
@@ -1424,6 +1408,12 @@ coco_camera_update_state( coco_sobject *sobject,
          &coco_init_infantry_from_ground },
        { COCO_CHAR_TO_KEY( 'e' ), COCO_ENGINEER_CLASS,
          &coco_init_infantry_from_ground }};
+
+coco_bool 
+coco_camera_update_state( coco_sobject *sobject, 
+                          coco_sobject_cl *cl, 
+                          coco_sstate *sstate )
+{
   int cam_idx = COCO_SOBJECT_CAMERA_INDEX( sobject );
   int comp_idx = COCO_SOBJECT_COMP_INDEX( sobject );
   coco_bool is_comp = (comp_idx >= 0);
@@ -1435,8 +1425,9 @@ coco_camera_update_state( coco_sobject *sobject,
   if ((is_comp || (cam_idx >= 0)))
     {
       for (i=0; i<COCO_UNIT_ORDER_KEYMAP_LENGTH; i++)
-        if (coco_get_bit( input->key_state, bindings[i].key ))
-          coco_summon_unit_maybe( sstate, bindings[i].cl, bindings[i].init_fn,
+        if (coco_get_bit( input->key_state, coco_unit_order_keymap[i].key ))
+          coco_summon_unit_maybe( sstate, coco_unit_order_keymap[i].cl,
+				  coco_unit_order_keymap[i].init_fn,
                                   COCO_SOBJECT_NATIONALITY( sobject ),
                                   is_comp ? comp_idx : cam_idx, is_comp,
                                   sobject );
@@ -1686,16 +1677,36 @@ coco_copter_update_state( coco_sobject *sobject,
     coco_gnum mdy_max = landed_p ? 0 : -dy_max;
     coco_gnum dy_final = COCO_CLAMP( mdy_max, dy_goal, dy_max );
 
-    /* angle */
+    /* angle - this be some trick s**t, because of the mod-256 nature
+       of angles and whatnot -dm 06-30-2005 */
     coco_i32 px = COCO_CLAMP( -COCO_OFFICIAL_WINDOW_W>>1, 
                               input->pointer_x,
                               COCO_OFFICIAL_WINDOW_W>>1 );
     coco_angle rest_angle = (ri&1) ? 0 : 128;
-    float angle_goal = rest_angle - (((float) px) 
-                                     * COCO_COPTER_MAX_ANGLE_OF_ATTACK 
-                                     / (COCO_OFFICIAL_WINDOW_W>>1)); 
-    coco_angle angle_final 
-      = landed_p ? rest_angle : ((int) angle_goal)&255;
+    float angle_goal_f = rest_angle - (((float) px) 
+				       * COCO_COPTER_MAX_ANGLE_OF_ATTACK 
+				       / (COCO_OFFICIAL_WINDOW_W>>1)); 
+    coco_angle angle_goal = ((int) angle_goal_f)&255;
+
+    int angle_current = COCO_SOBJECT_ANGLE( sobject );
+
+    int angle_diff = angle_goal - angle_current;
+    int angle_final;
+
+    if (angle_diff > 128)
+      angle_diff -= 256;
+    else if (angle_diff < -128)
+      angle_diff += 256;
+
+    coco_angle max_av = COCO_SOBJECT_MAX_ANGULAR_VELOCITY( sobject );
+    if (angle_diff > max_av)
+      angle_final = angle_current + max_av;
+    else if (angle_diff < -max_av)
+      angle_final = angle_current - max_av;
+    else
+      angle_final = angle_goal;
+    angle_final = angle_final&255;
+    if (landed_p) angle_final = rest_angle;
 
     /* x axis */
     coco_facing facing = COCO_SOBJECT_FACING( sobject );
@@ -1750,7 +1761,7 @@ coco_copter_update_state( coco_sobject *sobject,
     /* begin non-local side-effects */
     COCO_SOBJECT_DX( sobject ) = dx_final;
     COCO_SOBJECT_DY( sobject ) = dy_final;
-    COCO_SOBJECT_ANGLE( sobject ) = angle_final;
+    COCO_SOBJECT_ANGLE( sobject ) = (coco_angle) angle_final;
     COCO_COPTER_LANDED_P( sobject ) = landed_p;
     if (landed_p)
       {
@@ -2435,9 +2446,11 @@ coco_sstate_update( coco_sstate *sstate )
           if (spare_copter_p)
             coco_players[i].copters--;
           else 
-            coco_subtract_funds_available( i, 
-                                           COCO_FALSE, 
-                                           COCO_BUBBLE_COPTER_CLASS->cost );
+	    coco_subtract_funds_available( i, 
+					   COCO_FALSE, 
+					   COCO_BUBBLE_COPTER_CLASS->cost,
+					   COCO_TRUE );
+
           fcc = spare_copter_p
             ? sstate->favorite_copter_class[i]
             : COCO_BUBBLE_COPTER_CLASS;
@@ -2472,10 +2485,15 @@ coco_sstate_update( coco_sstate *sstate )
           if (spare_copter_p)
             coco_comps[i].copters--;
           else
+	    coco_subtract_funds_available( i, COCO_TRUE, 
+					   COCO_BUBBLE_COPTER_CLASS->cost,
+					   COCO_TRUE );
+	  /*
+	    Was: (not sure why wan't using subtract_funds_available...)
             coco_comps[i].funds
-              = COCO_MIN( coco_comps[i].funds
-                          - COCO_BUBBLE_COPTER_CLASS->cost, 
-                          0 );
+              = COCO_MAX( coco_comps[i].funds - COCO_BUBBLE_COPTER_CLASS->cost, 
+	      0 ); 
+	  */
           fcc = spare_copter_p 
             ? COCO_COMP_FAVORITE_COPTER_CLASS
             : COCO_BUBBLE_COPTER_CLASS;
@@ -2619,7 +2637,7 @@ coco_buy_copter_maybe( coco_sstate *sstate,
   float cost = (is_comp
                 ? COCO_COMP_FAVORITE_COPTER_CLASS 
                 : sstate->favorite_copter_class[p_or_c_index])->cost;
-  if (coco_subtract_funds_available( p_or_c_index, is_comp, cost ))
+  if (coco_subtract_funds_available( p_or_c_index, is_comp, cost, COCO_FALSE ))
     {
       if (is_comp)
         coco_comps[p_or_c_index].copters++;
@@ -3876,23 +3894,25 @@ coco_add_funds( int p_or_c_index, coco_bool is_comp, float funds )
 
 coco_bool
 coco_subtract_funds_available( int player_index, coco_bool is_comp, 
-                               float funds )
+                               float funds, coco_bool partial_ok )
 {
   if ((!is_comp)
       && (player_index >= 0)
       && coco_players[player_index].in_use
-      && (coco_players[player_index].funds >= funds))
+      && (partial_ok || (coco_players[player_index].funds >= funds)))
     {
-      coco_players[player_index].funds -= funds;
-      return COCO_TRUE;
+      float old = coco_players[player_index].funds;
+      coco_players[player_index].funds = COCO_MAX( old - funds, 0 );
+      return old >= funds;
     }
   else if (is_comp
            && (player_index >= 0)
            && coco_comps[player_index].in_use
-           && (coco_comps[player_index].funds >= funds))
+           && (partial_ok || (coco_comps[player_index].funds >= funds)))
     {
-      coco_comps[player_index].funds -= funds;
-      return COCO_TRUE;
+      float old = coco_comps[player_index].funds;
+      coco_comps[player_index].funds = COCO_MAX( old - funds, 0 );
+      return old >= funds;
     }
   else return COCO_FALSE;
 }
