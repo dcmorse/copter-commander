@@ -82,7 +82,7 @@ COCO_GII_INCLUDE_DIRECTORY=/usr/include
 COCO_X11_LIB_DIRECTORY=/usr/X11R6/lib
 COCO_X11_INCLUDE_DIRECTORY=/usr/X11R6/include
 
-# set to 0 if you don't have XFree86, 
+# comment out COCO_USE_XF86VIDMODE if you don't have XFree86, 
 # but then you lose the ability to go full-screen:
 COCO_USE_XF86VIDMODE=1
 COCO_XF86VIDMODE_LIB_DIRECTORY=${COCO_X11_LIB_DIRECTORY}

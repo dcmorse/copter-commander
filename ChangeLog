@@ -1,5 +1,8 @@
 2005-07-03  David Morse  <svref@yahoo.com>
 
+	* Makefile (COCO_USE_XF86VIDMODE): fix doc for NOT compiling in
+	video mode switching support.
+
 	* xf86vidmode.c: Support for video mode switching.
 
 	* glx-window.c (coco_window_xy): implemented
