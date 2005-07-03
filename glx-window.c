@@ -24,6 +24,7 @@
 #include <assert.h>
 #include <stdlib.h> /* for exit */
 #include "coco.h"
+#include "xf86vidmode.h"
 
 /* glx-copter-commander and tutorials should start immediately */
 coco_bool coco_start_game_asap = COCO_TRUE;
@@ -78,6 +79,23 @@ coco_get_x_file_descriptor( void )
     return ConnectionNumber( xdisplay );
   else return -1;
 }
+
+void
+coco_window_xy( coco_gnum *x_return, coco_gnum *y_return )
+{
+  int xx = 0;
+  int yy = 0;
+  Window ignore;
+  Window root_window = RootWindow( xdisplay, DefaultScreen( xdisplay ) );
+  assert( xdisplay );
+  assert( xwindow );
+  if (!XTranslateCoordinates( xdisplay, xwindow, root_window, 
+			      0, 0, &xx, &yy, &ignore ))
+    coco_warn_printf( "XTranslateCoordinates() errored\n" );
+  *x_return = xx;
+  *y_return = yy;
+}
+
 
 void 
 coco_make_window( void )
@@ -645,4 +663,16 @@ coco_notify_version_incompatible( int major, int minor )
   coco_fatal_printf( COCO_ERROR_SERVER_VERSION_INCOMPATIBLE,
                      "Server is running incompatible version %d.%d\n",
                      major, minor );
+}
+
+coco_bool
+coco_set_video_mode( void )
+{
+  return coco_set_video_mode_from_xdisplay( xdisplay );
+}
+
+void
+coco_restore_video_mode( void )
+{
+  coco_restore_video_mode_from_xdisplay( xdisplay );
 }

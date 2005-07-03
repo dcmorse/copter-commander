@@ -1,4 +1,15 @@
+2005-07-03  David Morse  <svref@yahoo.com>
+
+	* xf86vidmode.c: Support for video mode switching.
+
+	* glx-window.c (coco_window_xy): implemented
+
+	* gnome-window.c (coco_window_xy): implemented.
+
 2005-06-30  David Morse  <svref@yahoo.com>
+
+	* Makefile (COCO_USE_XF86VIDMODE): new #define to support optional
+	presence of the vidmode extension, modelled on gii.
 
 	* server.c (coco_copter_update_state): added support for maximum
 	copter angle change rate (max_angular_velocity)

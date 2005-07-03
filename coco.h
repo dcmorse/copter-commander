@@ -539,7 +539,11 @@ void coco_swap_buffer( void );
 coco_bool coco_get_pointer_grabbed_flag();
 coco_bool coco_grab_pointer( void );
 void coco_ungrab_pointer( void );
-coco_bool coco_mouse_in_window_p();
+coco_bool coco_mouse_in_window_p( void );
+coco_bool coco_set_video_mode( void );
+void coco_restore_video_mode( void );
+/* location of GL inner window, in screen coordinates: */
+void coco_window_xy( coco_gnum *x_return, coco_gnum *y_return );
 
 /* coco_keys correspond to unsigned ascii as much as possible.  Keys 32
    through 126 are usually represented by character literals.  These are
@@ -2016,6 +2020,7 @@ void coco_help_message();
 void coco_version_message( void );
 void coco_list_levels_message( void );
 
+/* xf86vidmode.c - currently lives in xf86vidmode.h */
 
 /* main.c */
 

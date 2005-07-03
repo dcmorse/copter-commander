@@ -266,8 +266,6 @@ IX.   Computer Player AI
          1. but its still fun :)
       B. coco_comp_think() looks down a prioritized list for a situation
          it should react to.  When it finds a match, it does it.
-      C. Currently (1.1) its a "Copter" without a "Commander":
-         It never spends its money.
 X.    History and Scale
       A. Version 1.0 took about 15 months of real time to create.  Probably
          2-4 man months of 40 hour weeks were spent developing it.
@@ -333,9 +331,8 @@ Appendix A: Release Procedure
       M. Go get a coke.
 
 Appendix B: Web Presence
-      A. copter-commander.org reserved, but waiting to get DNS set up.
-      B. Primary user page is www.speakeasy.org/~morse/copter-commander
-      C. Primary devo page is sourceforge.net/projects/coco
+      B. Primary user page is http://coco.sf.net
+      C. Primary devo page is http://sf.net/projects/coco
          1. We use the bug tracker.
 	 2. We use the mailing list.
       D. There is also a freshmeat page, as the primary advertising.

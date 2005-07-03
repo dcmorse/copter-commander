@@ -117,6 +117,7 @@ running the app - you might try something like:
 #include <errno.h>
 #include <assert.h>
 #include "coco.h"
+#include "xf86vidmode.h"
 #include "gnome-kennel.h"
 
 #define COCO_JOIN_DIALOG_Y_PAD 5
@@ -194,9 +195,10 @@ struct coco_keyboard_pointer_state *coco_get_keyboard_pointer_state()
 /* ________________________________________________________ */
 
 
-Display *
-coco_gnome_get_x_display_with_evil( void )
+static Display *
+coco_get_x_display_after_window( void )
 {
+  /* ugly hacking... */
   static Display *xdisplay = NULL;
   if (xdisplay) return xdisplay;
   else if (coco_root_window)
@@ -214,11 +216,25 @@ coco_get_x_file_descriptor( void )
   static int xfd = -1;
   if (-1==xfd)
     {
-      Display *xdisplay = coco_gnome_get_x_display_with_evil();
+      Display *xdisplay = coco_get_x_display_after_window();
       if ( xdisplay )
 	xfd = ConnectionNumber( xdisplay );
     }
   return xfd;
+}
+
+void
+coco_window_xy( coco_gnum *x_return, coco_gnum *y_return )
+{
+  int xx = 0;
+  int yy = 0;
+  if (coco_root_window)
+    gdk_window_get_origin (GTK_WIDGET( coco_gl_window )->window, &xx, &yy );
+  else
+    coco_fatal_printf( COCO_ERROR_COCO_IMPLEMENTAION_PROBLEM,
+		       "Tried to get window position with no window\n" );
+  *x_return = xx;
+  *y_return = yy;
 }
 
 /* called when the user closes the window */
@@ -429,7 +445,7 @@ coco_input_event_callback( GtkWidget *area, GdkEvent *event )
 	  yraw = event->crossing.y;
 	  coco_update_bnb_from_gstate( keystate, event->crossing.state, 
 				       COCO_TRUE );
-	  coco_manage_X_key_repeat( coco_gnome_get_x_display_with_evil(),
+	  coco_manage_X_key_repeat( coco_get_x_display_after_window(),
 				    GDK_LEAVE_NOTIFY == type );
 	}
     }
@@ -531,7 +547,7 @@ coco_input_event_callback( GtkWidget *area, GdkEvent *event )
 void 
 coco_kill_window( void )
 {
-  coco_manage_X_key_repeat( coco_gnome_get_x_display_with_evil(), COCO_TRUE );
+  coco_manage_X_key_repeat( coco_get_x_display_after_window(), COCO_TRUE );
   if (coco_root_window)
     gtk_widget_destroy( coco_root_window );
 }
@@ -594,6 +610,18 @@ coco_grab_pointer( void )
     coco_recalibrate_gii_please();
 #endif
   return coco_pointer_grabbed_flag;
+}
+
+coco_bool
+coco_set_video_mode( void )
+{
+  return coco_set_video_mode_from_xdisplay( coco_get_x_display_after_window());
+}
+
+void
+coco_restore_video_mode( void )
+{
+  coco_restore_video_mode_from_xdisplay( coco_get_x_display_after_window());
 }
 
 void 

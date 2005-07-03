@@ -82,6 +82,12 @@ COCO_GII_INCLUDE_DIRECTORY=/usr/include
 COCO_X11_LIB_DIRECTORY=/usr/X11R6/lib
 COCO_X11_INCLUDE_DIRECTORY=/usr/X11R6/include
 
+# set to 0 if you don't have XFree86, 
+# but then you lose the ability to go full-screen:
+COCO_USE_XF86VIDMODE=1
+COCO_XF86VIDMODE_LIB_DIRECTORY=${COCO_X11_LIB_DIRECTORY}
+COCO_XF86VIDMODE_INCLUDE_DIRECTORY=${COCO_X11_INCLUDE_DIRECTORY}
+
 # GtkGLArea (copter-commander only)
 COCO_GTKGLAREA_LIB_DIRECTORY=/usr/lib
 COCO_GTKGLAREA_INCLUDE_DIRECTORY=/usr/include
@@ -150,6 +156,15 @@ else
 #COCO_GII_INCLUDE_ARGUMENTS=""
 endif
 
+ifdef COCO_USE_XF86VIDMODE
+COCO_XF86VIDMODE_LINK_ARGUMENTS=-L${COCO_XF86VIDMODE_LIB_DIRECTORY} -lXxf86vm
+COCO_XF86VIDMODE_INCLUDE_ARGUMENTS=-I${COCO_XF86VIDMODE_INCLUDE_DIRECTORY}
+else
+# (I leave them undefined, and not null string, for unknown reasons.)
+#COCO_XF86VIDMODE_LINK_ARGUMENTS=""
+#COCO_XF86VIDMODE_INCLUDE_ARGUMENTS
+endif
+
 
 ifeq (${COCO_SOUND},openal)
 COCO_SOUND_LINK_LINE=-L${COCO_OPENAL_LIB_DIRECTORY} ${COCO_OPENAL_LIBS}
@@ -174,7 +189,7 @@ COCO_RASTER_DIRECTORY=rstr-${COCO_APPEARANCE_BASE}
 
 # All header files
 HDR_FILES = forward-sobject.h methods.h sobject.h coco.h raster.h \
-            background.h configure-time.h object-time.h sound.h
+            background.h configure-time.h object-time.h sound.h xf86vidmode.h
 
 # All C files, except for those dealing with the GUI, and those dealing with sound
 GAME_C_FILES = language.c clsho.c simple-command-line.c graphics.c network.c \
@@ -204,7 +219,7 @@ MUTE_C_FILES = mute-sound.c
 USED_SOUND_C_FILES = ${COCO_SOUND}-sound.c
 
 # All C files
-ALL_C_FILES = ${GAME_C_FILES} ${GNOME_C_FILES} ${GLX_C_FILES} ${OPENAL_C_FILES} ${ESD_C_FILES} ${MUTE_C_FILES}
+ALL_C_FILES = ${GAME_C_FILES} ${GNOME_C_FILES} ${GLX_C_FILES} ${OPENAL_C_FILES} ${ESD_C_FILES} ${MUTE_C_FILES} xf86vidmode.c
 
 
 GAME_OBJ_FILES = ${GAME_C_FILES:.c=.o}
@@ -292,6 +307,12 @@ ifdef COCO_USE_GII
 	 >> configure-time.h ;\
 	echo >> configure-time.h ;
 endif
+ifdef COCO_USE_XF86VIDMODE
+	set -e ;\
+	echo \#define COCO_USE_XF86VIDMODE ${COCO_USE_XF86VIDMODE} \
+	 >> configure-time.h ;\
+	echo >> configure-time.h ;
+endif
 
 
 # other decisions when the c objects are built.
@@ -356,6 +377,10 @@ screenshot.o: screenshot.c
 	${CC} ${CFLAGS} -c screenshot.c -o $@ \
           -I${COCO_LIBTIFF_INCLUDE_DIRECTORY}
 
+xf86vidmode.o: xf86vidmode.c
+	${CC} ${CFLAGS} -c xf86vidmode.c -o $@ \
+          ${COCO_XF86VIDMODE_INCLUDE_ARGUMENTS}
+
 # build other objects the standard way
 %.o: %.c 
 	${CC} ${CFLAGS} -c $*.c -o $@ \
@@ -365,27 +390,31 @@ screenshot.o: screenshot.c
 ${ALL_OBJ_FILES}: ${HDR_FILES} Makefile ${COCO_RASTER_DIRECTORY}/built
 
 GNOME_LINK_LINE=\
-${CC} ${CFLAGS} -o $@ ${GAME_OBJ_FILES} ${GNOME_OBJ_FILES} ${USED_SOUND_OBJ_FILES} ${COCO_RASTER_DIRECTORY}/*.o \
+${CC} ${CFLAGS} -o $@ ${GAME_OBJ_FILES} ${GNOME_OBJ_FILES} xf86vidmode.o \
+${USED_SOUND_OBJ_FILES} ${COCO_RASTER_DIRECTORY}/*.o \
 ${COCO_BASIC_LIBS} \
 -L${COCO_LIBTIFF_LIB_DIRECTORY} -ltiff \
 -L${COCO_GL_LIB_DIRECTORY} -lGL \
 `gnome-config --libs gnome gnomeui` \
 -L${COCO_GTKGLAREA_LIB_DIRECTORY} -lgtkgl \
-${COCO_GII_LINK_ARGUMENTS}
+${COCO_GII_LINK_ARGUMENTS} \
+${COCO_XF86VIDMODE_LINK_ARGUMENTS}
 
 
-copter-commander: ${GAME_OBJ_FILES} ${GNOME_OBJ_FILES} ${USED_SOUND_OBJ_FILES} ${COCO_RASTER_DIRECTORY}/built 
+copter-commander: ${GAME_OBJ_FILES} ${GNOME_OBJ_FILES} ${USED_SOUND_OBJ_FILES} ${COCO_RASTER_DIRECTORY}/built xf86vidmode.o
 	${GNOME_LINK_LINE} ${COCO_SOUND_LINK_LINE}
 
 GLX_LINK_LINE=\
-${CC} ${CFLAGS} -o $@ ${GAME_OBJ_FILES} ${GLX_OBJ_FILES} ${USED_SOUND_OBJ_FILES} ${COCO_RASTER_DIRECTORY}/*.o \
+${CC} ${CFLAGS} -o $@ ${GAME_OBJ_FILES} ${GLX_OBJ_FILES}  xf86vidmode.o \
+${USED_SOUND_OBJ_FILES} ${COCO_RASTER_DIRECTORY}/*.o \
 ${COCO_BASIC_LIBS} \
 -L${COCO_LIBTIFF_LIB_DIRECTORY} -ltiff \
 -L${COCO_X11_LIB_DIRECTORY} -lX11 -lXext \
 -L${COCO_GL_LIB_DIRECTORY} -lGL \
-${COCO_GII_LINK_ARGUMENTS}
+${COCO_GII_LINK_ARGUMENTS} \
+${COCO_XF86VIDMODE_LINK_ARGUMENTS}
 
-glx-copter-commander: ${GAME_OBJ_FILES} ${GLX_OBJ_FILES} ${USED_SOUND_OBJ_FILES} ${COCO_RASTER_DIRECTORY}/built 
+glx-copter-commander: ${GAME_OBJ_FILES} ${GLX_OBJ_FILES} ${USED_SOUND_OBJ_FILES} ${COCO_RASTER_DIRECTORY}/built  xf86vidmode.o
 ifeq (${COCO_SOUND},esd)
 	${GLX_LINK_LINE} ${COCO_SOUND_LINK_LINE} \
 	`gnome-config --libs gnome gnomeui`

@@ -3813,7 +3813,7 @@ coco_format_sstate_to_buffer( coco_sstate *sstate, int p_or_c_index,
     { /* maybe grow send buffer */
       int requested_size = COCO_MAX( send_buffer_desired_size + 200, 1024 );
       send_buffer_size = requested_size;
-      coco_cookie( "Reallocing (%p + 0x%x)", send_buffer, requested_size );
+      coco_cookie( "Reallocing (%p + 0x%x)\n", send_buffer, requested_size );
       send_buffer = coco_realloc( send_buffer, requested_size );
     }
 

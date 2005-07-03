@@ -1076,6 +1076,21 @@ coco_send_play_message_maybe( void )
 
 static coco_bool coco_gnome_disconnect_pending_p = COCO_FALSE;
 
+void
+coco_take_over_the_computer_wa_ha_ha( void )
+{
+  if (!coco_get_pointer_grabbed_flag())
+    coco_grab_pointer();
+  coco_set_video_mode();
+}
+
+coco_relinquish_the_computer_boo_hoo( void )
+{
+  if (coco_get_pointer_grabbed_flag())
+    coco_ungrab_pointer();
+  coco_restore_video_mode();
+}
+
 void 
 coco_client_disconnect( void )
 {
@@ -1102,8 +1117,7 @@ coco_client_disconnect( void )
       }
   }
   /* this is needed after game-over */
-  if (coco_get_pointer_grabbed_flag())
-    coco_ungrab_pointer();
+  coco_relinquish_the_computer_boo_hoo();
   coco_set_client_state( COCO_CLIENT_DEMO );
   coco_initialize_cstate( coco_get_cstate() );
   coco_cookie( "Setting pending disconnect\n" );
@@ -1295,11 +1309,10 @@ coco_key_press( coco_key key, char *string_or_null,
       {
         switch (key) {
         case COCO_KEY_TAB:
-          if (!coco_get_pointer_grabbed_flag())
-            coco_grab_pointer();
+	  coco_take_over_the_computer_wa_ha_ha();
           return; /* don't bother telling server */
         case COCO_KEY_ESCAPE:
-          coco_ungrab_pointer();
+	  coco_relinquish_the_computer_boo_hoo();
           return; /* don't bother telling server */
 #ifndef COCO_CONSOLE
         case COCO_KEY_RETURN:
@@ -2184,7 +2197,7 @@ coco_handle_client_message( struct coco_stream *str,
             = coco_add_message_notification( COCO_MESSAGE_VOTESTATE, coco_note_votestate, NULL );
         if (!coco_have_play_message) 
           {
-            coco_grab_pointer();
+	    coco_take_over_the_computer_wa_ha_ha();
             coco_have_play_message = COCO_TRUE;
           }
         assert( coco_have_port_message );
