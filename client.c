@@ -1084,6 +1084,7 @@ coco_take_over_the_computer_wa_ha_ha( void )
   coco_set_video_mode();
 }
 
+void
 coco_relinquish_the_computer_boo_hoo( void )
 {
   if (coco_get_pointer_grabbed_flag())

@@ -166,6 +166,9 @@ coco_bool coco_process_gnome_args( int start, int end, char **argv );
 extern const char *coco_product_name;  /* Copter Commander */
 extern const char *coco_run_name;  /* argv[0] */
 
+int coco_strcasecmp(const char *s1, const char *s2);
+int coco_strncasecmp( const char *s1, const char *s2, size_t n );
+
 /* VERSIONS
 
    Versions help keep track of what is compatible with what.  There are two

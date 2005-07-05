@@ -17,12 +17,11 @@
  * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
  */
 
-#define _BSD_SOURCE /* hack to get strncasecmp under glibc */
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
-#include <alloca.h> /* for alloca. (not stdlib because of --ansi) */
 #include <assert.h>
+#include "alloca.h"
 #include "coco.h"
 
 unsigned short coco_parse_port( char *strng, char *cl_arg )
@@ -216,9 +215,9 @@ coco_process_server_arguments( int argc, char **argv )
 static coco_nationality
 coco_parse_nationality( char *str )
 {
-  if (0==strcasecmp( str, COCO_BAD_GUYS_PRETTY_NAME ))
+  if (0==coco_strcasecmp( str, COCO_BAD_GUYS_PRETTY_NAME ))
     return COCO_BAD_GUYS;
-  else if (0==strcasecmp( str, COCO_GOOD_GUYS_PRETTY_NAME ))
+  else if (0==coco_strcasecmp( str, COCO_GOOD_GUYS_PRETTY_NAME ))
     return COCO_GOOD_GUYS;
   else return COCO_NEUTRAL;
 }

@@ -19,7 +19,6 @@
 
 /* console-data.c -- support for terminal user interface */
 
-#define _BSD_SOURCE /* to get strncasecmp under glibc */
 #include <stdlib.h>
 #include <string.h>
 #include <stdio.h>
@@ -207,7 +206,7 @@ coco_console_parse_command( const char *input, union coco_console_actual_arg *re
     input++;
   /* worry more about trailing whitespace? */
   for (cmd=coco_console_commands; cmd->name; cmd++)
-    if ((0==strcasecmp( input, cmd->name )))
+    if ((0==coco_strcasecmp( input, cmd->name )))
       {
         if (return_or_null) 
           return_or_null->aacmd = cmd;

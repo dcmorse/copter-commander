@@ -29,7 +29,6 @@
 #include <dirent.h>    /* for readdir */
 #include <assert.h>
 #include <errno.h>
-#include <alloca.h>
 
 #include "coco.h"
 
@@ -634,4 +633,47 @@ coco_strsplice( char *body, int cursor, const char *middle )
   memmove( body_cursor + midlen, body_cursor, strlen( body_cursor ) + 1 );
   memmove( body_cursor, middle, midlen );
   return cursor + midlen;
+}
+
+int
+coco_strcasecmp( const char *s1, const char *s2 )
+{
+  char c1=*s1;
+  char c2=*s2;
+  int d;
+  while (c1 && c2)
+    {
+      if (COCO_BETWEENI( 'a', c1, 'z' ))
+	c1 += 'A'-'a';
+      if (COCO_BETWEENI( 'a', c2, 'z' ))
+	c2 += 'A'-'a';
+      d=c1-c2;
+      if (d)
+	return d;
+      c1 = * ++s1;
+      c2 = * ++s2;
+    }
+  return 0;
+}
+
+int
+coco_strncasecmp( const char *s1, const char *s2, size_t n )
+{
+  char c1=*s1;
+  char c2=*s2;
+  int d;
+  while (c1 && c2 && n)
+    {
+      if (COCO_BETWEENI( 'a', c1, 'z' ))
+	c1 += 'A'-'a';
+      if (COCO_BETWEENI( 'a', c2, 'z' ))
+	c2 += 'A'-'a';
+      d=c1-c2;
+      if (d)
+	return d;
+      c1 = * ++s1;
+      c2 = * ++s2;
+      --n;
+    }
+  return 0;
 }

@@ -19,7 +19,6 @@
 
 /* console-language.c -- support for terminal user interface */
 
-#define _BSD_SOURCE /* to get strncasecmp under glibc */
 #include <stdlib.h>
 #include <string.h>
 #include <stdio.h>
@@ -122,11 +121,11 @@ coco_console_read_actual_arg( const char **line_read_return,
       const char two[] = "2";
       const char right[] = COCO_GOOD_GUYS_PRETTY_NAME;
       const char left[] = COCO_BAD_GUYS_PRETTY_NAME;
-      if ((0==strncasecmp( right, line, arglen )) || 
-          (0==strncasecmp( two,   line, arglen )))
+      if ((0==coco_strncasecmp( right, line, arglen )) || 
+          (0==coco_strncasecmp( two,   line, arglen )))
         acl_return->aanat = COCO_GOOD_GUYS;
-      else if ((0==strncasecmp( left, line, arglen )) || 
-               (0==strncasecmp( one,  line, arglen )))
+      else if ((0==coco_strncasecmp( left, line, arglen )) || 
+               (0==coco_strncasecmp( one,  line, arglen )))
         {
           acl_return->aanat = COCO_BAD_GUYS;
           line += arglen;

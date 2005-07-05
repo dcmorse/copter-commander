@@ -25,8 +25,8 @@
 #include <errno.h>
 #include <assert.h>
 #include <string.h> /* for strlen */
-#include <alloca.h> /* for alloca.  Normally stdlib would get it, but
-                       we're compiling -ansi */
+#include "alloca.h"
+
 #include "coco.h"
 
 

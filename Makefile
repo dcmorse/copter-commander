@@ -5,7 +5,7 @@
 # ____________________________________________________________________________
 #
 # Copter Commander - A 2d network helicopter game
-# Copyright (C) 2001  David Morse
+# Copyright (C) 2001, 2005  David Morse
 # 
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -23,6 +23,8 @@
 
 # ____________________________________________________________________________
 #                           *** INVOCATION ***
+#
+# (UNIX people: if 'make' complains about syntax errors, use 'gmake' instead!)
 #
 # make                      - make copter-commander and glx-copter-commander
 # make copter-commander     - make GTK+/Gnome based version of game
@@ -83,7 +85,7 @@ COCO_X11_LIB_DIRECTORY=/usr/X11R6/lib
 COCO_X11_INCLUDE_DIRECTORY=/usr/X11R6/include
 
 # comment out COCO_USE_XF86VIDMODE if you don't have XFree86, 
-# but then you lose the ability to go full-screen:
+# (but then you lose the ability to go full-screen):
 COCO_USE_XF86VIDMODE=1
 COCO_XF86VIDMODE_LIB_DIRECTORY=${COCO_X11_LIB_DIRECTORY}
 COCO_XF86VIDMODE_INCLUDE_DIRECTORY=${COCO_X11_INCLUDE_DIRECTORY}
@@ -189,7 +191,8 @@ COCO_RASTER_DIRECTORY=rstr-${COCO_APPEARANCE_BASE}
 
 # All header files
 HDR_FILES = forward-sobject.h methods.h sobject.h coco.h raster.h \
-            background.h configure-time.h object-time.h sound.h xf86vidmode.h
+            background.h configure-time.h object-time.h sound.h xf86vidmode.h \
+            alloca.h
 
 # All C files, except for those dealing with the GUI, and those dealing with sound
 GAME_C_FILES = language.c clsho.c simple-command-line.c graphics.c network.c \
@@ -264,6 +267,14 @@ tiff-clean:
 	      ${COCO_RASTER_DIRECTORY}/*.h  \
 	      ${COCO_RASTER_DIRECTORY}/*.o   \
 	      ${COCO_RASTER_DIRECTORY}/built ;
+
+# FreeBSD seems to hide alloca inside of stdlib.h, even when -ansi
+# So create a trampoline header file to point to the right one
+alloca.h: Makefile
+	if echo "#include <alloca.h>" | ${CC} ${CFLAGS} -E - > /dev/null 2> /dev/null ; \
+	  then echo "#include <alloca.h>" > alloca.h ;\
+	  else echo "#include <stdlib.h>" > alloca.h ;\
+	fi;
 
 # Some decisions are put off until configure time then included into
 # coco.h
@@ -346,44 +357,45 @@ sobject.c sobject.h forward-sobject.h: sobject.lisp oo-compiler.fas object-time.
 
 # build gnome objects without the ansi flag, and with the gnome headers.
 gnome-%.o: gnome-%.c 
-	${CC} ${CFLAGS_UNANSI} -c gnome-$*.c -o $@ \
+	${CC} ${CFLAGS_UNANSI} -c gnome-$*.c \
           -I${COCO_GL_INCLUDE_DIRECTORY} \
 	  `gnome-config --cflags gnome gnomeui` \
 	  -I${COCO_GTKGLAREA_INCLUDE_DIRECTORY}
 
 # build glx objects with access to X11 and GL
 glx-%.o: glx-%.c 
-	${CC} ${CFLAGS} -c glx-$*.c -o $@ \
+	${CC} ${CFLAGS} -c glx-$*.c \
 	  -I${COCO_X11_INCLUDE_DIRECTORY} \
 	  -I${COCO_GL_INCLUDE_DIRECTORY}
 
 # build OpenAL objects with access to OpenAL headers
 openal-%.o: openal-%.c 
-	${CC} ${CFLAGS} -c openal-$*.c -o $@ \
+	${CC} ${CFLAGS} -c openal-$*.c \
 	  -I${COCO_OPENAL_INCLUDE_DIRECTORY}
 
 # build esd objects with access to esd and libgnome headers
 # Need cflags_unansi because otherwise #include <unistd.h> doesn't
 # pick up fsync
 esd-%.o: esd-%.c 
-	${CC} ${CFLAGS_UNANSI} -c esd-$*.c -o $@ \
+	${CC} ${CFLAGS_UNANSI} -c esd-$*.c \
           -I${COCO_ESD_INCLUDE_DIRECTORY} \
 	  `gnome-config --cflags gnomeui`
 
 client.o: client.c
-	${CC} ${CFLAGS_UNANSI} -c client.c ${COCO_GII_INCLUDE_ARGUMENTS}
+	${CC} ${CFLAGS_UNANSI} -c client.c -I${COCO_GL_INCLUDE_DIRECTORY} \
+	  ${COCO_GII_INCLUDE_ARGUMENTS}
 
 screenshot.o: screenshot.c 
-	${CC} ${CFLAGS} -c screenshot.c -o $@ \
+	${CC} ${CFLAGS} -c screenshot.c -I${COCO_GL_INCLUDE_DIRECTORY} \
           -I${COCO_LIBTIFF_INCLUDE_DIRECTORY}
 
 xf86vidmode.o: xf86vidmode.c
-	${CC} ${CFLAGS} -c xf86vidmode.c -o $@ \
+	${CC} ${CFLAGS} -c xf86vidmode.c \
           ${COCO_XF86VIDMODE_INCLUDE_ARGUMENTS}
 
 # build other objects the standard way
 %.o: %.c 
-	${CC} ${CFLAGS} -c $*.c -o $@ \
+	${CC} ${CFLAGS} -c $*.c \
 	  -I${COCO_GL_INCLUDE_DIRECTORY}
 
 # add depenencies for all object files
@@ -453,7 +465,7 @@ endian: endian.c
 
 clean: tiff-clean
 	rm -f *.o copter-commander glx-copter-commander \
-	  configure-time.h *.strlit endian sizeof tiff-compile
+	  configure-time.h alloca.h *.strlit endian sizeof tiff-compile
 
 distclean: clean
 	rm -f object-time.h object-time.lisp \
@@ -480,6 +492,7 @@ ${COCO_TAR_FILE}:  forward-sobject.h  sobject.h  sobject.c oo-compiler.fas oo-co
           tiffs  \
 	 ${COCO_TAR_DIRECTORY} ;\
 	rm -f ${COCO_TAR_DIRECTORY}/configure-time.h ;\
+	rm -f ${COCO_TAR_DIRECTORY}/alloca.h ;\
 	mkdir ${COCO_TAR_DIRECTORY}/levels ${COCO_TAR_DIRECTORY}/sounds ;\
 	cp sounds/*.wav ${COCO_TAR_DIRECTORY}/sounds ;\
 	cp levels/*.ccl levels/*.cct ${COCO_TAR_DIRECTORY}/levels ;\

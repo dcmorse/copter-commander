@@ -18,9 +18,9 @@
  */
 
 #include <string.h>
-#include <alloca.h>
 #include <assert.h>
 #include <stdlib.h>             /* for exit */
+#include "alloca.h"
 #include "coco.h"
 
 /* command line nationality option, do NOT use for figuring out in-game

@@ -56,7 +56,7 @@ int
 main(int argc, char **argv)
 {
   int server;
-  
+
   coco_run_name = argv[0];
 
   coco_run_sanity_checks();

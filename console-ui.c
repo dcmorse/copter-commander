@@ -19,7 +19,6 @@
 
 /* console-graphics.c -- support for terminal user interface */
 
-#define _BSD_SOURCE /* to get strncasecmp under glibc */
 #include <stdlib.h>
 #include <string.h>
 #include <stdio.h>

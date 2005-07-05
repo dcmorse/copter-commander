@@ -19,15 +19,7 @@
 
 /* hack to actually get timercmp under glibc
    Need to actually ensure using glibc before using _BSD_SOURCE. */
-#include <sys/time.h>
-#ifndef timercmp
-/* glibc 2.2 or 2.3 won't define timercmp unless either non "-ansi" or
-   _BSD_SOURCE */
-#define timercmp(a, b, CMP) 						      \
- (((a)->tv_sec == (b)->tv_sec) ? 					      \
-  ((a)->tv_usec CMP (b)->tv_usec) : 					      \
-  ((a)->tv_sec CMP (b)->tv_sec))
-#endif
+/* #include <sys/time.h>*/
 
 
 #include <time.h>               /* for time() */
@@ -408,30 +400,39 @@ void
 coco_handle_connection_request( int listenfd, 
                                 unsigned short in_udp_port, 
                                 coco_sstate *sstate_or_null)
+
 { 
   struct sockaddr connection;
   unsigned int connlength = sizeof( connection );
   int connfd;
   connfd = accept( listenfd, &connection, &connlength );
   if (-1 == connfd)
-    if ((connfd==EAGAIN) || (connfd==EWOULDBLOCK))
+    if ((errno==EAGAIN) || (errno==EWOULDBLOCK))
       return;
-    else if ((connfd==ENETDOWN) ||
-             (connfd==EPROTO) ||
-             (connfd==ENOPROTOOPT) ||
-             (connfd==EHOSTDOWN) ||
-             (connfd==ENONET) ||
-             (connfd==EHOSTUNREACH) ||
-             (connfd==EOPNOTSUPP) ||
-             (connfd==ENETUNREACH))
+    else switch (errno)
       {
-        /* see man accept(2) on why we take all this crab. */
+      case ENETDOWN:
+      case ENOPROTOOPT:
+      case EHOSTDOWN:
+      case EHOSTUNREACH:
+      case EOPNOTSUPP:
+      case ENETUNREACH:
+#ifdef EPROTO
+      case EPROTO:
+#endif
+#ifdef ENONET
+      case ENONET:
+#endif
+        /* see man accept(2) under Linux on why we take all this crab.
+	   BSD doesn't even have EPROTO or ENONET defined, so I guess
+	   that won't be happening there.  */
         coco_handle_connection_request( listenfd, 
                                         in_udp_port, sstate_or_null );
         return;
+      default:
+	coco_warn_printf( "accept failed with errno=%d: %s\n", errno, 
+			  coco_errno_string( errno ) );
       }
-    else coco_warn_printf( "accept failed with errno=%d: %s\n", errno, 
-                           coco_errno_string( errno ) );
   else
     {
       int i;
@@ -1944,7 +1945,7 @@ coco_mech_update_state( coco_sobject *sobject,
   signed char camera_index = COCO_SOBJECT_CAMERA_INDEX( sobject );
   signed char comp_index = COCO_SOBJECT_COMP_INDEX( sobject );
   struct coco_keyboard_pointer_state *input;
-  coco_facing run;
+  coco_facing run=0;
   coco_bool landed_p = COCO_MECH_LANDED_ON_PAD_P( sobject );
   coco_bool jump = COCO_FALSE;
   int jumped_strength = 0;

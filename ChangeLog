@@ -1,3 +1,30 @@
+2005-07-05  David Morse  <svref@yahoo.com>
+
+	* server.c: hacks for timercmp standard C macro no longer
+	necessary.
+
+	* language.c (coco_strncasecmp, coco_strcasecmp): implemented
+	these standard C functions, because the standard isn't standard
+	enough for the compiler to find them in every case. All callers
+	replaced (one reasonable exception in tiff-compile).
+
+2005-07-04  David Morse  <svref@yahoo.com>
+
+	* INSTALL: doc updated
+
+	* server.c (coco_handle_connection_request): s/connfd/errno/ bug,
+	and protect EPROTO and ENONET refs from undefinedness under BSD.
+
+	* Makefile: Tell UNIX folks to use 'gmake' instead of 'make'.
+	Remove lots of superfluous "-o $@" arguments to .o builders.
+	introduce auto-generated "alloca.h" - tramp to <stdlib.h> or
+	<alloca.h> depending on availability.
+	Add missing -I GL lines for client.o and screenshot.o.
+
+	* string-literalize.sh: FreeBSD chokes on "-" as a sed filename.
+
+	* xf86vidmode.h: created, forgot to commit.
+
 2005-07-03  David Morse  <svref@yahoo.com>
 
 	* Makefile (COCO_USE_XF86VIDMODE): fix doc for NOT compiling in

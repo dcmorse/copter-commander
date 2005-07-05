@@ -2,7 +2,7 @@ HOW TO BUILD COPTER COMMANDER
 
 ________________________________________________________________
 
-Short form:
+*** QUICK-START
 
   cd copter-commander-VERSION
   emacs Makefile                # adjust "*** VARIABLES ***" section
@@ -14,14 +14,27 @@ Then tell coco-devel@lists.sourceforge.net what you think.  We need
 LOTS more feedback.  Also, we need an autoconf/automake guru to
 autoconfiscate this puppy, and ports to the other OSes.  Also, an
 artist!  Okay, end shameless plugs.
-
 ________________________________________________________________
 
-Long form:
+*** OS TIPS
+
+FreeBSD 5.4 Release:
+1) Make sure you "pkg_add -r gnomelibs" or somehow have gnome-config installed.
+
+2) Same with "tiff", and set COCO_LIBTIFF_LIB_DIRECTORY and
+   COCO_LIBTIFF_INCLUDE_DIRECTORY to be /usr/local/... based.
+
+4) Similarly for COCO_GL_LIB_DIRECTORY and COCO_GL_INCLUDE_DIRECTORY
+   are /usr/X11R6/... based
+
+3) Use 'gmake' instead of 'make'.
+________________________________________________________________
+
+*** DETAILED COMPILATION NOTES
 
 You REALLY want gnome on your system.  Development started against
 gnome-libs-1.2.8-0_helix_1, and at time of writing runs against
-gnome-libs-1.4.1.2.  If you have no gnome, you can make due with
+gnome-libs-1.4.2.  If you have no gnome, you can make due with
 glx-copter-commander, see "Making due with glx-copter-commander",
 below.
 
@@ -30,14 +43,14 @@ http://www.student.oulu.fi/~jlof/gtkglarea, or in most distros just
 install the package.  Its an easy configure/make/make-install.
 
 Copter commander performance depends heavily on the performance of
-three of its libraries.  The most important is OpenGL -- hardware
-good, software bad.  See
-http://www.speakeasy.org/~morse/copter-commander/opengl.html.  Second
+three of its libraries.  The most important is OpenGL -- which helps
+you harness the power of your pricey 3d accelleration chip.  See
+http://coco.sf.net/opengl.html.  Second
 is sound - try to get OpenAL going (www.openal.org), its pretty easy
 to install and has better quality and speed than ESD.  Last, and least
 important, is the input library, which defaults to X but can use GII,
 which can theoretically be faster than X11 using the env. variable
-GII_INPUT=input-linux-evdev.
+GII_INPUT=input-linux-evdev.  (but I haven't seen GII matter this year)
 
 If you have done the "make", and don't want to do the "make install"
 before a test, run the program like this:
@@ -78,6 +91,18 @@ or join an in-progress game.
 
 ________________________________________________________________
 
-Troubleshooting:
+*** Join the Copter-Commanders...
 
-Contact coco-devel@lists.sourceforge.net
+We get very little feedback about what is and is not fun, that only
+comes from users like you.  The best place to talk about
+copter-commander is the forum on sf.net:
+http://sourceforge.net/forum/forum.php?forum_id=70834 (not that anyone
+knows about it at time of writing - you may be the first!)
+________________________________________________________________
+
+*** IF YOU GET STUCK
+
+Trouble compiling or whatever? email
+coco-devel@lists.sourceforge.net .  Unfortunately, spam is a problem,
+so I think you might have to join the list before you can post: 
+http://lists.sourceforge.net/lists/listinfo/coco-devel
