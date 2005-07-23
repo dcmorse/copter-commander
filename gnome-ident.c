@@ -18,6 +18,9 @@
  */
 
 #include <gnome.h>
+#ifndef COCO_GNOME_UNPORT
+#include <gdk/gdkgl.h>
+#endif
 #include "coco.h"
 
 coco_bool coco_gnome = COCO_TRUE;
@@ -33,7 +36,11 @@ coco_process_gnome_args( int start, int end, char **argv )
   faux_argv[0] = argv[0];
   for (i=1; i<faux_argc; i++)
     faux_argv[i] = argv[i+start-1];
-  gnome_init( coco_product_name, coco_version_string,
-              faux_argc, faux_argv );
+  gnome_init( "Copter_Commander", coco_version_string, faux_argc, faux_argv );
+  char **ignore = argv + start;
+  int ignore_count = end - start;
+#ifndef COCO_GNOME_UNPORT
+  gdk_gl_init( &ignore_count, &ignore );
+#endif
   return COCO_TRUE;
 }

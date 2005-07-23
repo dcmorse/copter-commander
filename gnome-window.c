@@ -24,7 +24,7 @@ To: gtk-app-devel-list@gnome.org
 Date: Sat, 19 May 2001 18:23:55 -0700
   
   
-I'm trying to figure out which line of code, of roughly 97 million, is
+I am trying to figure out which line of code, of roughly 97 million, is
 responsible for things like this:
   
   Gdk-ERROR **: BadValue (integer parameter out of range for operation)
@@ -78,7 +78,7 @@ Iain <iain@ximian.com> writes:
 > 
   
 Hmm, good point - g_warning()/g_log()/g_logv() aren't involved at
-all. ;-)
+all. 
   
 
 From: Havoc Pennington <hp@redhat.com>
@@ -108,8 +108,8 @@ running the app - you might try something like:
 
 
 #include <gnome.h>
-#include <gtkgl/gtkglarea.h> /* sold seperatly from gtk */
-#include <gdk/gdk.h>   /* for GdkFont */
+#include <gtk/gtkgl.h>
+/* XXX still?: */ 
 #include <gdk/gdkx.h>  /* evil hacking on my part -- have to get x-display */
 #include <X11/Xlib.h> /* for ConnectionNumber macro -- nothing to link! */
 #include <GL/gl.h>    /* for glFlush, glGenlists, etc. */
@@ -256,8 +256,10 @@ coco_root_destroy_callback( GtkWidget *widget, gpointer data )
       coco_gl_window = NULL;
       gtk_object_unref( GTK_OBJECT( coco_root_window ) );
       coco_root_window = NULL;
+      gtk_main_quit();
+      coco_cookie( "exit( 0 ).  GTK is a cry-baby.\n" );
+      exit( 0 );
     }
-  coco_cookie( "root_destroy_callback ok\n" );
   return 0; /* not sure what I should return.  Looks like it makes no diff. */
 }
 
@@ -285,10 +287,10 @@ coco_reshape_callback( GtkWidget *widget, GdkEventConfigure *event )
 static gint 
 coco_realize_callback( GtkWidget *widget )
 {
-  if (gtk_gl_area_make_current( GTK_GL_AREA( widget ) ))
+  if (gdk_gl_drawable_make_current( gtk_widget_get_gl_drawable( widget ),
+				    gtk_widget_get_gl_context( widget ) ))
     {
       coco_main_window_current = COCO_TRUE;
-#ifdef COCO_DEBUG
       if ((COCO_OFFICIAL_WINDOW_W != widget->allocation.width)
           ||(COCO_OFFICIAL_WINDOW_H != widget->allocation.height))
         coco_warn_printf( "Desired size %dx%d not equal to real size %dx%d\n",
@@ -296,12 +298,12 @@ coco_realize_callback( GtkWidget *widget )
                           widget->allocation.height,
                           COCO_OFFICIAL_WINDOW_W,
                           COCO_OFFICIAL_WINDOW_H );
-#endif /* COCO_DEBUG */
       coco_setup_matricies( widget->allocation.width,
                             widget->allocation.height );
       coco_setup_misc_graphics();
       coco_load_font( &coco_default_font );
       coco_load_font( &coco_huge_font );
+      coco_load_font( &coco_dashboard_font );
       coco_load_font( &coco_fixed_font );
     }
   else coco_warn_printf( "Failed to make_current during realize_callback\n" );
@@ -574,7 +576,8 @@ coco_swap_buffer( void )
   if (coco_gl_window) /* sometimes we're in the process of shutting down. */
     {
       if (coco_double_buffer)
-        gtk_gl_area_swapbuffers( GTK_GL_AREA( coco_gl_window ) );
+	gdk_gl_drawable_swap_buffers
+	  ( gtk_widget_get_gl_drawable( coco_gl_window ) );
       else glFlush();
     }
   return;
@@ -632,92 +635,268 @@ coco_ungrab_pointer( void )
   return;
 }
 
+#ifndef COCO_USE_FREETYPE
+
+/* pango fonts require an unbelievable number of structures to do find
+   the width of a string! */
+struct coco_pango_font_stuff {
+  PangoFont *font;
+  PangoFontMetrics *metrics;
+  PangoFontDescription *description;
+  PangoLayout *layout; 		/* initialized to NULL when font
+				   loaded, then really filled out when
+				   we need the width of a string. */
+#ifdef COCO_NOBLE_INTERLINE_SPACING
+  int interline_spacing; 	/* noble, but ultimately wrong */
+#endif
+  coco_u16 widths[COCO_FONT_NCHARS];
+};
+
+#endif /* COCO_USE_FREETYPE */
+#ifndef COCO_USE_FREETYPE
+
+coco_bool
+coco_make_pango_font_name( coco_font *f, char *name_return, size_t max )
+{
+  coco_warn_printf( "loading font: assuming points == pixels.  :P\n" );
+  return max < snprintf( name_return, max, "%s%s%s %d", 
+			 f->name,
+			 ((f->flags)&COCO_BOLD)?" bold":"",
+			 ((f->flags)&COCO_ITALIC?" italic":""),
+			 f->height_request);
+}
+
+#endif /* COCO_USE_FREETYPE */
+#ifndef COCO_USE_FREETYPE
+
+void
+coco_get_character_widths_from_gl_rasterpos( struct coco_font *font, 
+					     coco_u16 *widths_return )
+
+{
+  int i;
+  for (i=0; i<' '; i++)
+    widths_return[i] = 0;
+  for (i=' '; i <= '~'; i++)
+    {
+      GLint xyzw[4];
+      glRasterPos2i( 0, 0 );
+      glCallList( font->list_base + i );
+      glGetIntegerv( GL_CURRENT_RASTER_POSITION, xyzw );
+      widths_return[i] = xyzw[0];
+    }
+} 
+
+#endif /* COCO_USE_FREETYPE */
+#ifndef COCO_USE_FREETYPE
 
 /* the implementation_datum is the gdk font. */
 void 
 coco_load_font( struct coco_font *font )
 {
-  GdkFont *gdkfont;
-  gdkfont = gdk_font_load( font->name );
-  if (NULL == gdkfont)
-    {
-      coco_warn_printf( "Couldn't load font \"%s\", using \"9x15\" instead.",
-                        font->name );
-      gdkfont = gdk_font_load( "9x15" );
-      if (NULL == gdkfont)
-        coco_fatal_printf( COCO_ERROR_NO_FONT, 
-                           "Couldn't even find \"9x15\"." );
-    }
-  gdk_font_ref( gdkfont );
-  font->implementation_datum = gdkfont;
-  font->list_base = glGenLists( 256 );
+  gchar *pango_font_name
+    = (char *) coco_malloc( sizeof( char ) * (100+strlen( font->name ) ));
+  if (!coco_make_pango_font_name( f, pango_font_name ))
+    coco_fatal_printf( COCO_ERROR_NO_FONT, 
+		       "Buffer overflow allocating space for font name\n" );
+
+  struct coco_pango_font_stuff *pfstuff = (struct coco_pango_font_stuff *)
+    coco_malloc( sizeof( struct coco_pango_font_stuff ) );
+  font->list_base = glGenLists( COCO_FONT_NCHARS );
   if (0 == font->list_base)
     coco_fatal_printf( COCO_ERROR_DISPLAY_LISTS,
-                  "Problems allocating OpenGL display lists for fonts." );
-
-  gdk_gl_use_gdk_font( gdkfont, 0, 256, font->list_base );
-
-  return;
+		       "Problems allocating OpenGL display lists for fonts." );
+  pfstuff->description = pango_font_description_from_string( pango_font_name );
+  if (NULL == pfstuff->description)
+    coco_fatal_printf( COCO_ERROR_NO_FONT, 
+		       "No font found matching \"%s\"\n"
+		       "Maybe try installing it?\n", pango_font_name );
+  else
+    {
+      gchar *fn = pango_font_description_to_string( pfstuff->description );
+      coco_cookie( "Wanted \"%s\", got \"%s\".\n", pango_font_name, fn );
+      g_free( fn );
+    }
+  pfstuff->font
+    = gdk_gl_font_use_pango_font( pfstuff->description, 0, COCO_FONT_NCHARS, 
+				  font->list_base );
+  font->implementation_datum = pfstuff;
+  if (NULL == pfstuff->font)
+    coco_fatal_printf( COCO_ERROR_NO_FONT, 
+		       "Problems getting GL to compile display "
+		       "lists for font \"%s\".\n", 
+		       pango_font_name );
+  pfstuff->metrics = pango_font_get_metrics( pfstuff->font, NULL );
+  if (NULL==pfstuff->metrics)
+    coco_fatal_printf( COCO_ERROR_NO_FONT,
+		       "pango_font_get_metrics( \"%s\" ) didn't work\n",
+		       pango_font_name );
+  pfstuff->layout = NULL;
+#ifdef COCO_NOBLE_INTERLINE_SPACING
+  pfstuff->interline_spacing = -1; /* initialize me later */
+#endif
+  coco_get_character_widths_from_gl_rasterpos( font, pfstuff->widths );
+  coco_free( pango_font_name );
 }
+
+#endif /* COCO_USE_FREETYPE */
+#ifndef COCO_USE_FREETYPE
 
 int 
 coco_font_height( struct coco_font *font )
 {
-  GdkFont *gdkfont = font->implementation_datum;
-  return gdkfont->ascent + gdkfont->descent;
+  struct coco_pango_font_stuff *pfstuff = font->implementation_datum;
+  PangoFontMetrics *metrics = pfstuff->metrics;
+  return PANGO_PIXELS( pango_font_metrics_get_ascent( metrics )
+		       + pango_font_metrics_get_descent( metrics ));
 }
+int 
+coco_font_ascent( struct coco_font *font )
+{
+  struct coco_pango_font_stuff *pfstuff = font->implementation_datum;
+  PangoFontMetrics *metrics = pfstuff->metrics;
+  return PANGO_PIXELS( pango_font_metrics_get_ascent( metrics ) );
+}
+int 
+coco_font_descent( struct coco_font *font )
+{
+  struct coco_pango_font_stuff *pfstuff = font->implementation_datum;
+  PangoFontMetrics *metrics = pfstuff->metrics;
+  return PANGO_PIXELS( pango_font_metrics_get_descent( metrics ));
+}
+void 
+coco_font_string_dimensions_pango( const char *string, int nchars_or_minus_one,
+				   struct coco_font *font,
+				   int *w, int *h, int *ascent );
+
+#endif /* COCO_USE_FREETYPE */
+#ifndef COCO_USE_FREETYPE
+
+
+int 
+coco_font_interline_spacing( struct coco_font *font )
+{
+#ifdef COCO_NOBLE_INTERLINE_SPACING
+  /* this doesn't work, numbers approximately 180% what they should be */
+  struct coco_pango_font_stuff *pfstuff = font->implementation_datum;
+  if (-1 == pfstuff->interline_spacing)
+    coco_font_string_dimensions_pango( "blah\nblah", -1, font, NULL,
+				       &(pfstuff->interline_spacing), NULL );
+  return pfstuff->interline_spacing;
+#else
+  return coco_font_height( font ) + 2; /* hack - just add 2px */
+#endif
+}
+
+
+#endif /* COCO_USE_FREETYPE */
+#ifndef COCO_USE_FREETYPE
+
+void 
+coco_font_string_dimensions_rasterpos( const char *string, 
+				       int nchars_or_minus_one,
+				       struct coco_font *font,
+				       int *w, int *h, int *ascent )
+{
+  struct coco_pango_font_stuff *pfstuff = font->implementation_datum;
+  int i;
+  int cursor = 0;
+  int line_height = coco_font_interline_spacing( font );
+  int hacc = line_height;
+  int wmax = 0;
+  int chars_counted = 0;
+  if (w||h)
+    {
+      while (1)
+	{
+	  int ww = 0;
+	  int ch;
+	  i = cursor;
+	  while (1)
+	    {
+	      ch=string[i];
+	      assert( COCO_BETWEENI( 0, ch, COCO_FONT_NCHARS ) );
+	      if ((ch=='\0')
+		  || (ch=='\n')
+		  || ((nchars_or_minus_one != -1)
+		      && (chars_counted >= nchars_or_minus_one))) 
+		break;
+	      i++;
+	      ww += pfstuff->widths[ch];
+	      chars_counted++;
+	    };
+	  if (wmax < ww) wmax = ww;
+	  if ((ch=='\0')
+	      || ((nchars_or_minus_one != -1)
+		  && (chars_counted >= nchars_or_minus_one)))
+	    break;
+	  if (string[i+1] != '\0') hacc += line_height;
+	  cursor = i + 1;
+	}
+      if (w) *w = wmax;
+      if (h) *h = hacc;
+    }
+  if (ascent) *ascent = coco_font_ascent( font );
+}
+
+#endif /* COCO_USE_FREETYPE */
+#ifndef COCO_USE_FREETYPE
+
 
 /* sets w and h to be the bounding box for the specified string, taking
    into account multi-line issues.  Ascent is not multi-line aware, (what
    would that mean?), it simply is set to the ascent of the font as a
    whole.  */
 void 
+coco_font_string_dimensions_pango( const char *string, int nchars_or_minus_one,
+				   struct coco_font *font,
+				   int *w, int *h, int *ascent )
+{
+  struct coco_pango_font_stuff *pfstuff = font->implementation_datum;
+  assert( coco_gl_window );
+  if (w||h)
+    {
+      int ww, hh;
+      if (NULL == pfstuff->layout)
+	{
+	  pfstuff->layout
+	    = gtk_widget_create_pango_layout( coco_gl_window, "Never see this" );
+	  if (NULL==pfstuff->layout)
+	    coco_fatal_printf( COCO_ERROR_NO_FONT,
+			       "Couldn't create pstuff->layout\n" );
+	  pango_layout_set_font_description( pfstuff->layout, 
+					     pfstuff->description );
+	}
+      pango_layout_set_text( pfstuff->layout, string, nchars_or_minus_one );
+      pango_layout_get_pixel_size( pfstuff->layout, &ww, &hh );
+      if (w) *w = ww;
+      if (h) *h = hh;
+      /* avoid leaving the layout around with a stale pointer to
+	 possibly de-allocated memory */
+      pango_layout_set_text( pfstuff->layout, "", 0 );
+    }
+  if (ascent)
+    *ascent
+      = PANGO_PIXELS( pango_font_metrics_get_ascent( pfstuff->metrics ) );
+}
+
+#endif /* COCO_USE_FREETYPE */
+#ifndef COCO_USE_FREETYPE
+
+void 
 coco_font_string_dimensions( const char *string, int nchars_or_minus_one,
                              struct coco_font *font,
                              int *w, int *h, int *ascent )
 {
-  GdkFont *gdkfont = font->implementation_datum;
-  int i;
-  int cursor = 0;
-  int line_height = gdkfont->ascent + gdkfont->descent;
-  int hacc = line_height;
-  int wmax = 0;
-  int chars_counted = 0;
-  char ch;
-  if (w||h)
-    while (1)
-      {
-        int line_width;
-        i = cursor;
-        while (1) /* advance i looking for line terminators */
-          { 
-            ch=string[i];
-            if ((ch=='\0') || (ch=='\n')
-                || ((nchars_or_minus_one!=-1)
-                    && (chars_counted >= nchars_or_minus_one))) 
-              break;
-            i++;
-            chars_counted++;
-          };
-        line_width = gdk_text_width( gdkfont, string+cursor, i-cursor );
-
-        /* Be nice if XTextWidth didn't return 0 in XFree... */
-        /* ww = XTextWidth( xfs, string+cursor, cursor-i ); */
-        if (wmax < line_width) wmax = line_width;
-        if ((ch=='\0')
-            || ((nchars_or_minus_one!=-1)
-                && (chars_counted >= nchars_or_minus_one)))
-          break;
-        if (string[i+1] != '\0') hacc += line_height;
-        cursor = i + 1;
-      }
-  if (w) *w = wmax;
-  if (h) *h = hacc;
-  if (ascent) *ascent = gdkfont->ascent;
+  coco_cookie( "coco_font_string_dimensions( \"%s\", %d, %s, ",
+	       string, nchars_or_minus_one, font->name );
+  coco_font_string_dimensions_rasterpos( string, nchars_or_minus_one, 
+					 font, w, h, ascent );
+  coco_cookie( "w=%d,h=%d,ascent=%d) \n", 
+	       w?*w:-100, h?*h:-100, ascent?*ascent:-100 );
 }
 
-
-
+#endif /* COCO_USE_FREETYPE */
 
 void
 coco_on_new_game1_activate( GtkMenuItem *menuitem,
@@ -811,9 +990,11 @@ coco_on_about1_activate( GtkMenuItem     *menuitem,
   GtkWidget *about = gnome_about_new( coco_product_name,
                                       coco_version_string,
                                       coco_product_copyright,
+				      coco_product_description_windbag,
                                       coco_product_authors,
-                                      coco_product_description_windbag,
-                                      NULL );
+				      NULL, /* documenters */
+                                      NULL, /* translators */
+                                      NULL ); /* pixmap */
   if (coco_root_window)
     gnome_dialog_set_parent( GNOME_DIALOG( about ), 
                              GTK_WINDOW( coco_root_window ));
@@ -975,6 +1156,8 @@ coco_gdk_string_bounding_box( GdkFont *font, const char *string,
     }
 }
 
+#ifdef COCO_GNOME_UNPORT
+
 /* Unfortunately I have no choice but to access internals of gnome less. */
 GdkFont *coco_gnome_less_get_font( GnomeLess *less )
 {
@@ -987,12 +1170,15 @@ GdkFont *coco_gnome_less_get_font( GnomeLess *less )
   coco_cookie( "Falling back to widget font\n" );
   return GTK_WIDGET( less )->style->font;
 }
-
+#endif
 
 void
 coco_use_string_viewer_dialog( const char *string, const char *title, 
                                coco_bool fixed_font_p )
 {
+#ifndef COCO_GNOME_UNPORT
+  coco_warn_printf ("coco_use_string_viewer_dialog() unimplemented in gnome2.\n");
+#else
   GtkWidget *dialog;
   GtkWidget *less;
 
@@ -1025,7 +1211,7 @@ coco_use_string_viewer_dialog( const char *string, const char *title,
     if ((w<800)&&(h<600))
       { /* small enough to constrain it */
         /* 100, 10 = fudge for less overhead */
-        gtk_widget_set_usize( GTK_WIDGET( less ), w + 100, h + 10 );
+        gtk_widget_set_size_request( GTK_WIDGET( less ), w + 100, h + 10 );
       }
     else
       { /* its big, better just hint at what we want */
@@ -1042,6 +1228,7 @@ coco_use_string_viewer_dialog( const char *string, const char *title,
   }
 
   gtk_widget_show_all( dialog );
+#endif
 }
 
 #define COCO_PLAYER_TABLE_COLUMNS 2
@@ -1157,6 +1344,8 @@ coco_player_table_new( void )
 
   clistw = gtk_clist_new_with_titles( COCO_PLAYER_TABLE_COLUMNS, titles );
   clist = GTK_CLIST( clistw );
+  /* XXX 30 * COCO_MAX_PLAYERS should be font_height * COCO_MAX_PLAYERS */
+  gtk_widget_set_size_request( clistw, -1, 30 * COCO_MAX_PLAYERS );
 
   /* Make nothing selectable. */
   gtk_clist_set_selection_mode( clist, GTK_SELECTION_EXTENDED );
@@ -1252,45 +1441,82 @@ coco_connection_label_new( void )
 
 
 void
+coco_gtk_text_buffer_append( GtkTextBuffer *text_buffer,
+			     const char *string,
+			     int nchars_or_minus_one )
+{
+  GtkTextIter text_iter;
+  gtk_text_buffer_get_end_iter( text_buffer, &text_iter );
+  gtk_text_buffer_insert( text_buffer, &text_iter, string, 
+			  nchars_or_minus_one );
+}
+
+/* The gnome-2.0 one */
+void
 coco_recieve_widget_update( void *text_raw, union coco_message *message )
 {
   coco_u32 plr;
-  GtkWidget *textw = GTK_WIDGET( text_raw );
-  GtkText *text = GTK_TEXT( textw );
-  guint point = gtk_text_get_length( text );
-  int slen = strlen( message->talk.message );
-  GtkAdjustment *vadj = text->vadj;
-  coco_bool scroll_at_bottom = vadj->value +vadj->page_size >= vadj->upper;
+  GtkWidget *text_widget = GTK_WIDGET( text_raw );
+  GtkTextView *text_view = GTK_TEXT_VIEW( text_widget );
+  GtkTextBuffer *text_buffer = gtk_text_view_get_buffer( text_view );
+  /* guint point = gtk_text_get_length( text ); */
+  /* GtkAdjustment *vadj = text->vadj; */
+  /* coco_bool scroll_at_bottom = vadj->value +vadj->page_size >= vadj->upper; */
 
-  gtk_text_freeze( text );
-  gtk_text_set_point( text, point );
-
-  /* coco_players[message->talk.from_player].name */
+/*   gtk_text_freeze( text ); */
+/*   gtk_text_set_point( text, point ); */
 
   plr = COCO_U32_NTOH( message->talk.from_player );
   if (plr!=COCO_U32_MAX)
     {
-      gtk_text_insert( text, NULL, NULL, NULL, 
-                       coco_players[plr].name, -1 );
-      gtk_text_insert( text, NULL, NULL, NULL, ": ", -1 );
+      coco_gtk_text_buffer_append( text_buffer, coco_players[plr].name, -1 );
+      coco_gtk_text_buffer_append( text_buffer, ": ", -1 );
     }
-  gtk_text_insert( text, NULL, NULL, NULL, message->talk.message,
-                   COCO_MIN( slen, COCO_CHAT_MAX ) );
-  gtk_text_insert( text, NULL, NULL, NULL, "\n", 1 );
+  coco_gtk_text_buffer_append( text_buffer, message->talk.message,
+			       COCO_MIN( strlen( message->talk.message ),
+					 COCO_CHAT_MAX ) );
+  coco_gtk_text_buffer_append( text_buffer, "\n", 1 );
 
-  gtk_text_set_point( text, gtk_text_get_length( text ) );
+  { 				/* scroll to end, crappily */
+    GtkTextIter iter;
+    gtk_text_buffer_get_end_iter( text_buffer, &iter );
+    gtk_text_view_scroll_to_iter( text_view, &iter, 0, FALSE, 0, 0 );
+  }
+  /* gtk_text_set_point( text, gtk_text_get_length( text ) );
 
-  gtk_text_thaw( text );
+  gtk_text_thaw( text ); */
   /* sadly this must go after the thaw, or else it doesn't get the new
      values for vadj->upper that come from adding the new text. */
+  /* 
   if (scroll_at_bottom)
     gtk_adjustment_set_value( vadj, vadj->upper );
+  */
 }
-
 
 GtkWidget *
 coco_recieve_widget_new( void )
 {
+#ifndef COCO_GNOME_UNPORT
+  GtkWidget *tview = gtk_text_view_new();
+  GtkTextBuffer *buffer = gtk_text_view_get_buffer( GTK_TEXT_VIEW (tview) );
+  gtk_text_buffer_set_text( buffer, "", -1 );
+  gtk_text_view_set_editable( GTK_TEXT_VIEW( tview ), FALSE );
+  gtk_text_view_set_cursor_visible( GTK_TEXT_VIEW( tview ), FALSE );
+  {
+    coco_notification_id msg_id;
+    msg_id =
+      coco_add_message_notification( COCO_MESSAGE_TALK,
+                                     coco_recieve_widget_update, 
+                                     (void *) tview );
+    gtk_object_set_data_full( GTK_OBJECT( tview ), 
+                              "coco talk_msg_id", (void *) (msg_id + 1),
+                              coco_widget_delete_talk_message_notification );
+  }
+  gtk_widget_set_size_request( tview, -1, 100 );
+  gtk_widget_show_all( tview );
+  return tview;
+  
+#else
   GtkWidget *hbox, *text, *scroller;
   text = gtk_text_new( NULL, NULL );
   scroller = gtk_vscrollbar_new( GTK_TEXT( text )->vadj );
@@ -1313,6 +1539,7 @@ coco_recieve_widget_new( void )
 
   
   return hbox;
+#endif
 }
 
 
@@ -1320,7 +1547,7 @@ static gint
 coco_send_widget_kbd_maybe_send( GtkWidget *entry, GdkEvent *event )
 {
   int key = coco_gdk_keysym_to_coco_key( event->key.keyval );
-  gchar *text = gtk_entry_get_text( GTK_ENTRY( entry ) );
+  const gchar *text = gtk_entry_get_text( GTK_ENTRY( entry ) );
   if ((COCO_KEY_RETURN == key) && !((NULL==text) || (text[0] == '\0')))
     {
       /* coco_chat copies internally, and gtk_entry_get_text returns an
@@ -1335,7 +1562,7 @@ static void
 coco_send_widget_button_send( GtkWidget *button, gpointer entry_raw )
 {
   GtkWidget *entry = entry_raw;
-  gchar *text = gtk_entry_get_text( GTK_ENTRY( entry ) );
+  const gchar *text = gtk_entry_get_text( GTK_ENTRY( entry ) );
   if (!((NULL==text) || (text[0] == '\0')))
     {
       coco_chat( text );
@@ -1442,15 +1669,7 @@ coco_chatroom_dialog_new( GtkWindow *window_parent )
   gtk_box_pack_start( GTK_BOX( outter_vbox ), 
                       paned,
                       TRUE, TRUE, 0 );
-  { /* set chatroom dialog minimum size to be pretty big -dm 05-07-2001 */
-    gint w, h;
-    gdk_window_get_size( GTK_WIDGET( window_parent )->window, &w, &h);
-    gtk_widget_set_usize( dialog, 
-                          COCO_MAX( 100, w-100 ), COCO_MAX( 100, h-100 ) );
-    /* gtk_widget_set_uposition( dialog, 1, 2 ); doesn't work */
-  }
-  /* enable user resizing */
-  gtk_window_set_policy( GTK_WINDOW( dialog ), FALSE, TRUE, FALSE );
+  gtk_window_set_resizable( GTK_WINDOW( dialog ), TRUE );
 
   gnome_dialog_set_parent( GNOME_DIALOG( dialog ), window_parent );
 
@@ -1473,6 +1692,8 @@ coco_chatroom_dialog_new( GtkWindow *window_parent )
                         ( coco_remove_play_notification_callback ),
                         (gpointer) id );
   }
+
+  gtk_widget_set_size_request( dialog, COCO_OFFICIAL_WINDOW_W*4/5, -1 );
 
   coco_set_dialog_position( GTK_WINDOW( dialog ) );
   
@@ -1624,8 +1845,6 @@ coco_port_editor_get_value( GtkWidget *port_editor )
 #endif
 }
 
-
-
 /* Use a gui join dialog to get hostname and port information about a
    server.  On success, return true, set the hostname in a freshly
    coco_malloc'ed *hostname_return, and set the port in *port_return.  
@@ -1645,7 +1864,7 @@ coco_use_join_dialog( GtkWidget *parent_window )
   table = gtk_table_new( 2, 2, FALSE );
   host_label = gtk_label_new( "Host:" );
   port_label = gtk_label_new( "Port:" );
-  host_input = gnome_entry_new( "coco remote hosts" );
+  host_input = gnome_entry_new( "coco_remote_hosts" );
   port_input = coco_port_editor_new();
 
   gtk_label_set_justify( GTK_LABEL( host_label ), GTK_JUSTIFY_LEFT );
@@ -1685,7 +1904,7 @@ coco_use_join_dialog( GtkWidget *parent_window )
     {
       GtkWidget *host_input_gtk 
         = gnome_entry_gtk_entry( GNOME_ENTRY( host_input ) );
-      char *text = gtk_entry_get_text( GTK_ENTRY( host_input_gtk ) );
+      const char *text = gtk_entry_get_text( GTK_ENTRY( host_input_gtk ) );
       char *hostname;
 
       if (coco_server && coco_server_malloced_p)
@@ -2144,6 +2363,7 @@ coco_use_new_game_dialog( GtkWidget *parent_window )
   static char *frame_names[COCO_NEW_GAME_FRAME_COUNT]
     = { "Network", "Level", "Computer Players" };
 
+#ifdef COCO_GNOME_UNPORT
   coco_GtkKennel *kennel 
     = coco_gtk_kennel_new( COCO_GTK_KENNEL_TO_MAXIMUM, 
                            COCO_GTK_KENNEL_TO_MAXIMUM ); 
@@ -2151,6 +2371,7 @@ coco_use_new_game_dialog( GtkWidget *parent_window )
   coco_GtkKennel *label_kennel 
     = coco_gtk_kennel_new( COCO_GTK_KENNEL_TO_MAXIMUM, 
                            COCO_GTK_KENNEL_TO_MAXIMUM ); 
+#endif
 
   dialog = gnome_dialog_new( "Start a Server",
                              GNOME_STOCK_BUTTON_OK,
@@ -2160,6 +2381,7 @@ coco_use_new_game_dialog( GtkWidget *parent_window )
 
   gnome_dialog_set_parent(GNOME_DIALOG( dialog ), GTK_WINDOW( parent_window ));
 
+#ifdef COCO_GNOME_UNPORT
   gtk_object_set_data_full( GTK_OBJECT( dialog ), 
                             "coco kennel", kennel,
                             (GtkDestroyNotify) coco_gtk_kennel_unref );
@@ -2169,7 +2391,7 @@ coco_use_new_game_dialog( GtkWidget *parent_window )
                             "coco label kennel", label_kennel,
                             (GtkDestroyNotify) coco_gtk_kennel_unref );
   coco_gtk_kennel_ref( label_kennel );
-
+#endif
 
   for (i=0; i<COCO_NEW_GAME_FRAME_COUNT; i++)
     {
@@ -2189,8 +2411,10 @@ coco_use_new_game_dialog( GtkWidget *parent_window )
     gtk_box_pack_start( GTK_BOX( hbox ), port_ed, FALSE, TRUE, 0 );
     gtk_container_set_border_width( GTK_CONTAINER( hbox ), 
                                     COCO_UI_PAD_VERTICAL );
+#ifdef COCO_GNOME_UNPORT
     coco_gtk_kennel_add( kennel, port_ed );
     coco_gtk_kennel_add( label_kennel, label );
+#endif
     gtk_widget_show_all( hbox );
     gtk_container_add( GTK_CONTAINER( frames
                                       [COCO_NEW_GAME_NETWORK_FRAME_IDX] ),
@@ -2208,9 +2432,10 @@ coco_use_new_game_dialog( GtkWidget *parent_window )
       = gtk_radio_button_new_with_label_from_widget
       ( GTK_RADIO_BUTTON( radio_bi ), "File:" );
 
+#ifdef COCO_GNOME_UNPORT
     coco_gtk_kennel_add( label_kennel, radio_bi );
     coco_gtk_kennel_add( label_kennel, radio_fi );
-
+#endif
     level_bi_options = gtk_option_menu_new();
     menu = gtk_menu_new();
     coco_cookie( "Menu set at %p\n", menu );
@@ -2240,7 +2465,7 @@ coco_use_new_game_dialog( GtkWidget *parent_window )
     }
     gtk_option_menu_set_menu( GTK_OPTION_MENU( level_bi_options ), menu );
 
-    level_fi_entry = gnome_file_entry_new( "coco level", "File:" );
+    level_fi_entry = gnome_file_entry_new( "coco_level", "File:" );
     gnome_file_entry_set_modal( GNOME_FILE_ENTRY( level_fi_entry ), TRUE );
 
     gtk_table_attach( GTK_TABLE( table ), radio_bi,
@@ -2253,9 +2478,10 @@ coco_use_new_game_dialog( GtkWidget *parent_window )
                       1, 2, 1, 2, GTK_EXPAND|GTK_FILL, GTK_EXPAND, 0, 0 );
     gtk_container_set_border_width( GTK_CONTAINER( table ), 
                                     COCO_UI_PAD_VERTICAL );
+#ifdef COCO_GNOME_UNPORT
     coco_gtk_kennel_add( kennel, level_bi_options );
     coco_gtk_kennel_add( kennel, level_fi_entry );
-
+#endif
     gtk_widget_show_all( table );
 
     gtk_signal_connect( GTK_OBJECT( radio_bi ), "toggled",
@@ -2314,11 +2540,13 @@ coco_use_new_game_dialog( GtkWidget *parent_window )
     gtk_container_set_border_width( GTK_CONTAINER( table ), 
                                     COCO_UI_PAD_VERTICAL );
 
+#ifdef COCO_GNOME_UNPORT
     coco_gtk_kennel_add( label_kennel, label_left );
     coco_gtk_kennel_add( label_kennel, label_right );
 
     coco_gtk_kennel_add( kennel, comps_left );
     coco_gtk_kennel_add( kennel, comps_right );
+#endif
     gtk_widget_show_all( table );
 
     gtk_container_add( GTK_CONTAINER( frames
@@ -2436,6 +2664,8 @@ coco_use_new_game_dialog( GtkWidget *parent_window )
 void
 coco_refresh_window_eventually( void )
 {
+  /* maybe gdk_window_invalidate_rect() is what is wanted.  Or maybe
+     gtk_widget_queue_draw() */
   coco_refresh_window();
   coco_cookie( "coco_refresh_window_eventually implemented poorly.\n" );
 }
@@ -2458,8 +2688,9 @@ void
 coco_make_window( void )
 {
   GtkWidget *vbox;
-  static int db_attribs[] = { GDK_GL_RGBA, GDK_GL_DOUBLEBUFFER, None };
-  static int sb_attribs[] = { GDK_GL_RGBA, None };
+  GdkGLConfigMode db_attribs = GDK_GL_MODE_RGBA | GDK_GL_MODE_DOUBLE;
+  GdkGLConfigMode sb_attribs = GDK_GL_MODE_RGBA | GDK_GL_MODE_SINGLE;
+  GdkGLConfig *config;
 
   coco_root_window = gnome_app_new( coco_product_name, coco_product_name );
   gtk_object_ref( GTK_OBJECT( coco_root_window ) ); /* for global variable */
@@ -2470,20 +2701,31 @@ coco_make_window( void )
                       GTK_SIGNAL_FUNC( coco_root_destroy_callback ), NULL );
 
   if (!coco_command_line_inhibit_double_buffer)
-    coco_gl_window = gtk_gl_area_new( db_attribs );
-  if (coco_gl_window)
+    config = gdk_gl_config_new_by_mode( db_attribs );
+  if (config)
     coco_double_buffer = COCO_TRUE;
   else 
     {
       coco_double_buffer = COCO_FALSE;
-      coco_gl_window = gtk_gl_area_new( sb_attribs );
-      if (NULL==coco_gl_window)
+      config = gdk_gl_config_new_by_mode( sb_attribs );
+      if (NULL==config)
         coco_fatal_printf( COCO_ERROR_NO_VISUAL,
-                           "gtk_gl_area_new() returned NULL, either there "
+                           "gdk_gl_config_new_by_mode() returned NULL, either there "
                            "is an GtkGLArea installation problem or the X"
                            " display is SERIOUSLY low tech." );
     }
+  coco_gl_window = gtk_drawing_area_new();
+  assert( coco_gl_window );
+  if (!gtk_widget_set_gl_capability( coco_gl_window, config, NULL, TRUE, 
+				     GDK_GL_RGBA_TYPE))
+    coco_fatal_printf( COCO_ERROR_NO_GL,
+		       "Could not gtk_widget_set_gl_capability() the"
+		       " drawing area.\n" );
+
   gtk_object_ref( GTK_OBJECT( coco_gl_window ) ); /* for global variable */
+  gtk_widget_set_size_request (coco_gl_window, 
+			       COCO_OFFICIAL_WINDOW_W,
+			       COCO_OFFICIAL_WINDOW_H );
 
   gtk_widget_set_events ( coco_gl_window,
 			  coco_use_gii
@@ -2529,9 +2771,6 @@ coco_make_window( void )
   gtk_signal_connect( GTK_OBJECT( coco_gl_window ), "leave_notify_event",
                       GTK_SIGNAL_FUNC( coco_input_event_callback ), 
                       NULL );
-
-  gtk_drawing_area_size( GTK_DRAWING_AREA( coco_gl_window ), 
-                         COCO_OFFICIAL_WINDOW_W, COCO_OFFICIAL_WINDOW_H );
 
   vbox = gtk_vbox_new( FALSE, 0 );
   gtk_box_pack_start( GTK_BOX( vbox ), coco_menubar_new( coco_root_window ),

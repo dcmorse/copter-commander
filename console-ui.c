@@ -73,7 +73,7 @@ coco_console_metrics( int *x, int *y, int *w, int *h, struct coco_font **font,
                       int *nlines_ )
 { /* sheeesh, clean this up! */
   struct coco_font *ffont = &coco_default_font;
-  int fis = COCO_FONT_INTERLINE_SPACING( ffont );
+  int fis = coco_font_interline_spacing( ffont );
   int nlines;
   if (font) *font = &coco_default_font;
   switch (coco_console_deployment) {
@@ -237,7 +237,7 @@ coco_console_draw( void )
            * COCO_CONSOLE_MAX_CHARS_PER_LINE);
       if (((char) 1) == *str) break;
       xx = x + COCO_CONSOLE_X_MARGIN;
-      yy = y + COCO_FONT_INTERLINE_SPACING( font )*line
+      yy = y + coco_font_interline_spacing( font )*line
         + COCO_CONSOLE_Y_MARGIN;
       if (line == coco_console_cursor_line)
         {

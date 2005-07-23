@@ -911,7 +911,7 @@ coco_draw_mission_objective( struct coco_cstate *cstate )
   struct coco_font *font = &coco_default_font;
   int mj = cstate->major_mission;
   int mn = cstate->minor_mission;
-  int hh = COCO_FONT_INTERLINE_SPACING( font );
+  int hh = coco_font_interline_spacing( font );
 
   coco_draw_color( COCO_COLOR_MISSION_OBJECTIVE );
   if (mj != 255)
@@ -1837,8 +1837,6 @@ coco_play_intro_movie_frame( coco_bool advance_frame, coco_bool rewind )
                            "Crawler and win the game!\n"
                            "\n"
                            "%s\n"
-                           "Portions Copyright 1998, 1999, 2000\n"
-                           "Tim Janik and Red Hat.\n"
                            "\n"
                            "%s comes with NO\n"
                            "WARRANTY, to the extent permitted by\n"
@@ -2262,7 +2260,7 @@ coco_send_join_message( coco_nationality nat )
 
 /* copies (obviously) the message over the network. */
 coco_bool
-coco_chat( char *message )
+coco_chat( const char *message )
 {
   int i;
   int len;
@@ -2958,7 +2956,7 @@ coco_draw_talk( long tv_sec_now )
 {
   struct coco_font *font = &coco_default_font;
   int x = 100;
-  int h = COCO_FONT_INTERLINE_SPACING( font );
+  int h = coco_font_interline_spacing( font );
   int ptr = coco_talk_display_ptr;
   int i;
   int y = COCO_RADAR_Y;

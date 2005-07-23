@@ -488,17 +488,25 @@ coco_reload_texture( struct coco_raster *raster, coco_gnum w, coco_gnum h );
 void coco_warn_gl_errors( char *label );
 
 
+#define COCO_BOLD 1
+#define COCO_ITALIC 2
+
 struct coco_font {
   char *name;
+  int height_request; 		/* in _pixels!_ */
+  char flags; 			/* COCO_BOLD & COCO_ITALIC */
   void *implementation_datum;
-  long list_base;
+  unsigned long list_base;
 };
 
-#define COCO_FONT_INTERLINE_SPACING( font ) (coco_font_height( font ) + 4)
 
 extern struct coco_font coco_default_font;
+extern struct coco_font coco_dashboard_font;
 extern struct coco_font coco_huge_font;
 extern struct coco_font coco_fixed_font;
+
+/* how many chars we initialize (how many display lists, mainly) */
+#define COCO_FONT_NCHARS (1+'~')
 
 enum coco_font_origin {COCO_BASELINE, COCO_TOP, COCO_BOTTOM};
 
@@ -507,6 +515,9 @@ void coco_draw_string( coco_gnum x, coco_gnum y,
                        struct coco_font *font, enum coco_font_origin origin );
 
 int coco_font_height( struct coco_font *font );
+int coco_font_ascent( struct coco_font *font );
+int coco_font_descent( struct coco_font *font );
+int coco_font_interline_spacing( struct coco_font *font );
 int 
 coco_font_string_width( const char *string, 
                         int nchars_or_minus_one, struct coco_font *font );
@@ -519,6 +530,16 @@ coco_bool coco_set_inhibit_refresh( coco_bool inhibit );
 coco_bool coco_get_inhibit_refresh( void );
 
 
+/* freetype.c */
+/* (or whatever file ends up implementing fonts ... possibly glx-window.c) */
+void coco_load_font( struct coco_font *font );
+void coco_font_string_dimensions( const char *string, int nchars_or_minus_one,
+				  struct coco_font *font,
+				  int *w, int *h, int *ascent );
+int coco_font_height( struct coco_font *font );
+int coco_font_ascent( struct coco_font *font );
+int coco_font_descent( struct coco_font *font );
+int coco_font_interline_spacing( struct coco_font *font );
 
 /* window.c -- this is a virtual source file possibly implemented in
    either of gnome-window.c or glx-window.c */
@@ -1407,7 +1428,7 @@ typedef int coco_notification_id;
 typedef void (* message_fn)( void *, union coco_message * );
 
 coco_bool coco_send_join_message( coco_nationality nat );
-coco_bool coco_chat( char *message );
+coco_bool coco_chat( const char *message );
 
 coco_notification_id 
 coco_add_message_notification( int message_type, message_fn fn, void *data );

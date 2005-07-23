@@ -522,24 +522,17 @@ coco_warn_gl_errors( char *label )
 
 /* _Font Support___________________________________________________ */
 
-#if (COCO_APPEARANCE == COCO_APPEARANCE_RESCUE_RAIDERS)
 struct coco_font coco_default_font = {
-  "-*-helvetica-bold-r-*-*-12-*-*-*-*-*-*-*", NULL, 0
+  "VeraBd", 14, COCO_BOLD, NULL, 0 	/* "-*-helvetica-bold-r-*-*-12-*-*-*-*-*-*-*" */
 };
-#elif (COCO_APPEARANCE == COCO_APPEARANCE_DOODLE)
-struct coco_font coco_default_font = {
-  "-*-lucida-bold-i-*-*-12-*-*-*-*-*-*-*", NULL, 0
+struct coco_font coco_dashboard_font = {
+  "VeraBd", 10, COCO_BOLD, NULL, 0 	/* "-*-helvetica-bold-r-*-*-12-*-*-*-*-*-*-*" */
 };
-#else
-#error COCO_APPEARANCE is not a value known to graphics.h
-#endif
-
 struct coco_font coco_fixed_font = {
-  "-*-lucidatypewriter-bold-r-*-*-12-*-*-*-*-*-*-*", NULL, 0
+  "VeraMoBd", 14, COCO_BOLD, NULL, 0 /* "-*-lucidatypewriter-bold-r-*-*-12-*-*-*-*-*-*-*" */
 };
-
 struct coco_font coco_huge_font = {
-  "-*-lucida-bold-r-*-*-34-*-*-*-*-*-*-*", NULL, 0
+  "VeraBd", 40, COCO_BOLD, NULL, 0 /*   "-*-lucida-bold-r-*-*-34-*-*-*-*-*-*-*" */
 };
 
 /* syntactic sugar */
@@ -564,7 +557,6 @@ coco_draw_string( coco_gnum x, coco_gnum y,
   int string_cursor = 0;
   int i;
   char ch = 'x';
-  int font_height = coco_font_height( font );
   int yoffset = 0;
 #ifdef COCO_DEBUG
   { /* droolproofing */
@@ -585,11 +577,9 @@ coco_draw_string( coco_gnum x, coco_gnum y,
   }
 #endif
   if (origin != COCO_BASELINE) 
-    {
-      int font_ascent;
-      coco_font_string_dimensions( "", -1, font, NULL, NULL, &font_ascent );
-      yoffset = (origin==COCO_TOP) ? font_ascent : (font_ascent - font_height);
-    }
+    yoffset = (origin==COCO_TOP)
+      ? coco_font_ascent( font )
+      : - coco_font_descent( font );
   glPushAttrib( GL_LIST_BIT
                 | GL_COLOR_BUFFER_BIT ); /* alpha_test on by dflt in coco */
   glListBase( font->list_base );
@@ -627,7 +617,7 @@ coco_draw_string( coco_gnum x, coco_gnum y,
           if (brk) break;
         }
       string_cursor = i+1; 
-      if (ch == '\n') y -= font_height;
+      if (ch == '\n') y -= coco_font_interline_spacing( font );
     }
   while (ch != '\0');
   glPopAttrib();

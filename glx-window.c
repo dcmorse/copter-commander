@@ -186,6 +186,7 @@ coco_make_window( void )
 
     coco_load_font( &coco_default_font );
     coco_load_font( &coco_huge_font );
+    coco_load_font( &coco_dashboard_font );
     coco_load_font( &coco_fixed_font );
     /* not yet, wait for more initialization: */
     /* coco_handle_ui_events( NULL ); */
@@ -512,26 +513,52 @@ coco_ungrab_pointer( void )
   coco_pointer_grabbed_flag = COCO_FALSE;
 }
 
+#ifndef COCO_USE_FREETYPE
+
+/* returns bool if it could fit the string in */
+coco_bool
+coco_make_x_font_name( coco_font *f, char *name_return, size_t max )
+{
+  return max 
+    >= snprintf( name_return, max, "-*-%s-%s-%s-*-*-%d-*-*-*-*-*-*-*", 
+		 f->name,
+		 ((f->flags)&COCO_BOLD)?"bold":"medium",
+		 ((f->flags)&COCO_ITALIC?"i":"r"),
+		 f->height_request);
+}
+
+#endif /* COCO_USE_FREETYPE */
+#ifndef COCO_USE_FREETYPE
+
 /* here, we use the implementation_datum slot directly as the xfontstruct. */
 void 
 coco_load_font( struct coco_font *font )
 {
-  font->implementation_datum = XLoadQueryFont( xdisplay, font->name );
+  char *x_font_name
+    = (char *) coco_malloc( sizeof( char ) * (100+strlen( font->name ) ));
+  if (!coco_make_x_font_name( f, x_font_name ))
+    coco_fatal_printf( COCO_ERROR_NO_FONT, 
+		       "Buffer overflow allocating space for font name\n" );
+  font->implementation_datum = XLoadQueryFont( xdisplay, x_font_name );
   if (NULL == font->implementation_datum)
     {
       coco_warn_printf( "Couldn't load font \"%s\", using \"9x15\" instead.",
-                   font->name );
+			x_font_name );
       font->implementation_datum = XLoadQueryFont( xdisplay, "9x15" );
       if (NULL == font->implementation_datum)
         coco_fatal_printf( COCO_ERROR_NO_FONT, "Couldn't even find \"9x15\"." );
     }
-  font->list_base = glGenLists( 256 );
+  font->list_base = glGenLists( COCO_FONT_NCHARS );
   if (0 == font->list_base)
     coco_fatal_printf( COCO_ERROR_DISPLAY_LISTS,
-                  "Problems allocating OpenGL display lists for fonts." );
+		       "Problems allocating OpenGL display lists for fonts." );
   glXUseXFont( ((XFontStruct *) font->implementation_datum)->fid, 
-               0, 256, font->list_base );
+               0, COCO_FONT_NCHARS, font->list_base );
+  coco_free( x_font_name );
 }
+
+#endif /* COCO_USE_FREETYPE */
+#ifndef COCO_USE_FREETYPE
 
 int 
 coco_font_height( struct coco_font *font )
@@ -539,6 +566,28 @@ coco_font_height( struct coco_font *font )
   XFontStruct *xfs = font->implementation_datum;
   return xfs->ascent + xfs->descent;
 }
+
+int 
+coco_font_ascent( struct coco_font *font )
+{
+  XFontStruct *xfs = font->implementation_datum;
+  return xfs->ascent;
+}
+int 
+coco_font_descent( struct coco_font *font )
+{
+  XFontStruct *xfs = font->implementation_datum;
+  return xfs->descent;
+}
+int 
+coco_font_interline_spacing( struct coco_font *font )
+{
+  /* hack */
+  return 4+coco_font_height( font );
+}
+
+#endif /* COCO_USE_FREETYPE */
+#ifndef COCO_USE_FREETYPE
 
 /* sets w and h to be the bounding box for the specified string, taking
    into account multi-line issues.  Ascent is not multi-line aware, (what
@@ -552,7 +601,7 @@ coco_font_string_dimensions( const char *string, int nchars_or_minus_one,
   XFontStruct *xfs = font->implementation_datum;
   int i;
   int cursor = 0;
-  int line_height = xfs->ascent + xfs->descent;
+  int line_height = coco_font_interline_spacing( font );
   int hacc = line_height;
   int wmax = 0;
   int chars_counted = 0;
@@ -599,6 +648,7 @@ coco_font_string_dimensions( const char *string, int nchars_or_minus_one,
   if (ascent) *ascent = xfs->ascent;
 }
 
+#endif /* COCO_USE_FREETYPE */
 
 /*
 int 

@@ -90,11 +90,15 @@ COCO_USE_XF86VIDMODE=1
 COCO_XF86VIDMODE_LIB_DIRECTORY=${COCO_X11_LIB_DIRECTORY}
 COCO_XF86VIDMODE_INCLUDE_DIRECTORY=${COCO_X11_INCLUDE_DIRECTORY}
 
-# GtkGLArea (copter-commander only)
-COCO_GTKGLAREA_LIB_DIRECTORY=/usr/lib
-COCO_GTKGLAREA_INCLUDE_DIRECTORY=/usr/include
+# Gnome is handled by the pkg-config script, no need to specify
+# LIB_DIRECTORY or INCLUDE_DIRECTORY.
 
-# Gnome (handled by the gnome-config script)
+# comment out COCO_USE_FREETYPE if you live in a cave and don't have
+# freetype2.  Note that gnome support will fall back to BROKEN pango
+# fonts if you do this.  YOu'll get batty text alignment.
+COCO_USE_FREETYPE=1
+# Freetype is handled by the freetype-config script, no need to
+# specify LIB_DIRECTORY or INCLUDE_DIRECTORY.
 
 # OpenGL (According to http://oss.sgi.com/projects/ogl-sample/ABI, these
 # should be as shown, if not, consider making a symlink)
@@ -164,7 +168,16 @@ COCO_XF86VIDMODE_INCLUDE_ARGUMENTS=-I${COCO_XF86VIDMODE_INCLUDE_DIRECTORY}
 else
 # (I leave them undefined, and not null string, for unknown reasons.)
 #COCO_XF86VIDMODE_LINK_ARGUMENTS=""
-#COCO_XF86VIDMODE_INCLUDE_ARGUMENTS
+#COCO_XF86VIDMODE_INCLUDE_ARGUMENTS=""
+endif
+
+ifdef COCO_USE_FREETYPE
+COCO_FREETYPE_LINK_ARGUMENTS=`freetype-config --libs`
+COCO_FREETYPE_INCLUDE_ARGUMENTS=`freetype-config --cflags`
+else
+# (I leave them undefined, and not null string, for unknown reasons.)
+#COCO_FREETYPE_LINK_ARGUMENTS=""
+#COCO_FREETYPE_INCLUDE_ARGUMENTS=""
 endif
 
 
@@ -198,12 +211,13 @@ HDR_FILES = forward-sobject.h methods.h sobject.h coco.h raster.h \
 GAME_C_FILES = language.c clsho.c simple-command-line.c graphics.c network.c \
                gamesho.c methods.c comp.c \
                background-${COCO_APPEARANCE_BASE}.c client.c sobject.c \
-	       screenshot.c server.c ccl.c globals.c main.c dashboard.c
+	       screenshot.c server.c ccl.c globals.c main.c dashboard.c \
+	       freetype.c
 #              console-ui.c console-data.c console-language.c \
 
 # Gnome GUI files
 # (note how they cleverly start with "gnome-", so I can easily pass extra flags.)
-GNOME_C_FILES = gnome-window.c gnome-kennel.c gnome-ident.c
+GNOME_C_FILES = gnome-window.c gnome-ident.c # gnome-kennel.c
 
 # GLX GUI files
 # (note how some cleverly start with "glx-", so I can easily pass extra flags.)
@@ -324,6 +338,12 @@ ifdef COCO_USE_XF86VIDMODE
 	 >> configure-time.h ;\
 	echo >> configure-time.h ;
 endif
+ifdef COCO_USE_FREETYPE
+	set -e ;\
+	echo \#define COCO_USE_FREETYPE ${COCO_USE_FREETYPE} \
+	 >> configure-time.h ;\
+	echo >> configure-time.h ;
+endif
 
 
 # other decisions when the c objects are built.
@@ -359,8 +379,7 @@ sobject.c sobject.h forward-sobject.h: sobject.lisp oo-compiler.fas object-time.
 gnome-%.o: gnome-%.c 
 	${CC} ${CFLAGS_UNANSI} -c gnome-$*.c \
           -I${COCO_GL_INCLUDE_DIRECTORY} \
-	  `gnome-config --cflags gnome gnomeui` \
-	  -I${COCO_GTKGLAREA_INCLUDE_DIRECTORY}
+	  `pkg-config --cflags libgnome-2.0 libgnomeui-2.0 gtkglext-1.0` 
 
 # build glx objects with access to X11 and GL
 glx-%.o: glx-%.c 
@@ -379,7 +398,12 @@ openal-%.o: openal-%.c
 esd-%.o: esd-%.c 
 	${CC} ${CFLAGS_UNANSI} -c esd-$*.c \
           -I${COCO_ESD_INCLUDE_DIRECTORY} \
-	  `gnome-config --cflags gnomeui`
+	  `pkg-config --cflags libgnomeui-2.0`
+
+freetype.o: freetype.c
+	${CC} ${CFLAGS} -c freetype.c \
+	${COCO_FREETYPE_INCLUDE_ARGUMENTS} \
+	-I${COCO_GL_INCLUDE_DIRECTORY}
 
 client.o: client.c
 	${CC} ${CFLAGS_UNANSI} -c client.c -I${COCO_GL_INCLUDE_DIRECTORY} \
@@ -407,10 +431,10 @@ ${USED_SOUND_OBJ_FILES} ${COCO_RASTER_DIRECTORY}/*.o \
 ${COCO_BASIC_LIBS} \
 -L${COCO_LIBTIFF_LIB_DIRECTORY} -ltiff \
 -L${COCO_GL_LIB_DIRECTORY} -lGL \
-`gnome-config --libs gnome gnomeui` \
--L${COCO_GTKGLAREA_LIB_DIRECTORY} -lgtkgl \
+`pkg-config --libs libgnome-2.0 libgnomeui-2.0 gtkglext-1.0` \
 ${COCO_GII_LINK_ARGUMENTS} \
-${COCO_XF86VIDMODE_LINK_ARGUMENTS}
+${COCO_XF86VIDMODE_LINK_ARGUMENTS} \
+${COCO_FREETYPE_LINK_ARGUMENTS}
 
 
 copter-commander: ${GAME_OBJ_FILES} ${GNOME_OBJ_FILES} ${USED_SOUND_OBJ_FILES} ${COCO_RASTER_DIRECTORY}/built xf86vidmode.o
@@ -424,12 +448,13 @@ ${COCO_BASIC_LIBS} \
 -L${COCO_X11_LIB_DIRECTORY} -lX11 -lXext \
 -L${COCO_GL_LIB_DIRECTORY} -lGL \
 ${COCO_GII_LINK_ARGUMENTS} \
-${COCO_XF86VIDMODE_LINK_ARGUMENTS}
+${COCO_XF86VIDMODE_LINK_ARGUMENTS} \
+${COCO_FREETYPE_LINK_ARGUMENTS}
 
 glx-copter-commander: ${GAME_OBJ_FILES} ${GLX_OBJ_FILES} ${USED_SOUND_OBJ_FILES} ${COCO_RASTER_DIRECTORY}/built  xf86vidmode.o
 ifeq (${COCO_SOUND},esd)
 	${GLX_LINK_LINE} ${COCO_SOUND_LINK_LINE} \
-	`gnome-config --libs gnome gnomeui`
+	`pkg-config --libs libgnome-2.0 libgnomeui-2.0`
 else
 	${GLX_LINK_LINE} ${COCO_SOUND_LINK_LINE}
 endif

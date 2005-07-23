@@ -69,7 +69,7 @@ void
 coco_draw_dashboard_string( int x, char *str )
 {
   coco_draw_string( x + COCO_DASHBOARD_ICON_TAB, COCO_DASHBOARD_BASELINE,
-                    str, -1, &coco_default_font, COCO_BASELINE );
+                    str, -1, &coco_dashboard_font, COCO_BASELINE );
 }
 
 void 

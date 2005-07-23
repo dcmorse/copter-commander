@@ -1,3 +1,25 @@
+2005-07-22  David Morse  <svref@yahoo.com>
+
+	* freetype.c: Freetype now renders all fonts!  Okay, so its a bit
+	hacked and debian-dependant.  TODO: locate official hiding-place
+	of system fonts, particularly "vera", and maybe put a config line
+	in the Makefile.  Theoretically freetype with glx-copter-commander
+	is optional, but I probably forgot to implement a few
+	this-and-thats to make it actually compile.
+
+	* gnome-window.c: Port to gnome-2 and gtk-2.  With difficulty.
+	Outstanding issues: Scrollbars are needed in the chatroom dialog
+	for both the messaging area and the player list.  Kennel got cut
+	out in preperation for GtkSizeGroup, but the latter hasn't been
+	implemented yet.  This is a big, dangerous, crufty change.
+
+	* Makefile: changes for gnome-2 and freetype.
+
+	* Makefile-gtk_1_4: Attic for storing pre-changeover Makefile.
+
+	* gnome-window-gtk_1_4.c: Attic for storing pre-changeover
+	gnome-window.c.
+
 2005-07-05  David Morse  <svref@yahoo.com>
 
 	* server.c: hacks for timercmp standard C macro no longer
