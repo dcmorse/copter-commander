@@ -37,19 +37,26 @@ Levels may contain a number of buildings of various types:
  * HQ Crawler            - mounts a deadly radar guided missile launcher
 
 Each player has a certain amount of funds available, which may be used to
-purchase troops, including replacement helicopter gunships.  The costs
-are:  
+purchase troops:
 
  * Man                   - 1 fund
  * Engineer              - 2 funds
  * Demolition Van        - 2 funds
  * Anti Aircraft Truck   - 3 funds
  * Tank                  - 4 funds
- * Civvie Helicopter     - 2 funds, should you run out of Gunships
- * Helicopter Gunship    - 20 funds
 
 More funds can be obtained by destroying enemy units and engaging in
 daring attacks.
+
+You start the game with a handful of helicopter gunships available,
+but should you run out you will be supplied with a more lightly armed
+converted civilian copter.  Score air-to-air victories to get more
+helicopter gunships.  Also, there are other different types of
+vehicles you may pilot, press 'n' to select between them:
+
+ * Helicopter Gunship    - as previously discussed
+ * Cargo Copter          - when landed, ground units come out of its hold
+ * Mech                  - radical craziness
 
 Levels start with each team's HQ Crawlers on opposite sides of the level,
 moving slowly towards each other.  Sides try to capture buildings near the

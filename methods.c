@@ -1124,24 +1124,71 @@ coco_gun_update_state( coco_sobject *sobject,
 void
 coco_every_sobject_kaboom( coco_sobject *sobject,
                            coco_sobject_cl *cl,
-                           coco_sstate *sstate )
+                           coco_sstate *sstate,
+			   coco_munition_owner_tag_type tag )
 {
+  coco_munition_owner_tag_type kaboom_tag;
   int refund = COCO_SOBJECT_REFUND( sobject );
   if (refund > 0)
     coco_add_funds( coco_find_closest_enemy_player( sobject, sstate ), 
                     COCO_FALSE, refund );
+  kaboom_tag = coco_sobject_munition_tag( sobject );
   coco_make_shrapnel( COCO_SOBJECT_SHRAPNEL_COUNT( sobject ),
                       sstate, COCO_SOBJECT_X_CENTER( sobject ),
                       COCO_SOBJECT_Y_CENTER( sobject ),
                       COCO_SOBJECT_DX( sobject ),
-                      COCO_SOBJECT_DY( sobject ) );
+                      COCO_SOBJECT_DY( sobject ),
+		      (kaboom_tag == COCO_MUNITION_OWNER_TAG_NOBODY)
+		      ? tag
+		      : kaboom_tag ); /* reciprocity gives both plrs kills */
   coco_sobject_delete( sobject, COCO_SOBJECT_CL( sobject ), sstate );
+}
+
+void
+coco_camera_kaboom( coco_sobject *sobject,
+		    coco_sobject_cl *cl,
+		    coco_sstate *sstate,
+		    coco_munition_owner_tag_type tag )
+{
+  /* if the killer was a player or comp, give them kills.  If
+     kills>=COCO_NKILLS_FOR_FANCY_COPTER, reward them with a fancy
+     copter. */
+  unsigned char *kills = NULL;
+  int pidx = COCO_MUNITION_OWNER_TAG_TO_PLAYER_INDEX( tag );
+  int cidx = COCO_MUNITION_OWNER_TAG_TO_COMP_INDEX( tag );
+  if (COCO_MUNITION_OWNER_TAG_IS_PLAYER( tag ))
+    kills = &(coco_players[pidx].kills);
+  else if (COCO_MUNITION_OWNER_TAG_IS_COMP( tag ))
+    kills = &(coco_comps[cidx].kills);
+  if ((NULL != kills)
+      && (COCO_SOBJECT_NATIONALITY( sobject )
+	  != (COCO_MUNITION_OWNER_TAG_IS_COMP( tag )
+	      ? coco_comps[cidx].nationality
+	      : coco_players[pidx].nationality)))
+    {
+      (*kills)++;
+      if (*kills >= COCO_NKILLS_FOR_FANCY_COPTER)
+	{
+	  coco_u32 *copters = NULL;
+	  if (COCO_MUNITION_OWNER_TAG_IS_PLAYER( tag ))
+	    copters = & (coco_players[pidx].copters);
+	  else if (COCO_MUNITION_OWNER_TAG_IS_COMP( tag ))
+	    copters = & (coco_comps[cidx].copters);
+	  if (copters)
+	    {
+	      (*copters)++;
+	      (*kills) -= COCO_NKILLS_FOR_FANCY_COPTER;
+	    }
+	}
+    }
+  coco_kaboom( sobject, cl->super, sstate, tag );
 }
 
 void
 coco_airbursting_kaboom( coco_sobject *sobject,
                          coco_sobject_cl *cl,
-                         coco_sstate *sstate )
+                         coco_sstate *sstate,
+			 coco_munition_owner_tag_type tag )
 {
   coco_sobject *explosion = coco_sstate_allocate_sobject( sstate );
 
@@ -1158,18 +1205,20 @@ coco_airbursting_kaboom( coco_sobject *sobject,
       y += COCO_SOBJECT_Y( sobject );
       coco_init_explosion( explosion, COCO_EXPLOSION_CLASS, 0, 
                            x - ((coco_gnum) raster->w>>1),
-                           y - ((coco_gnum) raster->h>>1), 0, 0, ri );
+                           y - ((coco_gnum) raster->h>>1), 0, 0, ri,
+			   tag );
       coco_make_snd( COCO_SOBJECT_AIRBURST_SOUND_TYPE( sobject ), 
                      sstate, x, y );
     }
   /* call-next-method */
-  coco_kaboom( sobject, cl->super, sstate );
+  coco_kaboom( sobject, cl->super, sstate, tag );
 }
 
 void
 coco_copter_kaboom( coco_sobject *sobject,
                     coco_sobject_cl *cl,
-                    coco_sstate *sstate )
+                    coco_sstate *sstate,
+		    coco_munition_owner_tag_type tag )
 {
   coco_sobject *trooper;
   COCO_COPTER_PARATROOPERS( sobject ) = 1;
@@ -1178,13 +1227,14 @@ coco_copter_kaboom( coco_sobject *sobject,
 
   /* call-next-method [SORT OF]: also want airburst, so just call that
      method which will call-next-method itself */
-  coco_airbursting_kaboom( sobject, cl, sstate );
+  coco_airbursting_kaboom( sobject, cl, sstate, tag );
 }
 
 void
 coco_bullet_kaboom( coco_sobject *sobject,
                     coco_sobject_cl *cl,
-                    coco_sstate *sstate )
+                    coco_sstate *sstate,
+		    coco_munition_owner_tag_type tag )
 {
   int i;
   for (i=COCO_SOBJECT_SPARK_COUNT( sobject ); i>0; i--)
@@ -1221,13 +1271,13 @@ coco_bullet_kaboom( coco_sobject *sobject,
       }
     }
   /* call-next-method */
-  coco_kaboom( sobject, cl->super, sstate );
+  coco_kaboom( sobject, cl->super, sstate, tag );
 }
 
 void
 coco_gun_kaboom( coco_sobject *sobject,
                  coco_sobject_cl *cl,
-                 coco_sstate *sstate )
+                 coco_sstate *sstate, coco_munition_owner_tag_type tag )
 {
   /* Should the gun-rubble be on the kaboom, or the delete?  Feels like
      kaboom to me right now. */
@@ -1242,13 +1292,14 @@ coco_gun_kaboom( coco_sobject *sobject,
                          "t=%dfailed.\n",
                          COCO_SOBJECT_X( sobject ), sstate->time );
   /* call-next-method */
-  coco_kaboom( sobject, cl->super, sstate );
+  coco_kaboom( sobject, cl->super, sstate, tag );
 }
 
 void
 coco_bomb_kaboom( coco_sobject *sobject,
                   coco_sobject_cl *cl,
-                  coco_sstate *sstate )
+                  coco_sstate *sstate,
+		  coco_munition_owner_tag_type tag )
 {
   if (COCO_SOBJECT_Y( sobject ) < COCO_BALLOON_FLOOR)
     {
@@ -1261,23 +1312,24 @@ coco_bomb_kaboom( coco_sobject *sobject,
                 - ((coco_gnum) rasters[COCO_EXPLOSION_BOMB_BASE]->w))
                >>1);
           coco_init_explosion( explosion, COCO_EXPLOSION_CLASS, 0, x,
-                               COCO_GROUND_Y, 0, 0, COCO_EXPLOSION_BOMB_BASE );
+                               COCO_GROUND_Y, 0, 0, COCO_EXPLOSION_BOMB_BASE,
+			       tag );
           coco_make_snd( COCO_SOUND_BOMB_HIT, sstate, x, COCO_GROUND_Y );
         }
     }
 
   /* call-next-method */
-  coco_kaboom( sobject, cl->super, sstate );
+  coco_kaboom( sobject, cl->super, sstate, tag );
 }
 
 void
 coco_rocket_kaboom( coco_sobject *sobject,
                     coco_sobject_cl *cl,
-                    coco_sstate *sstate )
+                    coco_sstate *sstate,
+		    coco_munition_owner_tag_type tag )
 {
   if (COCO_SOBJECT_Y( sobject ) < COCO_BALLOON_FLOOR)
     {
-      
       coco_facing facing = COCO_SOBJECT_FACING( sobject );
       struct coco_raster **rasters = COCO_EXPLOSION_CLASS->rasters;
       coco_gnum raster_w = rasters[COCO_EXPLOSION_NAPALM_BASE]->w;
@@ -1294,25 +1346,27 @@ coco_rocket_kaboom( coco_sobject *sobject,
                                  (COCO_SOBJECT_DX_PUBLIC( sobject )>>1)
                                  *(COCO_EXPLOSION_NAPALM_COUNT-i), 
                                  0, 
-                                 COCO_EXPLOSION_NAPALM_BASE + i );
+                                 COCO_EXPLOSION_NAPALM_BASE + i,
+				 tag );
         }
       coco_make_snd( COCO_SOUND_ROCKET_HIT, sstate, x, COCO_GROUND_Y );
     }
   /* call-next-method */
-  coco_kaboom( sobject, cl->super, sstate );
+  coco_kaboom( sobject, cl->super, sstate, tag );
 }
 
 
 void
 coco_infantry_kaboom( coco_sobject *sobject,
                       coco_sobject_cl *cl,
-                      coco_sstate *sstate )
+                      coco_sstate *sstate,
+		      coco_munition_owner_tag_type tag )
 {
   /* 3 == number of COCO_SOUND_SCREAM* */
   coco_make_snd( COCO_SOUND_SCREAM1 + (rand()%3), sstate, 
                  COCO_SOBJECT_X( sobject ), COCO_SOBJECT_Y( sobject ) );
   /* call-next-method */
-  coco_kaboom( sobject, cl->super, sstate );
+  coco_kaboom( sobject, cl->super, sstate, tag );
 }
 
 
@@ -1517,6 +1571,7 @@ coco_every_sobject_fire_bullet( coco_sobject *sobject, coco_sobject_cl *cl,
   coco_init_bullet( bullet, bcl,
                     facing ? facing : (dx>0?1:-1), /* doesn't matter tho */
                     x, y, dx, dy, COCO_SOBJECT_NATIONALITY( sobject ),
+		    coco_sobject_munition_tag( sobject ),
                     COCO_U32_ADD_N_MODULAR( sstate->time, bcl->lifespan ));
   /* coco_cookie( "Class %s bullet sound type %d\n", COCO_SOBJECT_CL( sobject )->name, COCO_SOBJECT_FIRE_BULLET_SOUND_TYPE( sobject ) ); */
   coco_make_snd( COCO_SOBJECT_FIRE_BULLET_SOUND_TYPE( sobject ), sstate, 
@@ -1564,6 +1619,7 @@ coco_every_sobject_launch_missile( coco_sobject *sobject, coco_sobject_cl *cla,
                      0, 
                      COCO_SOBJECT_NATIONALITY( sobject ),
                      coco_atan2( (ty - hpy), (tx - hpx) ),
+		     coco_sobject_munition_tag( sobject ),
                      COCO_SOBJECT_INDEX( target ) );
   coco_make_snd( COCO_SOUND_MISSILE_LAUNCH, sstate, hpx, hpy );
   return missile;
@@ -1683,7 +1739,8 @@ coco_drop_bomb( coco_sobject *copter, coco_sobject_cl *cl,
                           - COCO_BOMB_EAST_RASTER_H,
                           COCO_SOBJECT_DX( copter ),
                           COCO_SOBJECT_DY( copter ),
-                          COCO_SOBJECT_NATIONALITY( copter ) );
+                          COCO_SOBJECT_NATIONALITY( copter ),
+			  coco_sobject_munition_tag( copter ));
           return bomb;
         }
     }
@@ -1719,7 +1776,8 @@ coco_launch_rocket( coco_sobject *sobject, coco_sobject_cl *cl,
                             COCO_SOBJECT_NATIONALITY( sobject ),
                             (facing>0)
                             ? COCO_ROCKET_RIGHT_ANGLE
-                            : COCO_ROCKET_LEFT_ANGLE );
+                            : COCO_ROCKET_LEFT_ANGLE,
+			    coco_sobject_munition_tag( sobject ));
           coco_make_snd( COCO_SOUND_ROCKET_LAUNCH, sstate, x, y );
         }
       else coco_cookie( "FAILED TO ALLOC ROCKET!!!\n" );
@@ -2040,7 +2098,8 @@ coco_every_sobject_ground_collide( coco_sobject *sobject,
   if (coco_sobject_subtype_p( COCO_SOBJECT_CL( sobject ),
                               COCO_BOMB_CLASS ))
     coco_cookie( "Packed right into the surface\n" ); */
-  coco_kaboom( sobject, COCO_SOBJECT_CL( sobject ), sstate );
+  coco_kaboom( sobject, COCO_SOBJECT_CL( sobject ), sstate, 
+	       COCO_MUNITION_OWNER_TAG_NOBODY );
 }
 
 
@@ -2133,7 +2192,8 @@ coco_bunker_hostile_collision( coco_sobject *bunker,
       if (defenders > 0)
         {
           COCO_BUNKER_DEFENDERS( bunker ) = --defenders;
-          coco_kaboom( obj2, COCO_SOBJECT_CL( obj2 ), sstate );
+          coco_kaboom( obj2, COCO_SOBJECT_CL( obj2 ), sstate, 
+		       COCO_MUNITION_OWNER_TAG_NOBODY );
           *stat2 = COCO_TRUE;
         }
     }
@@ -2188,7 +2248,8 @@ coco_bunker_hostile_collision( coco_sobject *bunker,
     {
       /* no op -- they can blow/drive through. */
     }
-  else coco_kaboom( obj2, COCO_SOBJECT_CL( obj2 ), sstate );
+  else coco_kaboom( obj2, COCO_SOBJECT_CL( obj2 ), sstate,
+		    COCO_MUNITION_OWNER_TAG_NOBODY );
 }
 
 coco_bool
@@ -2358,7 +2419,8 @@ coco_health_subtracting_hostile_collision( coco_sobject *obj1,
     {
       if (hea1 <= dmg2)
         {
-          coco_kaboom( obj1, COCO_SOBJECT_CL( obj1 ), sstate );
+          coco_kaboom( obj1, COCO_SOBJECT_CL( obj1 ), sstate, 
+		       coco_sobject_munition_tag( obj2 ) );
           *stat1 = COCO_TRUE;
         }
       else COCO_SOBJECT_HEALTH( obj1 ) = hea1 - dmg2;
@@ -2367,7 +2429,8 @@ coco_health_subtracting_hostile_collision( coco_sobject *obj1,
     {
       if (hea2 <= dmg1)
         {
-          coco_kaboom( obj2, COCO_SOBJECT_CL( obj2 ), sstate );
+          coco_kaboom( obj2, COCO_SOBJECT_CL( obj2 ), sstate,
+		       coco_sobject_munition_tag( obj1 ));
           *stat2 = COCO_TRUE;
         }
       else COCO_SOBJECT_HEALTH( obj2 ) = hea2 - dmg1;
@@ -2419,7 +2482,8 @@ coco_bullet_hostile_collision( coco_sobject *obj1,
     {
       *stat1 = COCO_TRUE;
       *stat2 = COCO_FALSE;
-      coco_kaboom( obj1, COCO_SOBJECT_CL( obj1 ), sstate );
+      coco_kaboom( obj1, COCO_SOBJECT_CL( obj1 ), sstate,
+		   COCO_MUNITION_OWNER_TAG_NOBODY );
       COCO_SOBJECT_RASTER_INDEX( obj2 ) = COCO_INFANTRY_FREE_FALL_BASE;
       COCO_INFANTRY_PARACHUTES( obj2 ) = 0;
       return;
@@ -2491,7 +2555,8 @@ coco_demo_van_hostile_collision( coco_sobject *obj1,
       /* make van invulnerable */
       COCO_SOBJECT_HEALTH( obj1 ) = COCO_NIGH_INVULNERABLE;
       COCO_SOBJECT_DX( obj1 ) = 0;
-      coco_kaboom( obj2, COCO_SOBJECT_CL( obj2 ), sstate );
+      coco_kaboom( obj2, COCO_SOBJECT_CL( obj2 ), sstate,
+		   coco_sobject_munition_tag( obj1 ));
       *stat1 = COCO_FALSE;
       *stat2 = COCO_TRUE;
     }

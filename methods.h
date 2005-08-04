@@ -178,40 +178,53 @@ coco_bool coco_bomb_update_state( coco_sobject *sobject,
 
 void coco_every_sobject_kaboom( coco_sobject *sobject,
                                 coco_sobject_cl *cl,
-                                coco_sstate *sstate );
+                                coco_sstate *sstate,
+				coco_munition_owner_tag_type tag );
 
+
+void coco_camera_kaboom( coco_sobject *sobject,
+			 coco_sobject_cl *cl,
+			 coco_sstate *sstate,
+			 coco_munition_owner_tag_type tag );
 
 void coco_copter_kaboom( coco_sobject *sobject,
                          coco_sobject_cl *cl,
-                         coco_sstate *sstate );
+                         coco_sstate *sstate,
+			 coco_munition_owner_tag_type tag );
 
 
 void coco_airbursting_kaboom( coco_sobject *sobject,
                               coco_sobject_cl *cl,
-                              coco_sstate *sstate );
+                              coco_sstate *sstate,
+			      coco_munition_owner_tag_type tag );
 
 
 void coco_bullet_kaboom( coco_sobject *sobject,
                          coco_sobject_cl *cl,
-                         coco_sstate *sstate );
+                         coco_sstate *sstate,
+			 coco_munition_owner_tag_type tag );
 
 void coco_gun_kaboom( coco_sobject *sobject,
                       coco_sobject_cl *cl,
-                      coco_sstate *sstate );
+                      coco_sstate *sstate,
+		      coco_munition_owner_tag_type tag );
 
 
 void coco_bomb_kaboom( coco_sobject *sobject,
                        coco_sobject_cl *cl,
-                       coco_sstate *sstate );
+                       coco_sstate *sstate,
+		       coco_munition_owner_tag_type tag );
 
 void coco_rocket_kaboom( coco_sobject *sobject,
                          coco_sobject_cl *cl,
-                         coco_sstate *sstate );
+                         coco_sstate *sstate,
+			 coco_munition_owner_tag_type tag );
 
 void
 coco_infantry_kaboom( coco_sobject *sobject,
                       coco_sobject_cl *cl,
-                      coco_sstate *sstate );
+                      coco_sstate *sstate,
+		      coco_munition_owner_tag_type tag );
 
 
 void coco_every_sobject_delete( coco_sobject *sobject,

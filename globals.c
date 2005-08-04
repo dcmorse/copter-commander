@@ -42,12 +42,12 @@ int coco_jamming = 1;
 int coco_command_line_inhibit_double_buffer = COCO_FALSE;/* not coco_bool to appease popt */
 
 const char *coco_product_authors[]
- = { "David Morse <copter-commander-devel@bomberlan.net>", NULL };
+ = { "David Morse <svref AT users DOT sourceforge DOT net>", NULL };
 const char *coco_product_copyright = "Copyright 2001-2005 David Morse.";
 const char *coco_product_description
  = "A 2d network helicopter game.\n";
 const char *coco_product_description_windbag
- = "A 2d network helicopter game.  \nUses some code courtesy of BEAST, Copyright 1998, 1999, 2000 Tim Janik and Red Hat.";
+ = "A 2d network helicopter game.\n";
 
 const char *coco_gnu_public_license =
 #include "COPYING.strlit"

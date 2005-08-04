@@ -653,10 +653,9 @@ struct coco_pango_font_stuff {
 };
 
 #endif /* COCO_USE_FREETYPE */
-#ifndef COCO_USE_FREETYPE
 
 coco_bool
-coco_make_pango_font_name( coco_font *f, char *name_return, size_t max )
+coco_make_pango_font_name( struct coco_font *f, char *name_return, size_t max )
 {
   coco_warn_printf( "loading font: assuming points == pixels.  :P\n" );
   return max < snprintf( name_return, max, "%s%s%s %d", 
@@ -666,7 +665,6 @@ coco_make_pango_font_name( coco_font *f, char *name_return, size_t max )
 			 f->height_request);
 }
 
-#endif /* COCO_USE_FREETYPE */
 #ifndef COCO_USE_FREETYPE
 
 void
@@ -1177,7 +1175,48 @@ coco_use_string_viewer_dialog( const char *string, const char *title,
                                coco_bool fixed_font_p )
 {
 #ifndef COCO_GNOME_UNPORT
-  coco_warn_printf ("coco_use_string_viewer_dialog() unimplemented in gnome2.\n");
+  GtkWidget *dialog = gtk_window_new(GTK_WINDOW_TOPLEVEL);
+  GtkWidget *scrollers = gtk_scrolled_window_new( NULL, NULL );
+  GtkWidget *text = gtk_text_view_new();
+  GtkTextBuffer *tb = gtk_text_view_get_buffer( GTK_TEXT_VIEW( text ) );
+  PangoLayout *pl;
+  int width_request = COCO_OFFICIAL_WINDOW_W - 20;
+  int height_request = COCO_OFFICIAL_WINDOW_H - 20;
+  gtk_text_buffer_set_text( tb, string, -1 );
+  gtk_container_add( GTK_CONTAINER( scrollers ), text );
+  gtk_container_add( GTK_CONTAINER( dialog ), scrollers );
+  if (fixed_font_p)
+    {
+      static PangoFontDescription *pfd = NULL;
+      if (NULL==pfd)
+	{
+	  char buf[100];
+	  sprintf( buf, "Mono %d", coco_fixed_font.height_request );
+	  pfd = pango_font_description_from_string( buf );
+	}
+      if (pfd)
+	gtk_widget_modify_font( text, pfd );
+      else 
+	coco_warn_printf( "Unable to load monospace font for"
+			  " string viewer dialog.\n" );
+    }
+  pl = gtk_widget_create_pango_layout( text, string );
+  if (pl)
+    {
+      PangoRectangle r;
+      pango_layout_get_pixel_extents( pl, NULL, &r );
+      width_request = r.width + 20; /* 20 = approx scroller width */
+      height_request = COCO_MIN( r.height+20, COCO_OFFICIAL_WINDOW_H );
+      g_free( pl );
+    }
+  /* gtk_scrolled_window_add_with_viewport( GTK_SCROLLED_WINDOW( dialog ), text ); */
+  gtk_window_set_default_size( GTK_WINDOW( dialog ), width_request, height_request );
+  gtk_scrolled_window_set_policy( GTK_SCROLLED_WINDOW( scrollers ),
+				  GTK_POLICY_AUTOMATIC, GTK_POLICY_AUTOMATIC );
+  if (title)
+    gtk_window_set_title( GTK_WINDOW( dialog ), title );
+  gtk_widget_show_all( dialog );
+  return;
 #else
   GtkWidget *dialog;
   GtkWidget *less;

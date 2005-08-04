@@ -1,3 +1,16 @@
+2005-08-03  David Morse  <svref@yahoo.com>
+
+	* gnome-window.c (coco_use_string_viewer_dialog): ported to
+	gnome-2.
+
+2005-07-24  David Morse  <svref@yahoo.com>
+
+	* sobject.lisp: refunds adjusted to be 1/2 cost.  Bubble-copters
+	to 0.  Fancy-copters to 2.  Income cut in half.
+
+	* server.c (coco_server_key_press): remove ability to buy copters,
+	instead have 'kills' mechanism to reward air-to-air victories.
+
 2005-07-22  David Morse  <svref@yahoo.com>
 
 	* freetype.c: Freetype now renders all fonts!  Okay, so its a bit

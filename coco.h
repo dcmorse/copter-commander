@@ -709,6 +709,7 @@ struct coco_dashboard_info {
   unsigned char server_fps;
   unsigned char fancy_class_index;
   coco_i32 camera_class_index; /* so wide a type for -1 */
+  unsigned char kills;
 };
 
  /* 0: summon-disable, 1: missile-lock */
@@ -1084,6 +1085,7 @@ struct coco_player {
                 coco_add_funds and coco_subtract_funds_available */
   coco_u32 copters; /* defined server side only */
 
+  unsigned char kills; 		/* kills since last fancy copter */
   char name[COCO_PLAYER_NAME_MAX];
 };
 
@@ -1598,9 +1600,23 @@ coco_u32 coco_draw_frame_number;
   : (-6 + (int) (angle) + (health_max)))
 
 
+typedef signed char coco_munition_owner_tag_type;
+#define COCO_MUNITION_OWNER_TAG_IS_COMP( ch ) ((ch)<0)
+#define COCO_MUNITION_OWNER_TAG_IS_PLAYER( ch ) ((ch)>0)
+#define COCO_MUNITION_OWNER_TAG_IS_NOBODY( ch ) (0==(ch))
+#define COCO_MUNITION_OWNER_TAG_NOBODY 0
+#define COCO_PLAYER_INDEX_TO_MUNITION_OWNER_TAG( i ) ((i)+1)
+#define COCO_COMP_INDEX_TO_MUNITION_OWNER_TAG( i ) (-1-(i))
+#define COCO_MUNITION_OWNER_TAG_TO_PLAYER_INDEX( i ) ((i)-1)
+#define COCO_MUNITION_OWNER_TAG_TO_COMP_INDEX( i ) ((-(i))-1)
+
+#define COCO_NKILLS_FOR_FANCY_COPTER 3
+
 #include "forward-sobject.h"
 #include "methods.h" /* COCO_SOBJECT_RASTER( sobject ) function in here */
 #include "sobject.h"
+
+coco_munition_owner_tag_type coco_sobject_munition_tag( coco_sobject *s );
 
 /* Pseudo accessors. */
 
@@ -1701,7 +1717,8 @@ void coco_randomize_metal_shrapnel( coco_sobject *sobject );
 
 void
 coco_make_shrapnel( unsigned count, coco_sstate *sstate,
-                    coco_gnum x, coco_gnum y, coco_gnum dx, coco_gnum dy );
+                    coco_gnum x, coco_gnum y, coco_gnum dx, coco_gnum dy,
+		    coco_munition_owner_tag_type tag );
 
 coco_sobject *
 coco_hut_deploy_balloon( coco_sobject *hut, coco_sstate *sstate );
@@ -1754,9 +1771,10 @@ struct coco_comp {
   coco_bool refuelling;      /* go refuel and rearm */
   coco_gnum goto_area;       /* low priority x-coordinate to fly to */
   int buy_index;	     /* [0..COCO_COMP_BUY_INDEX_MAX) */
+  unsigned char kills;
 };
 
-#define COCO_COMP_BUY_INDEX_MAX 8
+#define COCO_COMP_BUY_INDEX_MAX 9
 
 struct coco_comp coco_comps[COCO_MAX_COMPS];
 
@@ -1765,6 +1783,7 @@ struct coco_comp coco_comps[COCO_MAX_COMPS];
 #define COCO_PORC_FUNDS( index, is_comp ) ((is_comp) ? coco_comps[index].funds : coco_players[index].funds)
 #define COCO_PORC_NATIONALITY( index, is_comp ) ((is_comp) ? coco_comps[index].nationality : coco_players[index].nationality)
 #define COCO_PORC_FAVORITE_COPTER_CLASS( index, is_comp ) ((is_comp) ? COCO_COMP_FAVORITE_COPTER_CLASS : sstate->favorite_copter_class[index])
+#define COCO_PORC_KILLS( index, is_comp ) ((is_comp) ? coco_comps[index].kills : coco_players[index].kills)
 
 #define COCO_GNUM_TO_RXNUM( x, bw ) ((COCO_OFFICIAL_WINDOW_W * (x)) / (bw))
 #define COCO_GNUM_TO_RYNUM( y )     ((COCO_RADAR_H * (y)) / COCO_VIEWABLE_H)

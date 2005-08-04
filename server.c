@@ -454,6 +454,7 @@ coco_handle_connection_request( int listenfd,
                 coco_players[i].funds = COCO_GAME_START_FUNDS;
                 coco_players[i].copters = COCO_GAME_START_COPTERS;
               }
+	    coco_players[i].kills = 0;
             if (sstate_or_null)
               {
                 sstate_or_null->respawn[i] = COCO_TRUE;
@@ -575,6 +576,7 @@ coco_add_comp( coco_nationality nat, coco_sstate *sstate )
         coco_comps[i].in_use = COCO_TRUE;
         coco_comps[i].goto_area = sstate->board_w>>1;
         coco_comps[i].buy_index = rand() % COCO_COMP_BUY_INDEX_MAX;
+        coco_comps[i].kills = 0;
         coco_schedule_comp_respawn_maybe( i, sstate );
         coco_send_everyone_compflux_message();
         found = COCO_TRUE;
@@ -1122,7 +1124,8 @@ coco_randomize_metal_shrapnel( coco_sobject *sobject )
 
 void
 coco_make_shrapnel( unsigned count, coco_sstate *sstate,
-                    coco_gnum x, coco_gnum y, coco_gnum dx, coco_gnum dy )
+                    coco_gnum x, coco_gnum y, coco_gnum dx, coco_gnum dy,
+		    coco_munition_owner_tag_type tag )
 {
   for (; count>0; count--)
     {
@@ -1139,7 +1142,7 @@ coco_make_shrapnel( unsigned count, coco_sstate *sstate,
         return;
       sdx = dx + (rand()&30) - 15;
       sdy = dy + (rand()&30) - 15;
-      coco_init_metal_shrapnel( shrapnel, klass, x, y, sdx, sdy );
+      coco_init_metal_shrapnel( shrapnel, klass, x, y, sdx, sdy, tag );
       coco_randomize_metal_shrapnel( shrapnel );
     }
 }
@@ -1844,7 +1847,8 @@ coco_fire_plasma( coco_sobject *sobject, coco_sobject_cl *class,
         COCO_MECH_ENERGY( sobject ) = e - COCO_PLASMA_ENERGY;
         COCO_MECH_PLASMA( sobject ) = plasmas - 1;
         coco_init_plasma( plasma, COCO_PLASMA_CLASS, x, y, dx, dy,
-                          COCO_SOBJECT_NATIONALITY( sobject ) );
+                          COCO_SOBJECT_NATIONALITY( sobject ),
+			  coco_sobject_munition_tag( sobject ));
         COCO_MECH_LAST_PLASMA_FIRE_TIME( sobject ) = sstate->time;
         coco_make_snd( COCO_SOUND_PLASMA_CANNON, sstate, x, y );
         return plasma;
@@ -1929,7 +1933,8 @@ coco_make_mech_jet_exhaust( coco_sobject *mech, coco_sstate *sstate,
       jy =  COCO_SOBJECT_Y( mech ) + COCO_SOBJECT_DY( mech ) - r->h;
 
       coco_init_explosion( jet, COCO_EXPLOSION_CLASS, 0,
-                           jx, jy, 0, 0, ri );
+                           jx, jy, 0, 0, ri, 
+			   coco_sobject_munition_tag( mech ) );
       return jet;
     }
   else return NULL;
@@ -2525,8 +2530,7 @@ void
 coco_add_hazard_pay( coco_sstate *sstate )
 {
   /* Hazard pay for being on same screen as enemy copter, or enemy hq: 
-     1 fund / second.  Hazard pay for being near or past enemy copter: 
-     .25 fund / second.  */
+     0.5 fund / second, a quarter that for being past the copter.  */
   if (0 == (sstate->time % (COCO_IDEAL_FRAMES_PER_SECOND>>2)))
     {
       static coco_bool ST_is_comps[] = { COCO_FALSE, COCO_TRUE };
@@ -2569,9 +2573,9 @@ coco_add_hazard_pay( coco_sstate *sstate )
                     }
                 });
                 if (targ_on_screen_p)
-                  coco_add_funds( i, is_comp, 0.25 );
+                  coco_add_funds( i, is_comp, 0.125 );
                 else if (passed_targ_p)
-                  coco_add_funds( i, is_comp, 0.0675 );
+                  coco_add_funds( i, is_comp, 0.03375 );
               }
         }
     }
@@ -2631,25 +2635,6 @@ coco_send_cstate( int udpfd, int plr_index, void *cstate_buf, size_t buf_size )
   return COCO_TRUE;
 }
 
-coco_bool
-coco_buy_copter_maybe( coco_sstate *sstate, 
-                       int p_or_c_index, coco_bool is_comp  )
-{
-  float cost = (is_comp
-                ? COCO_COMP_FAVORITE_COPTER_CLASS 
-                : sstate->favorite_copter_class[p_or_c_index])->cost;
-  if (coco_subtract_funds_available( p_or_c_index, is_comp, cost, COCO_FALSE ))
-    {
-      if (is_comp)
-        coco_comps[p_or_c_index].copters++;
-      else 
-        coco_players[p_or_c_index].copters++;
-      return COCO_TRUE;
-    }
-  else return COCO_FALSE;
-}
-
-
 /* NULL on fail */
 coco_sobject *
 coco_find_camera( coco_sstate *sstate, int p_or_c_index, coco_bool is_comp )
@@ -2693,10 +2678,8 @@ coco_server_key_press( int p_or_c_index, coco_bool is_comp,
             && ! COCO_COPTER_LANDED_P( cam ))
           coco_toggle_facing( cam, COCO_SOBJECT_CL( cam ) );
         break;
-      case COCO_CHAR_TO_KEY( 'h' ):
-        coco_buy_copter_maybe( sstate, p_or_c_index, is_comp );
-        break;
       case COCO_CHAR_TO_KEY( 'n' ):
+	/* Some of this is vestigal cruft from when copters cost money XXX */
         if (is_comp)
           coco_warn_printf( "Changing favorite copter class "
                             "not supported for comps.\n" );
@@ -3707,6 +3690,7 @@ coco_write_cstate_serial_header( struct coco_cstate_serial_header *str,
   str->dashinfo.server_fps = COCO_IDEAL_FRAMES_PER_SECOND;
   str->dashinfo.fancy_class_index 
     = COCO_PORC_FAVORITE_COPTER_CLASS( p_or_c_index, is_comp )->cl_index;
+  str->dashinfo.kills   = COCO_PORC_KILLS( p_or_c_index, is_comp );
   /* = sstate->favorite_copter_class[p_or_c_index]->cl_index; */
   str->dashinfo.camera_class_index
     = cam_object_or_null ? COCO_SOBJECT_CL_INDEX( cam_object_or_null ) : -1;
@@ -3989,3 +3973,16 @@ coco_copter_velocity_offset_old_skool( coco_sobject *camera,
     : 0;
 }
 
+coco_munition_owner_tag_type 
+coco_sobject_munition_tag( coco_sobject *s )
+{
+  int x;
+  if (coco_sobject_subtype_p( COCO_SOBJECT_CL( s ), COCO_MUNITION_CLASS ))
+    return COCO_MUNITION_OWNER_TAG( s );
+  else if ((x=COCO_SOBJECT_CAMERA_INDEX( s )) >= 0)
+    return COCO_PLAYER_INDEX_TO_MUNITION_OWNER_TAG( x );
+  else if ((x=COCO_SOBJECT_CAMERA_INDEX( s )) >= 0)
+    return COCO_COMP_INDEX_TO_MUNITION_OWNER_TAG( x );
+  else
+    return COCO_MUNITION_OWNER_TAG_NOBODY;
+}

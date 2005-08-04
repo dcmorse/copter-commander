@@ -188,7 +188,8 @@
                            (("sstate" "coco_sstate *")))
 ;; blow yourself up, A-team style
 (c-define-generic-function "kaboom" "sobject" "void"
-                           (("sstate" "coco_sstate *")))
+                           (("sstate" "coco_sstate *")
+			    ("owner" "coco_munition_owner_tag_type")))
 ;; clean up any private memory you may have
 (c-define-generic-function "sobject_delete" "sobject" "void"
                            (("sstate" "coco_sstate *")))
@@ -326,6 +327,8 @@
 (c-define-generic-function "camera_velocity_offset" "sobject"
                            "coco_gnum" (("sstate" "coco_sstate *")))
 
+(c-define-method "kaboom" "camera" "coco_camera_kaboom")
+
 (c-define-method "camera_velocity_offset" "camera"
                  "coco_every_camera_velocity_offset")
 
@@ -439,8 +442,8 @@
    ("center_of_mass"    "coco_cobra_center_of_mass")
    ("rasters"      "coco_cobra_rasters")
    ("rotor_radius" "56")
-   ("refund"       "5")
    ("cost"         "15")
+   ("refund"       "1")
    ("dashboard_icon" "&coco_cobra_icon_raster"))
   :init-by-list-fn :virtual)
 
@@ -462,7 +465,6 @@
    ("center_of_mass"    "coco_bubble_copter_center_of_mass")
    ("rasters"      "coco_bubble_copter_rasters")
    ("rotor_radius" "50")
-   ("refund"       "5")
    ("cost"         "2")
    ("health_max"   "3")
    ("x_force"      "2"))
@@ -487,8 +489,8 @@
    ("center_of_mass"    "coco_cargo_copter_center_of_mass")
    ("rasters"      "coco_cargo_copter_rasters")
    ("rotor_radius" "65")
-   ("refund"       "5")
    ("cost"         "15")
+   ("refund"       "1")
    ("health_max"   "5")
    ("x_force"      "2")
    ("dashboard_icon" "&coco_cargo_copter_icon_raster")
@@ -541,7 +543,7 @@
    ("h"           "COCO_SOBJECT_CANONICAL_H( inst )")
    ("airburst_sound_type" "COCO_SOUND_BIG_AIRBURST")
    ("cost"        "15")
-   ("refund"       "5")
+   ("refund"       "1")
    ("dashboard_icon" "&coco_mech_icon_raster") ;; XXX wrong
    ("gen_dashboard_items" "coco_mech_dashboard_items")
    ("emits_smoke_when_damaged" "COCO_TRUE"))
@@ -900,7 +902,8 @@
    ("shrapnel_count" "4")
    ("health_max"   "2")
    ("canonical_w"   "COCO_VAN_GREEN_RASTER_W")
-   ("cost" "2"))
+   ("cost" "2")
+   ("refund" "1"))
   :init-by-list-fn :automatic)
 
 (c-define-method "hostile_collision" "demo_van" 
@@ -917,7 +920,7 @@
    ("weapon_hardpoints" "coco_tank_hardpoints")
    ("canonical_w"  "COCO_TANK_GREEN_RASTER_W")
    ("bullet_class" "COCO_TANK_BULLET_CLASS")
-   ("refund"       "1")
+   ("refund"       "2")
    ("cost"         "4")
    ("fire_bullet_sound_type" "COCO_SOUND_TANK_GUN"))
   :init-by-list-fn :virtual)
@@ -934,7 +937,8 @@
    ("cobject_guess_nationality_fn" "coco_firetruck_guess_nationality")
    ("smoke_countdown" "0" "unsigned char")
    ("canonical_w"   "COCO_FIRETRUCK_GREEN_RASTER_W")
-   ("cost"         "3"))
+   ("cost"         "3")
+   ("refund"       "1"))
   :init-by-list-fn :automatic)
 
 (c-define-method "sobject_update_state" "firetruck"
@@ -1035,6 +1039,7 @@
 (c-define-class "munition" ("sobject")
   (("dx"           :arg)
    ("dy"           :arg)
+   ("owner_tag"    :arg "coco_munition_owner_tag_type")
    ("phase"        "COCO_EXPLOSIVE")
    ("health_max"   "1")
    ("shrapnel_count" "0")
@@ -1182,6 +1187,7 @@
 
 (c-define-class "spark" ("munition")
   (("phase"        "COCO_VAPOR")
+   ("owner_tag"    "COCO_MUNITION_OWNER_TAG_NOBODY")
    ("canonical_w"  "1")
    ("w"            "1")
    ("h"            "1")

@@ -141,8 +141,8 @@ static coco_sobject_cl *buy_schedule[COCO_COMP_BUY_INDEX_MAX]
      COCO_DEMO_VAN_CLASS,
      COCO_FIRETRUCK_CLASS,
      COCO_INFANTRY_CLASS,
-     /* algorithmic assumptions below assume COBRA is LAST and ONLY LAST: */
-     COCO_COBRA_CLASS };
+     COCO_INFANTRY_CLASS,
+     COCO_FIRETRUCK_CLASS };
 
 /* perform side effects on self->kpstate, (and self->cruise_altitude) */
 void
@@ -171,8 +171,6 @@ coco_comp_think( struct coco_comp *self,
       = cstate->dashinfo.bits & (1<<COCO_DASHINFO_BIT_SUMMON_DISABLE);
     coco_sobject_cl *buy_cl = buy_schedule[self->buy_index];
     coco_u32 threshold_funds = buy_cl->cost;
-    /* copters are never lockouted, so this ties our hands a little
-       unneccarily. */
     if ((!summon_lockout) && (funds >= threshold_funds))
       {
 	int i;
@@ -186,14 +184,8 @@ coco_comp_think( struct coco_comp *self,
 	    /* assume the order goes through ... not 100% safe assumption, since teammate may be mashing keys too */
 	    self->buy_index++;
 	  }
-	else if ((buy_cl == COCO_COBRA_CLASS))  /* special case */
-		 
-	  {
-	    if (cstate->dashinfo.copters < 1) /* don't buy if you've got a bundle */
-	      coco_comp_key_press( state_return, self, 
-				   COCO_CHAR_TO_KEY( 'h' ) );
-	    self->buy_index = 0;
-	  }
+	if (self->buy_index >= COCO_COMP_BUY_INDEX_MAX)
+	  self->buy_index = 0;
       }
   }
 

@@ -42,11 +42,10 @@ __________________________________________________
 MISCELLANEOUS
 
 return               talk mode (return sends)
-                     
+
 C-c                  make screenshot
 C-s                  toggle sound on/off
 C-b                  toggle alpha blending on/off
 
-escape               ungrab mouse
-tab                  regrab mouse
-
+tab                  fullscreen
+escape               windowed

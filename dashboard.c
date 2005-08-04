@@ -58,8 +58,9 @@ DEFINE_AMMO_READER( coco_rockets,    rockets  )
 DEFINE_AMMO_READER( coco_plasma,     plasma   )
 /* DEFINE_AMMO_READER( coco_energy,     fuel     ) not used */
 DEFINE_AMMO_READER( coco_funds,      funds    )
-DEFINE_AMMO_READER( coco_copters,    copters  )
+/* DEFINE_AMMO_READER( coco_copters,    copters  ) */
 DEFINE_AMMO_READER( coco_kits,       kits     )
+/* DEFINE_AMMO_READER( coco_kills,      kills    ) */
 
 
 #define COCO_DASHBOARD_ICON_TAB 44
@@ -116,11 +117,24 @@ void
 coco_draw_dashboard_copters( int x, struct coco_cstate *cstate,
                              void *ignore1, void *ignore2 )
 {
+  char buf[50];
   coco_sobject_cl *cl = coco_sobject_classes
     + cstate->dashinfo.fancy_class_index;
   assert( cl->dashboard_icon );
   coco_draw_dashboard_raster( x, cl->dashboard_icon );
-  coco_draw_dashboard_numeric( x, cstate, (void *) coco_copters, NULL );
+  coco_draw_color( (cstate->dashinfo.copters > 0)
+		   ? COCO_COLOR_DASHBOARD_FULL
+		   : COCO_COLOR_DASHBOARD_FG );
+  if (cstate->dashinfo.kills)
+  sprintf( buf, "%d (%d/%d)", 
+	   (int) cstate->dashinfo.copters, 
+	   (int) cstate->dashinfo.kills,
+	   COCO_NKILLS_FOR_FANCY_COPTER);
+  else
+  sprintf( buf, "%d", 
+	   (int) cstate->dashinfo.copters );
+  coco_draw_dashboard_string( x, buf );
+
 }
 
 
