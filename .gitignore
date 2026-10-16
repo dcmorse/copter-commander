@@ -26,3 +26,17 @@ _$*
 *.ln
 core
 # CVS default ignores end
+
+# build products
+/glx-copter-commander
+/endian
+/sizeof
+/tiff-compile
+*.strlit
+/configure-time.h
+/forward-sobject.h
+/sobject.c
+/sobject.h
+/oo-compiler.lib
+/oo-compiler.fas
+/rstr-*/
